@@ -537,6 +537,7 @@
   <div class="tab" onclick="switchTab('payments')">수납 관리</div>
   <div class="tab" onclick="switchTab('learner')" style="color:#2f855a;">📚 학습기</div>
   <div class="tab" onclick="switchTab('blog')" style="color:#a8710a;">📝 블로그 생성</div>
+  <div class="tab" onclick="switchTab('legal')" style="color:#7a4fb5;">📁 법정 서류함</div>
 </div>
 
 <div class="main">
@@ -1191,7 +1192,93 @@
   </div>
 </div>
 
-<!-- 학원 정보 설정 모달 (납입증명서에 사용) -->
+<!-- 법정 서류함 -->
+<div class="page" id="page-legal">
+  <div class="card">
+    <div class="card-title">📁 법정 서류함</div>
+    <div style="font-size:12px; color:#888; margin-bottom:6px;">
+      학원의 설립·운영 및 과외교습에 관한 법률 시행규칙 [별표 2]에 따라 학원이 갖춰야 하는 장부·서류예요. 아래 3가지는 이미 등록된 학생·직원·수납 정보를 바탕으로 자동으로 정리해드려요.
+    </div>
+    <div style="background:#fff8e6; border:1px solid #f0dca0; border-radius:8px; padding:12px 14px; font-size:12.5px; color:#7a5c00; line-height:1.7;">
+      ⚠️ 아래 2가지는 시스템이 대신 만들어드릴 수 없는 서류예요. 실물(또는 스캔본)을 별도로 꼭 보관해주세요.<br>
+      · <b>원칙</b> — 학원 운영 원칙을 정리한 문서 (학원만 해당)<br>
+      · <b>학원설립·운영등록증명서</b> — 교육지원청에서 발급받은 증명서 원본<br>
+      또한 <b>수입 및 지출 내역 장부</b>(지출 부분)는 아직 이 시스템에 없어요 — 지금은 수납(수입) 내역만 "수납 관리" 탭에서 관리되고 있고, 지출 장부는 별도로 기록해주셔야 합니다.
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title" style="display:flex; justify-content:space-between; align-items:center;">
+      <span>수강생 대장 <span style="font-weight:400; font-size:12px; color:#888;">— 별지 제25호서식 · 3년 보관</span></span>
+      <button class="btn btn-primary btn-sm" onclick="printStudentRoster()">🖨️ A4로 인쇄</button>
+    </div>
+    <div style="overflow-x:auto;">
+      <table style="width:100%; border-collapse:collapse; font-size:13px;" id="legalStudentRosterTable"></table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title" style="display:flex; justify-content:space-between; align-items:center;">
+      <span>직원 명부 <span style="font-weight:400; font-size:12px; color:#888;">— 별지 제26호서식 · 계속 보관</span></span>
+      <div style="display:flex; gap:8px;">
+        <button class="btn btn-secondary btn-sm" onclick="openStaffModal()">+ 직원 추가</button>
+        <button class="btn btn-primary btn-sm" onclick="printStaffRoster()">🖨️ A4로 인쇄</button>
+      </div>
+    </div>
+    <div style="overflow-x:auto;">
+      <table style="width:100%; border-collapse:collapse; font-size:13px;" id="legalStaffTable"></table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">교습비등 영수증 원부 <span style="font-weight:400; font-size:12px; color:#888;">— 별지 제24호서식 · 5년 보관</span></div>
+    <div style="font-size:13px; color:#555; margin-bottom:10px;">이건 이미 "수납 관리" 탭에 만들어져 있어요 — 기간을 정하면 완납된 학생들의 교습비 내역을 원부 형태로 뽑을 수 있습니다.</div>
+    <button class="btn btn-primary btn-sm" onclick="switchTab('payments')">💰 수납 관리에서 원부 뽑으러 가기</button>
+  </div>
+</div>
+
+<!-- 직원 등록/수정 모달 -->
+<div class="modal-bg" id="staffModal">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-title" id="staffModalTitle">직원 등록</div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>직명</label>
+        <input type="text" id="staffTitle" placeholder="예: 원장, 강사, 행정직원">
+      </div>
+      <div class="form-group">
+        <label>성명</label>
+        <input type="text" id="staffName" placeholder="홍길동">
+      </div>
+      <div class="form-group full">
+        <label>주소</label>
+        <input type="text" id="staffAddress" placeholder="부천시 소사구 옥길동 ...">
+      </div>
+      <div class="form-group">
+        <label>전화번호</label>
+        <input type="text" id="staffPhone" placeholder="010-0000-0000">
+      </div>
+      <div class="form-group">
+        <label>담당업무</label>
+        <input type="text" id="staffDuty" placeholder="예: 국어 수업, 상담, 행정">
+      </div>
+      <div class="form-group">
+        <label>채용 연월일</label>
+        <input type="date" id="staffHireDate">
+      </div>
+      <div class="form-group">
+        <label>해임 연월일 (재직 중이면 비워두세요)</label>
+        <input type="date" id="staffLeaveDate">
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-danger" id="staffDeleteBtn" style="display:none;" onclick="deleteStaff()">삭제</button>
+      <button class="btn btn-secondary" onclick="closeStaffModal()">취소</button>
+      <button class="btn btn-primary" onclick="saveStaff()">저장</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-bg" id="academySettingsModal">
   <div class="modal" style="max-width:520px; max-height:85vh; overflow-y:auto;">
     <div class="modal-title">학원 정보 설정</div>
@@ -1454,6 +1541,10 @@
         <label>학부모 연락처</label>
         <input type="text" id="newPhone" placeholder="010-0000-0000">
       </div>
+      <div class="form-group full">
+        <label>주소 <span style="font-weight:400; color:#888; font-size:12px;">— 법정 서류(수강생 대장)에 필요해요</span></label>
+        <input type="text" id="newAddress" placeholder="부천시 소사구 옥길동 ...">
+      </div>
       <div class="form-group">
         <label>과정</label>
         <select id="newCourse" onchange="onCourseOrDiscountChange()">
@@ -1675,13 +1766,14 @@
     // Promise.all은 그중 하나라도 실패하면 나머지 성공한 것까지 전부 버려버려서, 신호 약한
     // 모바일에서 요청 하나만 실패해도 자료·시험 등 모든 데이터가 통째로 안 불러와지는 상태가 됐다.
     // allSettled로 바꿔서 "하나 실패해도 나머지는 살리기" + 재시도까지 추가한다.
-    const names = ['geuldap_students','geuldap_records','geuldap_quizzes','geuldap_attendance','geuldap_leads','geuldap_payments','geuldap_readings','geuldap_lr_materials','geuldap_lr_exams','geuldap_lr_wrong'];
+    const names = ['geuldap_students','geuldap_records','geuldap_quizzes','geuldap_attendance','geuldap_leads','geuldap_payments','geuldap_readings','geuldap_lr_materials','geuldap_lr_exams','geuldap_lr_wrong','geuldap_staff'];
     const results = await Promise.allSettled(names.map(n => getDocsWithRetry(n)));
-    const [ss, rs, qs, as_, ls_, ps_, rd_, lrm_, lre_, lrw_] = results;
+    const [ss, rs, qs, as_, ls_, ps_, rd_, lrm_, lre_, lrw_, stf_] = results;
     const targets = [
       [ss, window._students], [rs, window._records], [qs, window._quizzes],
       [as_, window._attendance], [ls_, window._leads], [ps_, window._payments],
-      [rd_, window._readings], [lrm_, window._lrMaterials], [lre_, window._lrExams], [lrw_, window._lrWrong]
+      [rd_, window._readings], [lrm_, window._lrMaterials], [lre_, window._lrExams], [lrw_, window._lrWrong],
+      [stf_, window._staff]
     ];
     targets.forEach(([result, arr], i) => {
       if (result.status === 'fulfilled') {
@@ -1705,6 +1797,7 @@
     localStorage.setItem('glrm', JSON.stringify(window._lrMaterials));
     localStorage.setItem('glre', JSON.stringify(window._lrExams));
     localStorage.setItem('glrw', JSON.stringify(window._lrWrong));
+    localStorage.setItem('gstf', JSON.stringify(window._staff));
     if (window._academySettings) localStorage.setItem('gas', JSON.stringify(window._academySettings));
   } catch(e) { console.log('Firebase 로드:', e); }
   renderStudents();
@@ -1724,7 +1817,7 @@
 
 <script>
   // ===== 버전 정보 (콘솔에서 확인: APP_VERSION 또는 페이지 로드시 자동 출력) =====
-  const APP_VERSION = 'v6.6';
+  const APP_VERSION = 'v7.0';
   const APP_VERSION_LOG = [
     'v1.0 — 탭 구조 + UI 껍데기',
     'v1.1 — AI 문제 생성 + 개념 사다리',
@@ -1768,7 +1861,8 @@
     'v6.3 — 학습기 회차 재조정: 1~4회차(모의고사 포함) 전부 문제 수 10→5개로 축소. 4회차(실전 모의고사)는 객관식4+단답형1로 구성 고정. 마스터 기준을 "90점 이상"에서 "5문제 전부 정답(100%)"으로 강화(별도 마스터 도전 시험도 동일하게 5문제·전부 정답 기준으로 통일, 자료 분량별로 다르던 문제 수도 5개로 통일). 문제 공유 캐시(로딩 단축용)를 1회차에서만 하던 것을 1~4회차 전부로 확장 — 자료당 회차별로 캐시되어, 한 번 만들어진 회차는 다른 학생이 볼 때 로딩 없이 바로 시작됨',
     'v6.4 — 자료를 처음 업로드하는 순간, 1~4회차 문제를 전부 백그라운드에서 미리 만들어두도록 추가(pregenerateAllRoundsForMaterial). 성공하면 어떤 학생이 어떤 회차를 처음 시작하든 로딩 없이 바로 시작됨 — 실패해도 조용히 넘어가고 그 회차는 기존처럼 학생이 실제 시작할 때 그 자리에서 생성됨(안전장치)',
     'v6.5 — 콘솔에 버전 기록이 한 덩어리로 다닥다닥 붙어 나오던 것을, 접었다 펼 수 있는 목록(항목마다 줄 구분)으로 정리',
-    'v6.6 — GitHub Pages 배포 실패 반복 확인용 테스트 버전(기능 변경 없음)'
+    'v6.6 — GitHub Pages 배포 실패 반복 확인용 테스트 버전(기능 변경 없음)',
+    'v7.0 — [신규] "📁 법정 서류함" 탭 추가 — 학원의 설립·운영 및 과외교습에 관한 법률 시행규칙 [별표2] 기준 필수 장부·서류 정리. 수강생 대장(자동생성+A4인쇄, 이를 위해 학생 정보에 주소·퇴원연월일 필드 추가), 직원 명부(신규 기능 — 등록/수정/삭제 + A4인쇄), 교습비등영수증원부(기존 수납관리 기능으로 바로가기). 시스템이 대신 못 만드는 서류(원칙, 학원설립운영등록증명서)와 아직 없는 지출장부는 안내 문구로 명시'
   ];
   console.log(`%c글답 학습기 ${APP_VERSION}`, 'font-weight:bold; font-size:14px; color:#0d1b4b;');
   console.groupCollapsed('%c버전 기록 (클릭해서 펼치기)', 'color:#888; font-size:11px;');
@@ -1812,6 +1906,7 @@
   window._lrMaterials = JSON.parse(localStorage.getItem('glrm') || '[]');
   window._lrExams = JSON.parse(localStorage.getItem('glre') || '[]');
   window._lrWrong = JSON.parse(localStorage.getItem('glrw') || '[]');
+  window._staff = JSON.parse(localStorage.getItem('gstf') || '[]');
   window._academySettings = JSON.parse(localStorage.getItem('gas') || 'null');
 
   // 기본 과정 목록: 아직 과정이 하나도 없으면 자동으로 채운다
@@ -3374,6 +3469,154 @@ ${a.name}`;
     `;
   }
 
+  // ===== 법정 서류함 =====
+  function renderLegalDocs() {
+    // 수강생 대장 미리보기
+    const activeStudents = _students.slice().sort((a,b)=> (a.date||'').localeCompare(b.date||''));
+    const rosterRows = activeStudents.map((s,i) => `
+      <tr>
+        <td style="border:1px solid #ccc; padding:6px;">${i+1}</td>
+        <td style="border:1px solid #ccc; padding:6px;">${s.name}</td>
+        <td style="border:1px solid #ccc; padding:6px;">${s.address||'-'}</td>
+        <td style="border:1px solid #ccc; padding:6px;">${s.phone||'-'}</td>
+        <td style="border:1px solid #ccc; padding:6px;">${s.date||'-'}</td>
+        <td style="border:1px solid #ccc; padding:6px;">${s.withdrawDate||''}</td>
+      </tr>`).join('');
+    document.getElementById('legalStudentRosterTable').innerHTML = `
+      <tr style="background:#faf8f3;">
+        <th style="border:1px solid #ccc; padding:6px;">등록번호</th>
+        <th style="border:1px solid #ccc; padding:6px;">성명</th>
+        <th style="border:1px solid #ccc; padding:6px;">주소</th>
+        <th style="border:1px solid #ccc; padding:6px;">전화번호</th>
+        <th style="border:1px solid #ccc; padding:6px;">입원 연월일</th>
+        <th style="border:1px solid #ccc; padding:6px;">퇴원 연월일</th>
+      </tr>${rosterRows || '<tr><td colspan="6" style="padding:12px; text-align:center; color:#888;">등록된 학생이 없습니다</td></tr>'}`;
+
+    // 직원 명부 미리보기
+    const staffRows = (window._staff||[]).map((st,i) => `
+      <tr onclick="editStaff('${st.id}')" style="cursor:pointer;">
+        <td style="border:1px solid #ccc; padding:6px;">${i+1}</td>
+        <td style="border:1px solid #ccc; padding:6px;">${st.title||'-'}</td>
+        <td style="border:1px solid #ccc; padding:6px;">${st.name}</td>
+        <td style="border:1px solid #ccc; padding:6px;">${st.address||'-'}</td>
+        <td style="border:1px solid #ccc; padding:6px;">${st.phone||'-'}</td>
+        <td style="border:1px solid #ccc; padding:6px;">${st.duty||'-'}</td>
+        <td style="border:1px solid #ccc; padding:6px;">${st.hireDate||'-'}</td>
+        <td style="border:1px solid #ccc; padding:6px;">${st.leaveDate||''}</td>
+      </tr>`).join('');
+    document.getElementById('legalStaffTable').innerHTML = `
+      <tr style="background:#faf8f3;">
+        <th style="border:1px solid #ccc; padding:6px;">일련번호</th>
+        <th style="border:1px solid #ccc; padding:6px;">직명</th>
+        <th style="border:1px solid #ccc; padding:6px;">성명</th>
+        <th style="border:1px solid #ccc; padding:6px;">주소</th>
+        <th style="border:1px solid #ccc; padding:6px;">전화번호</th>
+        <th style="border:1px solid #ccc; padding:6px;">담당업무</th>
+        <th style="border:1px solid #ccc; padding:6px;">채용 연월일</th>
+        <th style="border:1px solid #ccc; padding:6px;">해임 연월일</th>
+      </tr>${staffRows || '<tr><td colspan="8" style="padding:12px; text-align:center; color:#888;">등록된 직원이 없습니다. "+ 직원 추가"로 등록해주세요.</td></tr>'}`;
+  }
+
+  function printStudentRoster() {
+    const a = window._academySettings || {};
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>수강생 대장</title>
+    <style>
+      * { box-sizing:border-box; } @page { size:A4 landscape; margin:14mm; }
+      body { font-family:'Malgun Gothic','Noto Sans KR',sans-serif; padding:12mm 14mm; }
+      h1 { text-align:center; font-size:19px; } table { border-collapse:collapse; width:100%; font-size:13px; }
+      td, th { border:1px solid #333; padding:6px; }
+    </style></head><body>
+    <h1>수강생 대장 — ${escapeHtml(a.name||'')}</h1>
+    <table>${document.getElementById('legalStudentRosterTable').innerHTML}</table>
+    </body></html>`;
+    const w = window.open('', '_blank');
+    w.document.write(html); w.document.close();
+    setTimeout(() => { w.focus(); w.print(); }, 300);
+  }
+
+  function printStaffRoster() {
+    const a = window._academySettings || {};
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>직원 명부</title>
+    <style>
+      * { box-sizing:border-box; } @page { size:A4 landscape; margin:14mm; }
+      body { font-family:'Malgun Gothic','Noto Sans KR',sans-serif; padding:12mm 14mm; }
+      h1 { text-align:center; font-size:19px; } table { border-collapse:collapse; width:100%; font-size:13px; }
+      td, th { border:1px solid #333; padding:6px; }
+    </style></head><body>
+    <h1>직원 명부 — ${escapeHtml(a.name||'')}</h1>
+    <table>${document.getElementById('legalStaffTable').innerHTML}</table>
+    </body></html>`;
+    const w = window.open('', '_blank');
+    w.document.write(html); w.document.close();
+    setTimeout(() => { w.focus(); w.print(); }, 300);
+  }
+
+  let editingStaffId = null;
+  function openStaffModal() {
+    editingStaffId = null;
+    document.getElementById('staffModalTitle').textContent = '직원 등록';
+    document.getElementById('staffTitle').value = '';
+    document.getElementById('staffName').value = '';
+    document.getElementById('staffAddress').value = '';
+    document.getElementById('staffPhone').value = '';
+    document.getElementById('staffDuty').value = '';
+    document.getElementById('staffHireDate').value = todayLocalDateStr();
+    document.getElementById('staffLeaveDate').value = '';
+    document.getElementById('staffDeleteBtn').style.display = 'none';
+    document.getElementById('staffModal').classList.add('open');
+  }
+  function editStaff(id) {
+    const st = (window._staff||[]).find(x=>x.id===id);
+    if (!st) return;
+    editingStaffId = id;
+    document.getElementById('staffModalTitle').textContent = '직원 정보 수정';
+    document.getElementById('staffTitle').value = st.title || '';
+    document.getElementById('staffName').value = st.name || '';
+    document.getElementById('staffAddress').value = st.address || '';
+    document.getElementById('staffPhone').value = st.phone || '';
+    document.getElementById('staffDuty').value = st.duty || '';
+    document.getElementById('staffHireDate').value = st.hireDate || '';
+    document.getElementById('staffLeaveDate').value = st.leaveDate || '';
+    document.getElementById('staffDeleteBtn').style.display = 'inline-block';
+    document.getElementById('staffModal').classList.add('open');
+  }
+  function closeStaffModal() { document.getElementById('staffModal').classList.remove('open'); }
+  async function saveStaff() {
+    const name = document.getElementById('staffName').value.trim();
+    if (!name) { alert('성명을 입력해주세요.'); return; }
+    const fields = {
+      title: document.getElementById('staffTitle').value.trim(),
+      name,
+      address: document.getElementById('staffAddress').value.trim(),
+      phone: document.getElementById('staffPhone').value.trim(),
+      duty: document.getElementById('staffDuty').value.trim(),
+      hireDate: document.getElementById('staffHireDate').value,
+      leaveDate: document.getElementById('staffLeaveDate').value
+    };
+    window._staff = window._staff || [];
+    if (editingStaffId) {
+      const idx = window._staff.findIndex(s=>s.id===editingStaffId);
+      if (idx > -1) window._staff[idx] = { ...window._staff[idx], ...fields };
+      if (window._fbReady) await withWriteRetry(() => window._updateByFieldId('geuldap_staff', editingStaffId, fields), '직원 정보');
+    } else {
+      const st = { id: Date.now().toString(), ...fields };
+      window._staff.push(st);
+      if (window._fbReady) await withWriteRetry(() => window._add(window._col(window._db,'geuldap_staff'), st), '직원 등록');
+    }
+    localStorage.setItem('gstf', JSON.stringify(window._staff));
+    closeStaffModal();
+    renderLegalDocs();
+  }
+  async function deleteStaff() {
+    if (!editingStaffId) return;
+    if (!confirm('이 직원 정보를 삭제할까요?')) return;
+    window._staff = (window._staff||[]).filter(s=>s.id!==editingStaffId);
+    localStorage.setItem('gstf', JSON.stringify(window._staff));
+    if (window._fbReady) { try { await window._deleteByFieldId('geuldap_staff', editingStaffId); } catch(e) { console.error('직원 삭제 오류', e); } }
+    closeStaffModal();
+    renderLegalDocs();
+  }
+
   // ===== 초기화 =====
   document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('newDate').value = todayLocalDateStr();
@@ -3386,7 +3629,7 @@ ${a.name}`;
 
   // ===== 탭 =====
   function switchTab(tab) {
-    document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', ['students','upload','records','reading','attendance','quiz','leads','timetable','payments','learner','blog'][i]===tab));
+    document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', ['students','upload','records','reading','attendance','quiz','leads','timetable','payments','learner','blog','legal'][i]===tab));
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.getElementById('page-'+tab).classList.add('active');
     if (tab==='upload') renderUploadStudents();
@@ -3399,6 +3642,7 @@ ${a.name}`;
     if (tab==='payments') { const m = document.getElementById('payMonth'); if (!m.value) m.value = todayLocalDateStr().slice(0,7); loadPayments(m.value); }
     if (tab==='learner') renderLearnerTab();
     if (tab==='blog') renderBlogGenerate();
+    if (tab==='legal') renderLegalDocs();
   }
 
   // ===== 렌더링 =====
@@ -3460,10 +3704,13 @@ ${a.name}`;
     const idx = _students.findIndex(s=>s.id===id);
     if (idx === -1) return;
     const nextActive = _students[idx].active === false ? true : false;
-    _students[idx] = { ..._students[idx], active: nextActive };
+    // 비활성화(휴원/퇴원) 시점의 날짜를 남겨서, 법정 서류(수강생 대장)의 "퇴원 연월일"에 쓴다.
+    // 다시 활성화하면 퇴원일은 지운다.
+    const withdrawDate = nextActive ? null : todayLocalDateStr();
+    _students[idx] = { ..._students[idx], active: nextActive, withdrawDate };
     localStorage.setItem('gs', JSON.stringify(_students));
     if (window._fbReady) {
-      window._updateByFieldId('geuldap_students', id, { active: nextActive }).catch(console.error);
+      window._updateByFieldId('geuldap_students', id, { active: nextActive, withdrawDate }).catch(console.error);
     }
     renderStudents();
   }
@@ -3647,6 +3894,7 @@ ${a.name}`;
     document.getElementById('newGrade').selectedIndex = 0;
     document.getElementById('newDate').value = todayLocalDateStr();
     document.getElementById('newPhone').value = '';
+    document.getElementById('newAddress').value = '';
     populateCourseSelect();
     document.getElementById('newCourse').value = '';
     document.getElementById('newDiscount').value = '';
@@ -3672,6 +3920,7 @@ ${a.name}`;
     document.getElementById('newGrade').value = s.grade;
     document.getElementById('newDate').value = s.date;
     document.getElementById('newPhone').value = s.phone || '';
+    document.getElementById('newAddress').value = s.address || '';
     populateCourseSelect();
     document.getElementById('newCourse').value = s.courseName || '';
     document.getElementById('newDiscount').value = s.discount || '';
@@ -3694,6 +3943,7 @@ ${a.name}`;
     const grade = document.getElementById('newGrade').value;
     const date = document.getElementById('newDate').value;
     const phone = document.getElementById('newPhone').value.trim();
+    const address = document.getElementById('newAddress').value.trim();
     const courseName = document.getElementById('newCourse').value;
     const discount = document.getElementById('newDiscount').value;
     const tuition = Number(document.getElementById('newTuition').value) || 0;
@@ -3703,7 +3953,7 @@ ${a.name}`;
     const schedule = collectScheduleRows();
     if (!name) { alert('이름을 입력해주세요'); return; }
 
-    const fields = { name, grade, date, schedule, phone, courseName, discount, tuition, birthdate, billingDay, accessCode };
+    const fields = { name, grade, date, schedule, phone, address, courseName, discount, tuition, birthdate, billingDay, accessCode };
 
     if (editingStudentId) {
       const idx = _students.findIndex(s=>s.id===editingStudentId);
