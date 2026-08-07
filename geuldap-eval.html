@@ -1226,6 +1226,7 @@
       </div>
     </div>
     <div style="overflow-x:auto;">
+      <div style="font-size:12px; color:#888; margin-bottom:6px;">💡 명단의 직원 행을 클릭하면 정보 수정·삭제가 가능해요.</div>
       <table style="width:100%; border-collapse:collapse; font-size:13px;" id="legalStaffTable"></table>
     </div>
   </div>
@@ -1817,7 +1818,7 @@
 
 <script>
   // ===== 버전 정보 (콘솔에서 확인: APP_VERSION 또는 페이지 로드시 자동 출력) =====
-  const APP_VERSION = 'v7.0';
+  const APP_VERSION = 'v7.2';
   const APP_VERSION_LOG = [
     'v1.0 — 탭 구조 + UI 껍데기',
     'v1.1 — AI 문제 생성 + 개념 사다리',
@@ -1862,7 +1863,9 @@
     'v6.4 — 자료를 처음 업로드하는 순간, 1~4회차 문제를 전부 백그라운드에서 미리 만들어두도록 추가(pregenerateAllRoundsForMaterial). 성공하면 어떤 학생이 어떤 회차를 처음 시작하든 로딩 없이 바로 시작됨 — 실패해도 조용히 넘어가고 그 회차는 기존처럼 학생이 실제 시작할 때 그 자리에서 생성됨(안전장치)',
     'v6.5 — 콘솔에 버전 기록이 한 덩어리로 다닥다닥 붙어 나오던 것을, 접었다 펼 수 있는 목록(항목마다 줄 구분)으로 정리',
     'v6.6 — GitHub Pages 배포 실패 반복 확인용 테스트 버전(기능 변경 없음)',
-    'v7.0 — [신규] "📁 법정 서류함" 탭 추가 — 학원의 설립·운영 및 과외교습에 관한 법률 시행규칙 [별표2] 기준 필수 장부·서류 정리. 수강생 대장(자동생성+A4인쇄, 이를 위해 학생 정보에 주소·퇴원연월일 필드 추가), 직원 명부(신규 기능 — 등록/수정/삭제 + A4인쇄), 교습비등영수증원부(기존 수납관리 기능으로 바로가기). 시스템이 대신 못 만드는 서류(원칙, 학원설립운영등록증명서)와 아직 없는 지출장부는 안내 문구로 명시'
+    'v7.0 — [신규] "📁 법정 서류함" 탭 추가 — 학원의 설립·운영 및 과외교습에 관한 법률 시행규칙 [별표2] 기준 필수 장부·서류 정리. 수강생 대장(자동생성+A4인쇄, 이를 위해 학생 정보에 주소·퇴원연월일 필드 추가), 직원 명부(신규 기능 — 등록/수정/삭제 + A4인쇄), 교습비등영수증원부(기존 수납관리 기능으로 바로가기). 시스템이 대신 못 만드는 서류(원칙, 학원설립운영등록증명서)와 아직 없는 지출장부는 안내 문구로 명시',
+    'v7.1 — 교습비등영수증(개별 발급분)과 영수증원부 둘 다에 "교습기간" 항목 추가 (법정 별지 제24호서식 필수항목은 아니지만, 카드매출전표 대체 시 요구되는 항목과 통일하고 학부모 안내 명확화 차원)',
+    'v7.2 — 직원 명부: 수정·삭제 기능은 원래 구현돼 있었으나(행 클릭 → 수정 모달 → 삭제 버튼) 안내가 없어 몰랐던 것으로 확인됨 → "명단의 직원 행을 클릭하면 정보 수정·삭제가 가능해요" 안내 문구 추가'
   ];
   console.log(`%c글답 학습기 ${APP_VERSION}`, 'font-weight:bold; font-size:14px; color:#0d1b4b;');
   console.groupCollapsed('%c버전 기록 (클릭해서 펼치기)', 'color:#888; font-size:11px;');
@@ -3373,6 +3376,7 @@ ${a.name}`;
         <div>생년월일 : ${s.birthdate||'-'}</div>
         <div>교습과목 : ${a.subject||'-'}</div>
         <div>과정명 : ${s.courseName||'-'}</div>
+        <div>교습기간 : ${y}년 ${Number(m)}월 1일 ~ ${y}년 ${Number(m)}월 말일</div>
         <hr style="margin:10px 0;">
         <div>교습비 : ${(p.amount||0).toLocaleString()}원</div>
         <div>기타경비 : 0원</div>
@@ -3436,6 +3440,7 @@ ${a.name}`;
         <td style="border:1px solid #ccc; padding:6px;">${s&&s.birthdate?s.birthdate:'-'}</td>
         <td style="border:1px solid #ccc; padding:6px;">${a.subject||'-'}</td>
         <td style="border:1px solid #ccc; padding:6px;">${s&&s.courseName?s.courseName:'-'}</td>
+        <td style="border:1px solid #ccc; padding:6px;">${y}.${m}.1~${y}.${m}.말일</td>
         <td style="border:1px solid #ccc; padding:6px; text-align:right;">${(p.amount||0).toLocaleString()}원</td>
         <td style="border:1px solid #ccc; padding:6px;">${p.paidDate||'-'}</td>
       </tr>`;
@@ -3454,6 +3459,7 @@ ${a.name}`;
             <th style="border:1px solid #ccc; padding:6px;">생년월일</th>
             <th style="border:1px solid #ccc; padding:6px;">교습과목</th>
             <th style="border:1px solid #ccc; padding:6px;">과정명</th>
+            <th style="border:1px solid #ccc; padding:6px;">교습기간</th>
             <th style="border:1px solid #ccc; padding:6px;">교습비</th>
             <th style="border:1px solid #ccc; padding:6px;">납부일</th>
           </tr>
