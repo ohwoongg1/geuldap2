@@ -1254,6 +1254,73 @@
   </div>
 
   <div class="card">
+    <div class="card-title">💰 채용 지원금 안내</div>
+    <div style="font-size:12px; color:#888; margin-bottom:8px;">직원 정보를 바탕으로 받을 가능성이 있는 채용 지원금을 안내해드려요. 실제 신청은 고용24(work24.go.kr)에서 사업주가 직접 해야 하고, 여기 안내는 참고용 간이 판별이에요.</div>
+    <div id="subsidyList"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title" style="display:flex; justify-content:space-between; align-items:center;">
+      <span>🏪 소상공인(학원) 자체 지원 안내 <span style="font-weight:400; font-size:12px; color:#888;">— 채용과 무관, 학원 자체가 받는 지원</span></span>
+    </div>
+    <div style="font-size:12px; color:#888; margin-bottom:10px;">정책은 매년·수시로 바뀌니, 신청 직전엔 반드시 공식 사이트에서 최신 공고를 다시 확인해주세요.</div>
+    <div style="display:flex; flex-direction:column; gap:10px;">
+
+      <div style="border:1px solid #e5e0d5; border-radius:8px; padding:12px;">
+        <div style="font-weight:600; margin-bottom:6px;">① 소상공인 경영안정 바우처 — 25만원</div>
+        <table style="width:100%; font-size:12.5px; border-collapse:collapse;">
+          <tr><td style="width:80px; color:#888; padding:3px 0;">대상</td><td>연매출 0원 초과 ~ 1억 400만원 미만 소상공인 (학원 대부분 해당 가능성 높음)</td></tr>
+          <tr><td style="color:#888; padding:3px 0;">한도</td><td>25만원, 등록한 카드에 포인트로 자동 적립 → 전기·가스·수도요금, 4대보험료, 차량연료비 결제 시 자동 차감</td></tr>
+          <tr><td style="color:#888; padding:3px 0;">필요서류</td><td>사업자등록증, 신청자 명의 카드 등록 (홈페이지에서 온라인 인증 절차로 대부분 대체됨)</td></tr>
+          <tr><td style="color:#888; padding:3px 0;">신청처</td><td><a href="https://www.sbiz24.kr" target="_blank">소상공인24 (sbiz24.kr)</a></td></tr>
+          <tr><td style="color:#888; padding:3px 0;">팁</td><td>영수증 제출 없이 자동 차감이라 사후관리 부담이 거의 없음. 연 1회 예산 소진 시 마감되니 공고 뜨면 바로 신청 권장.</td></tr>
+        </table>
+      </div>
+
+      <div style="border:1px solid #e5e0d5; border-radius:8px; padding:12px;">
+        <div style="font-weight:600; margin-bottom:6px;">② 소상공인 정책자금 대출(일반경영안정자금)</div>
+        <table style="width:100%; font-size:12.5px; border-collapse:collapse;">
+          <tr><td style="width:80px; color:#888; padding:3px 0;">대상</td><td>업력 무관 신청 가능한 소상공인</td></tr>
+          <tr><td style="color:#888; padding:3px 0;">한도</td><td>운전자금(임대료·인건비·재료비 등) 목적, 시설·운전자금 각 최대 7천만원 수준, 금리 연 2.96%대(변동)</td></tr>
+          <tr><td style="color:#888; padding:3px 0;">필요서류</td><td>사업자등록증, 최근 1년 매출 확인 가능한 부가세 신고서, 신용정보 조회 동의서</td></tr>
+          <tr><td style="color:#888; padding:3px 0;">신청처</td><td><a href="https://www.sbiz24.kr" target="_blank">소상공인시장진흥공단 (sbiz24.kr)</a></td></tr>
+          <tr><td style="color:#888; padding:3px 0;">팁</td><td>연 1~2회 공고, 예산 소진되면 조기 마감되는 경우가 많아 공고 시작 직후 신청하는 게 유리함. 대출이라 상환 의무 있는 점 유의.</td></tr>
+        </table>
+      </div>
+
+      <div style="border:1px solid #e5e0d5; border-radius:8px; padding:12px;">
+        <div style="font-weight:600; margin-bottom:6px;">③ 두루누리 사회보험료 지원</div>
+        <table style="width:100%; font-size:12.5px; border-collapse:collapse;">
+          <tr><td style="width:80px; color:#888; padding:3px 0;">대상</td><td>10인 미만 사업장, 월평균보수 270만원 미만 신규가입 근로자(2026년 기준)</td></tr>
+          <tr><td style="color:#888; padding:3px 0;">한도</td><td>고용보험·국민연금 보험료 최대 80% 지원 (직원별로 위 "채용 지원금 안내"에서 자동 판별해드려요)</td></tr>
+          <tr><td style="color:#888; padding:3px 0;">필요서류</td><td>4대보험 취득신고 시 함께 신청(별도 서류 거의 없음)</td></tr>
+          <tr><td style="color:#888; padding:3px 0;">신청처</td><td><a href="https://www.4insure.or.kr" target="_blank">4대사회보험 정보연계센터 (4insure.or.kr)</a></td></tr>
+        </table>
+      </div>
+
+      <div style="border:1px solid #e5e0d5; border-radius:8px; padding:12px;">
+        <div style="font-weight:600; margin-bottom:6px;">④ 부천시 소상공인 특례보증·이차보전 <span style="font-weight:400; font-size:11px; color:#a15c00;">(지자체·학원 소재지 기준)</span></div>
+        <table style="width:100%; font-size:12.5px; border-collapse:collapse;">
+          <tr><td style="width:80px; color:#888; padding:3px 0;">대상</td><td>부천시 소재 소상공인, 사업자등록 후 2개월 이상 경과, 지방세 체납 없어야 함</td></tr>
+          <tr><td style="color:#888; padding:3px 0;">한도</td><td>보증한도 최대 5,000만원, 대출이자 연 2%로 1년간 지원(이차보전) — 시중 대출보다 훨씬 저렴</td></tr>
+          <tr><td style="color:#888; padding:3px 0;">필요서류</td><td>사업자등록증, 지방세 납세증명서 등 (경기신용보증재단에서 안내)</td></tr>
+          <tr><td style="color:#888; padding:3px 0;">신청처</td><td>경기신용보증재단 부천지점, 문의 1577-5900</td></tr>
+          <tr><td style="color:#888; padding:3px 0;">팁</td><td>상·하반기 각각 예산이 나뉘어 있어(연 12억원 규모) 조기 소진될 수 있음. 부천산업진흥원(bizbc.or.kr)·부천시청 홈페이지에 수시로 새 공고가 올라오니 주기적으로 확인 권장. 이 항목은 부천시 기준이라, 다른 지역으로 이전하시면 해당 지자체 공고를 다시 확인해야 해요.</td></tr>
+        </table>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">📋 연차유급휴가·퇴직금 현황</div>
+    <div style="font-size:12px; color:#888; margin-bottom:8px;">동거친족(무보수) 직원은 제외하고, 재직 중인 직원의 근속기간 기준으로 연차 발생일수·퇴직금 대상 여부를 계산해드려요. 정확한 최종 계산은 실제 근무일·출근율까지 반영해야 하니 참고용으로 봐주세요.</div>
+    <div style="overflow-x:auto;">
+      <table style="width:100%; border-collapse:collapse; font-size:13px;" id="leaveRetirementTable"></table>
+    </div>
+  </div>
+
+  <div class="card">
     <div class="card-title" style="display:flex; justify-content:space-between; align-items:center;">
       <span>직원 명부 <span style="font-weight:400; font-size:12px; color:#888;">— 별지 제26호서식 · 계속 보관</span></span>
       <div style="display:flex; gap:8px;">
@@ -1349,11 +1416,27 @@
           배우자·자녀 등 동거친족이며 무보수로 돕고 있음
         </label>
       </div>
+      <div class="form-group">
+        <label>생년월일 (지원금 판별용, 선택)</label>
+        <input type="date" id="staffBirthdate">
+      </div>
+      <div class="form-group full" style="display:flex; gap:16px; flex-wrap:wrap;">
+        <label style="display:flex; align-items:center; gap:6px; font-weight:400;">
+          <input type="checkbox" id="staffPrevUnemployed" style="width:auto;">
+          채용 직전 실업 상태였음
+        </label>
+        <label style="display:flex; align-items:center; gap:6px; font-weight:400;">
+          <input type="checkbox" id="staffCareerBreak" style="width:auto;">
+          경력단절 후 재취업(출산·육아 등)
+        </label>
+      </div>
     </div>
-    <div id="staffInsuranceHint" style="font-size:12px; color:#555; margin-top:-6px; margin-bottom:10px;"></div>
+    <div id="staffInsuranceHint" style="font-size:12px; color:#555; margin-top:-6px; margin-bottom:6px;"></div>
+    <div id="staffWageHint" style="font-size:12px; margin-top:-4px; margin-bottom:10px;"></div>
     <div class="modal-actions">
       <button class="btn btn-danger" id="staffDeleteBtn" style="display:none;" onclick="deleteStaff()">삭제</button>
       <button class="btn btn-secondary" id="staffContractBtn" style="display:none;" onclick="printLaborContract()">📄 근로계약서</button>
+      <button class="btn btn-secondary" id="staffInsuranceFormBtn" style="display:none;" onclick="printInsuranceAcquisitionForm()">📋 4대보험 취득신고서</button>
       <button class="btn btn-secondary" onclick="closeStaffModal()">취소</button>
       <button class="btn btn-primary" onclick="saveStaff()">저장</button>
     </div>
@@ -1428,6 +1511,12 @@
       <div class="form-group full">
         <label>전화번호</label>
         <input type="text" id="asPhone">
+      </div>
+      <div class="form-group full">
+        <label style="display:flex; align-items:center; gap:6px; font-weight:400;">
+          <input type="checkbox" id="asStaffCount5Plus" style="width:auto;">
+          상시근로자 수 5인 이상 (채용 지원금 안내 정확도에 반영돼요)
+        </label>
       </div>
     </div>
 
@@ -1960,7 +2049,7 @@
 
 <script>
   // ===== 버전 정보 (콘솔에서 확인: APP_VERSION 또는 페이지 로드시 자동 출력) =====
-  const APP_VERSION = 'v7.9';
+  const APP_VERSION = 'v7.16';
   const APP_VERSION_LOG = [
     'v1.0 — 탭 구조 + UI 껍데기',
     'v1.1 — AI 문제 생성 + 개념 사다리',
@@ -2014,7 +2103,14 @@
     'v7.6 — [신규, 채용 반자동화 1단계] 직원 명부에 근무형태·임금·근무일·근무시간 필드 추가, "📄 근로계약서" 버튼으로 표준근로계약서 양식 자동채움+A4인쇄 지원 (사업주 정보는 학원 설정에서, 근로자 정보는 직원명부에서 자동 반영)',
     'v7.7 — [신규, 채용 반자동화 2단계] 법정 서류함에 "4대보험·원천징수 마감일 리마인더" 카드 추가 — 직원 채용일·해임일 기준으로 취득·상실신고 마감일(14일 이내) 자동계산, 급여 지급 중인 직원 있으면 매월 원천징수신고(10일) 마감도 함께 안내. 임박(7일 이내)·기한지남 항목은 색으로 구분 표시',
     'v7.8 — [채용 반자동화 2.5단계] 직원 명부에 "주당 근무시간"·"근무 예상기간(3개월 이상 여부)" 필드 추가 → 산재보험(무조건)·고용보험(주15시간↑ 또는 3개월↑예정)·국민연금(주15시간↑ 또는 월소득220만원↑)·건강보험(주15시간↑) 기준으로 실제 가입 대상 여부를 자동 판별. 직원 모달에 실시간 힌트로 표시, 근로계약서 사회보험란도 자동 체크되도록 반영, 마감일 리마인더도 "4대보험 전체"가 아니라 실제 해당하는 보험만 안내하도록 개선(예: "산재보험만" / "고용보험·산재보험 취득신고")',
-    'v7.9 — [채용 반자동화 2.9단계] 직원 명부에 "배우자·자녀 등 동거친족이며 무보수" 체크박스 추가 — 체크 시 근로자성이 인정되지 않는다고 보고 4대보험 판정·마감일 리마인더에서 자동 제외, 근로계약서 사회보험란도 전부 미가입 표시+안내문구 추가'
+    'v7.9 — [채용 반자동화 2.9단계] 직원 명부에 "배우자·자녀 등 동거친족이며 무보수" 체크박스 추가 — 체크 시 근로자성이 인정되지 않는다고 보고 4대보험 판정·마감일 리마인더에서 자동 제외, 근로계약서 사회보험란도 전부 미가입 표시+안내문구 추가',
+    'v7.10 — [채용 반자동화 3단계] 직원 명부에 "최저임금·주휴수당 계산기" 추가 — 2026년 최저시급(10,320원) 기준으로 시급/월급 입력값이 미달인지 실시간 판정, 주15시간 이상이면 주휴수당 포함 예상 월급도 함께 계산해서 보여줌. 매년 최저임금 고시가 바뀌므로 연도 넘어가면 MINIMUM_WAGE_2026 상수 갱신 필요(주석으로 명시)',
+    'v7.11 — [채용 반자동화 4단계] 법정 서류함에 "연차유급휴가·퇴직금 현황" 카드 추가 — 직원 근속기간 기준으로 연차 발생일수(1년미만 월개근당1일/1년이상 15일+가산, 최대25일)와 퇴직금 대상 여부(근속1년↑+주15시간↑) 자동계산. 동거친족(무보수) 직원은 표에서 제외',
+    'v7.12 — [채용 반자동화 5단계, 마지막] 직원 모달에 "📋 4대보험 취득신고서" 버튼 추가 — 사업장정보(학원설정)+근로자정보(직원명부)+취득일+보수월액 추정치+보험별 신고필요여부(간이판정)를 채운 참고용 양식 A4인쇄. 주민등록번호는 민감정보라 자동기재하지 않고 신고시 직접입력 안내. 이걸로 채용 반자동화 시리즈(근로계약서/마감일리마인더/4대보험판정/최저임금/연차퇴직금/취득신고서양식) 완료',
+    'v7.13 — [채용 반자동화 6단계] "💰 채용 지원금 안내" 카드 추가 — 학원 설정에 "상시근로자 5인 이상" 체크박스 신설, 직원 명부에 생년월일·채용직전실업여부·경력단절여부 필드 추가. 두루누리(규모요건 낮음)는 항상 안내, 5인 이상 체크시에만 청년일자리도약장려금(18~34세+직전실업)·고령자계속고용장려금(60세↑)·경력단절여성 지원 후보를 직원별로 판별해서 안내(참고용, 실제 신청은 work24.go.kr)',
+    'v7.14 — 두루누리 사회보험료 지원 기준액을 2026년 최신치(월평균보수 230만원→270만원 미만)로 정정. 채용 지원금 카드에 소상공인 경영안정 바우처(25만원, sbiz24.kr)·소상공인 정책자금 대출 안내 문구 추가(채용과 무관한 학원 자체 대상 지원)',
+    'v7.15 — "🏪 소상공인(학원) 자체 지원 안내" 카드 신설 (채용지원금 카드와 별개) — 소상공인 경영안정바우처·정책자금 대출·두루누리 3개 제도별로 대상·한도·필요서류·신청처·실전팁을 표로 정리해서 안내',
+    'v7.16 — 소상공인 자체 지원 카드에 ④ 부천시 소상공인 특례보증·이차보전(보증한도 5천만원, 대출이자 연2% 1년지원, 경기신용보증재단 부천지점) 추가. 지자체 지원이라 다른 지역 이전 시 재확인 필요하다는 안내 포함'
   ];
   console.log(`%c글답 학습기 ${APP_VERSION}`, 'font-weight:bold; font-size:14px; color:#0d1b4b;');
   console.groupCollapsed('%c버전 기록 (클릭해서 펼치기)', 'color:#888; font-size:11px;');
@@ -2991,6 +3087,7 @@
     document.getElementById('asSubject').value = a.subject || '';
     document.getElementById('asAddress').value = a.address || '';
     document.getElementById('asPhone').value = a.phone || '';
+    document.getElementById('asStaffCount5Plus').checked = !!a.staffCount5Plus;
     renderCourseList();
     document.getElementById('academySettingsModal').classList.add('open');
   }
@@ -3008,6 +3105,7 @@
       subject: document.getElementById('asSubject').value.trim(),
       address: document.getElementById('asAddress').value.trim(),
       phone: document.getElementById('asPhone').value.trim(),
+      staffCount5Plus: document.getElementById('asStaffCount5Plus').checked,
       serialCounter: prev.serialCounter || 0,
       courses: (prev.courses || [])
     };
@@ -3673,6 +3771,8 @@ ${a.name}`;
   function renderLegalDocs() {
     renderCashLedger();
     renderHrReminders();
+    renderLeaveRetirementTable();
+    renderSubsidyList();
     // 수강생 대장 미리보기
     const activeStudents = _students.slice().sort((a,b)=> (a.date||'').localeCompare(b.date||''));
     const rosterRows = activeStudents.map((s,i) => `
@@ -3772,8 +3872,12 @@ ${a.name}`;
     document.getElementById('staffWeeklyHours').value = '';
     document.getElementById('staffExpect3Months').value = 'yes';
     document.getElementById('staffFamilyUnpaid').checked = false;
+    document.getElementById('staffBirthdate').value = '';
+    document.getElementById('staffPrevUnemployed').checked = false;
+    document.getElementById('staffCareerBreak').checked = false;
     document.getElementById('staffDeleteBtn').style.display = 'none';
     document.getElementById('staffContractBtn').style.display = 'none';
+    document.getElementById('staffInsuranceFormBtn').style.display = 'none';
     document.getElementById('staffModal').classList.add('open');
     updateStaffInsuranceHint();
   }
@@ -3797,13 +3901,59 @@ ${a.name}`;
     document.getElementById('staffWeeklyHours').value = st.weeklyHours || '';
     document.getElementById('staffExpect3Months').value = st.expect3Months || 'yes';
     document.getElementById('staffFamilyUnpaid').checked = !!st.familyUnpaid;
+    document.getElementById('staffBirthdate').value = st.birthdate || '';
+    document.getElementById('staffPrevUnemployed').checked = !!st.prevUnemployed;
+    document.getElementById('staffCareerBreak').checked = !!st.careerBreak;
     document.getElementById('staffDeleteBtn').style.display = 'inline-block';
     document.getElementById('staffContractBtn').style.display = 'inline-block';
+    document.getElementById('staffInsuranceFormBtn').style.display = 'inline-block';
     document.getElementById('staffModal').classList.add('open');
     updateStaffInsuranceHint();
   }
 
-  // 시간강사·알바 등 시간제 근로자의 4대보험 적용 여부를 근무시간·기간·임금 기준으로 판별
+  // 2026년 기준 최저임금(고용노동부 고시). 매년 바뀌므로 다음 해가 되면 이 값을 갱신해야 함.
+  const MINIMUM_WAGE_2026 = 10320;
+  const MINIMUM_WAGE_MONTHLY_2026 = 2156880; // 주40시간(월209시간) 기준, 주휴수당 포함
+
+  function judgeMinimumWage({ weeklyHours, wage, wageType }) {
+    const wh = Number(weeklyHours) || 0;
+    const w = Number(wage) || 0;
+    if (!wh || !w) return null;
+    // 주휴수당: 주15시간 이상 근무 시 발생, 근사식으로 주당 유급시간 = min(8, 주근로시간/40*8)
+    const weeklyAllowanceHours = wh >= 15 ? Math.min(8, (wh/40)*8) : 0;
+    let effectiveHourly, monthlyEstimate;
+    if (wageType === '시급') {
+      effectiveHourly = w;
+      monthlyEstimate = Math.round(w * (wh + weeklyAllowanceHours) * 4.345);
+    } else {
+      // 월급: 실근무시간+주휴시간 기준으로 환산 시급을 역산
+      const monthlyPaidHours = (wh + weeklyAllowanceHours) * 4.345;
+      effectiveHourly = monthlyPaidHours > 0 ? Math.round(w / monthlyPaidHours) : 0;
+      monthlyEstimate = w;
+    }
+    return {
+      effectiveHourly,
+      monthlyEstimate,
+      belowMinimum: effectiveHourly < MINIMUM_WAGE_2026,
+      hasWeeklyAllowance: weeklyAllowanceHours > 0
+    };
+  }
+
+  function renderStaffWageHint() {
+    const box = document.getElementById('staffWageHint');
+    if (!box) return;
+    const weeklyHours = document.getElementById('staffWeeklyHours').value;
+    const wage = document.getElementById('staffWage').value;
+    const wageType = document.getElementById('staffWageType').value;
+    const r = judgeMinimumWage({ weeklyHours, wage, wageType });
+    if (!r) { box.innerHTML = ''; return; }
+    if (r.belowMinimum) {
+      box.innerHTML = `⚠️ <b style="color:#b3261e;">2026년 최저시급(${MINIMUM_WAGE_2026.toLocaleString()}원) 미달로 추정돼요</b> (환산 시급 약 ${r.effectiveHourly.toLocaleString()}원). 임금을 조정해주세요.`;
+    } else {
+      box.innerHTML = `✅ 최저임금 기준 충족 (환산 시급 약 ${r.effectiveHourly.toLocaleString()}원)${r.hasWeeklyAllowance ? `, 주휴수당 포함 예상 월 ${r.monthlyEstimate.toLocaleString()}원` : ''}`;
+    }
+  }
+
   function judgeInsuranceEligibility({ weeklyHours, expect3Months, wage, wageType, familyUnpaid }) {
     if (familyUnpaid) {
       // 배우자·자녀 등 동거친족이며 무보수인 경우, 근로기준법상 근로자성이 인정되지 않는 게 원칙이라
@@ -3823,6 +3973,7 @@ ${a.name}`;
   }
 
   function updateStaffInsuranceHint() {
+    renderStaffWageHint();
     const box = document.getElementById('staffInsuranceHint');
     if (!box) return;
     const familyUnpaid = document.getElementById('staffFamilyUnpaid').checked;
@@ -3859,7 +4010,10 @@ ${a.name}`;
       workHours: document.getElementById('staffWorkHours').value.trim(),
       weeklyHours: Number(document.getElementById('staffWeeklyHours').value) || 0,
       expect3Months: document.getElementById('staffExpect3Months').value,
-      familyUnpaid: document.getElementById('staffFamilyUnpaid').checked
+      familyUnpaid: document.getElementById('staffFamilyUnpaid').checked,
+      birthdate: document.getElementById('staffBirthdate').value,
+      prevUnemployed: document.getElementById('staffPrevUnemployed').checked,
+      careerBreak: document.getElementById('staffCareerBreak').checked
     };
     window._staff = window._staff || [];
     if (editingStaffId) {
@@ -3941,6 +4095,64 @@ ${a.name}`;
         </div>
       </div>
       <div style="margin-top:40px; text-align:center;">작성일자 : ${todayLocalDateStr()}</div>
+    </body></html>`);
+    w.document.close();
+    setTimeout(()=>w.print(), 300);
+  }
+
+  function printInsuranceAcquisitionForm() {
+    const st = (window._staff||[]).find(x=>x.id===editingStaffId);
+    if (!st) return;
+    const as = window._academySettings || {};
+    const academyName = as.name || '글답국어독서논술학원';
+    const bizNo = as.bizNo || '';
+    const address = as.address || '';
+    const phone = as.phone || '';
+    const elig = judgeInsuranceEligibility({ weeklyHours: st.weeklyHours, expect3Months: st.expect3Months, wage: st.wage, wageType: st.wageType, familyUnpaid: st.familyUnpaid });
+    const monthlyWage = elig.monthlyWage || (st.wageType==='월급' ? st.wage : 0);
+    const insList = ['국민연금','건강보험','고용보험','산재보험'];
+    const applicable = insList.filter(k => elig[k]);
+    const rows = insList.map(k => `<tr>
+        <td style="border:1px solid #999; padding:8px; text-align:center;">${k}</td>
+        <td style="border:1px solid #999; padding:8px; text-align:center;">${elig[k] ? '취득' : '해당없음'}</td>
+      </tr>`).join('');
+    const w = window.open('', '_blank');
+    w.document.write(`<html><head><title>4대보험 취득신고서 - ${escapeHtml(st.name)}</title>
+      <style>
+        body { font-family:'Malgun Gothic',sans-serif; padding:30px; line-height:1.8; font-size:14px; }
+        h1 { text-align:center; font-size:20px; letter-spacing:6px; margin-bottom:8px; }
+        .sub { text-align:center; font-size:12px; color:#888; margin-bottom:24px; }
+        table { width:100%; border-collapse:collapse; margin:14px 0; }
+        td, th { border:1px solid #999; padding:8px 10px; font-size:13.5px; text-align:left; }
+        th { background:#f5f5f5; width:160px; }
+        .blank { color:#bbb; }
+      </style></head><body>
+      <h1>사회보험(4대보험) 취득신고서</h1>
+      <div class="sub">— 참고용 작성 보조 양식. 실제 신고는 4insure.or.kr(4대사회보험 정보연계센터)에서 진행해주세요 —</div>
+      <table>
+        <tr><th colspan="2" style="background:#eee;">사업장 정보</th></tr>
+        <tr><th>사업장명</th><td>${escapeHtml(academyName)}</td></tr>
+        <tr><th>사업자등록번호</th><td>${escapeHtml(bizNo) || '<span class="blank">(학원 설정에서 입력 필요)</span>'}</td></tr>
+        <tr><th>사업장 소재지</th><td>${escapeHtml(address)}</td></tr>
+        <tr><th>사업장 전화번호</th><td>${escapeHtml(phone)}</td></tr>
+        <tr><th colspan="2" style="background:#eee;">근로자 정보</th></tr>
+        <tr><th>성명</th><td>${escapeHtml(st.name)}</td></tr>
+        <tr><th>주민등록번호</th><td class="blank">(개인정보라 자동 기재하지 않습니다 — 신고 시 직접 입력)</td></tr>
+        <tr><th>주소</th><td>${escapeHtml(st.address||'')}</td></tr>
+        <tr><th>연락처</th><td>${escapeHtml(st.phone||'')}</td></tr>
+        <tr><th>취득연월일</th><td>${st.hireDate||'-'}</td></tr>
+        <tr><th>보수월액(월평균소득)</th><td>${monthlyWage ? monthlyWage.toLocaleString()+'원 (추정치, 실제 신고 시 정확히 재계산 필요)' : '<span class="blank">-</span>'}</td></tr>
+        <tr><th>근무형태</th><td>${escapeHtml(st.workType||'-')} · 주당 ${st.weeklyHours||'-'}시간</td></tr>
+      </table>
+      <table>
+        <tr style="background:#f5f5f5;"><th style="width:auto; text-align:center;">보험 종류</th><th style="width:auto; text-align:center;">신고 필요 여부(간이판정)</th></tr>
+        ${rows}
+      </table>
+      <p style="font-size:12px; color:#888;">
+        ※ 이 표는 주당 근무시간·근무예상기간·임금을 기준으로 한 간이 판정입니다. 실제 취득 대상 여부와 보수월액은 4대사회보험 정보연계센터(4insure.or.kr)에서 최종 확인해주세요.<br>
+        ${applicable.length ? `이번 신고에서 챙기실 보험: <b>${applicable.join(', ')}</b>` : '이번 신고에서 필수로 챙길 보험이 없는 것으로 추정됩니다(산재보험은 별도 확인 필요).'}
+      </p>
+      <div style="margin-top:30px; text-align:center;">작성일자 : ${todayLocalDateStr()}</div>
     </body></html>`);
     w.document.close();
     setTimeout(()=>w.print(), 300);
@@ -4121,6 +4333,109 @@ ${a.name}`;
         ${overdue ? '⚠️ 기한 지남 — ' : (soon ? '🔔 임박 — ' : '· ')}${it.label} <b>${it.due}</b>까지
       </div>`;
     }).join('');
+  }
+
+  // ===== 연차유급휴가·퇴직금 현황 =====
+  function computeStaffTenure(st) {
+    const start = new Date(st.hireDate + 'T00:00:00');
+    const end = st.leaveDate ? new Date(st.leaveDate + 'T00:00:00') : new Date();
+    const tenureDays = Math.floor((end - start) / (1000*60*60*24));
+    const tenureYears = tenureDays / 365;
+    const monthsCompleted = Math.min(11, Math.floor(tenureDays / 30));
+    let annualLeaveDays;
+    if (tenureYears < 1) {
+      annualLeaveDays = monthsCompleted; // 1개월 개근당 1일, 최대 11일
+    } else {
+      const extra = Math.floor((tenureYears - 1) / 2);
+      annualLeaveDays = Math.min(25, 15 + extra);
+    }
+    const weeklyHours = Number(st.weeklyHours) || 0;
+    const retirementEligible = tenureYears >= 1 && weeklyHours >= 15;
+    return { tenureDays, tenureYears, annualLeaveDays, retirementEligible };
+  }
+
+  function renderLeaveRetirementTable() {
+    const table = document.getElementById('leaveRetirementTable');
+    if (!table) return;
+    const staffList = (window._staff||[]).filter(st => st.hireDate && !st.familyUnpaid);
+    if (staffList.length === 0) {
+      table.innerHTML = '<tr><td style="padding:12px; text-align:center; color:#888;">해당하는 직원이 없습니다</td></tr>';
+      return;
+    }
+    const rows = staffList.map(st => {
+      const t = computeStaffTenure(st);
+      const yearsLabel = t.tenureYears >= 1 ? `${t.tenureYears.toFixed(1)}년` : `${Math.floor(t.tenureDays/30)}개월`;
+      return `<tr>
+        <td style="border:1px solid #ccc; padding:6px;">${escapeHtml(st.name)}</td>
+        <td style="border:1px solid #ccc; padding:6px;">${st.hireDate}${st.leaveDate ? ' ~ '+st.leaveDate : ' ~ 재직중'}</td>
+        <td style="border:1px solid #ccc; padding:6px;">${yearsLabel}</td>
+        <td style="border:1px solid #ccc; padding:6px; text-align:center;">${t.annualLeaveDays}일</td>
+        <td style="border:1px solid #ccc; padding:6px; text-align:center; color:${t.retirementEligible?'#1a7a3a':'#888'};">${t.retirementEligible ? '✅ 대상' : '⬜ 아직 아님'}</td>
+      </tr>`;
+    }).join('');
+    table.innerHTML = `<tr style="background:#faf8f3;">
+        <th style="border:1px solid #ccc; padding:6px;">성명</th>
+        <th style="border:1px solid #ccc; padding:6px;">재직기간</th>
+        <th style="border:1px solid #ccc; padding:6px;">근속</th>
+        <th style="border:1px solid #ccc; padding:6px;">연차 발생일수</th>
+        <th style="border:1px solid #ccc; padding:6px;">퇴직금 대상</th>
+      </tr>${rows}`;
+  }
+
+  // ===== 채용 지원금 안내 (참고용 간이 판별) =====
+  function computeAge(birthdate) {
+    if (!birthdate) return null;
+    const b = new Date(birthdate + 'T00:00:00');
+    const today = new Date();
+    let age = today.getFullYear() - b.getFullYear();
+    const m = today.getMonth() - b.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < b.getDate())) age--;
+    return age;
+  }
+
+  function computeSubsidyCandidates(st) {
+    const list = [];
+    // 두루누리 사회보험료 지원 — 10인 미만 소규모 사업장은 대부분 대상, 규모 요건이 낮아 별도 체크
+    if (st.hireDate && !st.familyUnpaid) {
+      list.push({ name: '두루누리 사회보험료 지원', note: '10인 미만 사업장 + 월평균보수 270만원 미만 신규가입 근로자면 대상 가능성 높음 (고용보험·국민연금 보험료 최대 80% 지원, 2026년 기준)', link: 'https://www.4insure.or.kr' });
+    }
+    const as = window._academySettings || {};
+    if (!as.staffCount5Plus) return list; // 5인 미만이면 아래 항목들은 대부분 해당 안 됨
+    const age = computeAge(st.birthdate);
+    if (age !== null && age >= 18 && age <= 34 && st.prevUnemployed) {
+      list.push({ name: '청년일자리도약장려금', note: '취업애로청년을 정규직으로 채용해 6개월 이상 고용 유지 시 1년간 최대 720만원(월 60만원) 지원', link: 'https://www.work24.go.kr' });
+    }
+    if (age !== null && age >= 60) {
+      list.push({ name: '고령자 계속고용장려금', note: '정년 이후에도 계속고용하는 제도를 취업규칙 등에 명문화해야 대상 — 요건이 까다로운 편이라 고용센터 사전 상담 권장', link: 'https://www.work24.go.kr' });
+    }
+    if (st.careerBreak) {
+      list.push({ name: '경력단절여성 관련 지원', note: '여성새로일하기센터(새일센터) 연계 채용지원금 등 — 지역 새일센터에 직접 문의 필요', link: 'https://saeil.mogef.go.kr' });
+    }
+    return list;
+  }
+
+  function renderSubsidyList() {
+    const box = document.getElementById('subsidyList');
+    if (!box) return;
+    const as = window._academySettings || {};
+    const staffList = (window._staff||[]).filter(st => st.hireDate);
+    if (staffList.length === 0) { box.innerHTML = '<div style="color:#888; font-size:13px;">등록된 직원이 없습니다.</div>'; return; }
+    let html = '';
+    if (!as.staffCount5Plus) {
+      html += `<div style="padding:8px 10px; margin-bottom:8px; background:#fff8e6; border-radius:6px; font-size:12.5px; color:#a15c00;">
+        ⚠️ 현재 "상시근로자 5인 이상"이 체크되어 있지 않아, 청년일자리도약장려금 등 대부분의 사업주 대상 장려금은 안내에서 제외돼요. 규모 요건 자체가 5인 이상인 제도가 많아서예요. 두루누리처럼 규모 요건이 낮은 것만 아래 표시됩니다. 직원이 늘어나면 학원 설정에서 체크해주세요.
+      </div>`;
+    }
+    staffList.forEach(st => {
+      const candidates = computeSubsidyCandidates(st);
+      if (candidates.length === 0) return;
+      html += `<div style="margin-bottom:10px;"><b style="font-size:13px;">${escapeHtml(st.name)}</b><div style="margin-top:4px;">` +
+        candidates.map(c => `<div style="padding:8px 10px; margin-bottom:4px; background:#f7f7f5; border-radius:6px; font-size:12.5px;">
+          <b>${c.name}</b> — ${c.note}<br><a href="${c.link}" target="_blank" style="font-size:11px;">${c.link}</a>
+        </div>`).join('') + `</div></div>`;
+    });
+    if (!html) html = '<div style="color:#888; font-size:13px;">현재 조건에 맞는 지원금이 확인되지 않았어요. 생년월일·경력단절 여부 등을 직원 정보에 입력하면 더 정확히 안내해드려요.</div>';
+    box.innerHTML = html;
   }
 
   function printCashLedger() {
