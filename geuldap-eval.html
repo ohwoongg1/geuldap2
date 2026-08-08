@@ -1248,6 +1248,12 @@
   </div>
 
   <div class="card">
+    <div class="card-title">📅 4대보험·원천징수 마감일 리마인더</div>
+    <div style="font-size:12px; color:#888; margin-bottom:8px;">직원 명부의 채용·해임일 기준으로 법정 마감일을 자동으로 계산해서 보여드려요. 실제 신고는 4insure.or.kr(4대사회보험 정보연계센터)·홈택스에서 직접 하셔야 해요.</div>
+    <div id="hrReminderList"></div>
+  </div>
+
+  <div class="card">
     <div class="card-title" style="display:flex; justify-content:space-between; align-items:center;">
       <span>직원 명부 <span style="font-weight:400; font-size:12px; color:#888;">— 별지 제26호서식 · 계속 보관</span></span>
       <div style="display:flex; gap:8px;">
@@ -1301,9 +1307,53 @@
         <label>해임 연월일 (재직 중이면 비워두세요)</label>
         <input type="date" id="staffLeaveDate">
       </div>
+      <div class="form-group">
+        <label>근무형태</label>
+        <select id="staffWorkType">
+          <option value="상용">상용(정규)</option>
+          <option value="시간제">시간제(아르바이트·시간강사)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>임금</label>
+        <div style="display:flex; gap:6px;">
+          <input type="number" id="staffWage" placeholder="숫자만" style="flex:1;" oninput="updateStaffInsuranceHint()">
+          <select id="staffWageType" style="width:90px;" onchange="updateStaffInsuranceHint()">
+            <option value="월급">월급</option>
+            <option value="시급">시급</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>근무일</label>
+        <input type="text" id="staffWorkDays" placeholder="예: 월~금">
+      </div>
+      <div class="form-group">
+        <label>근무시간</label>
+        <input type="text" id="staffWorkHours" placeholder="예: 14:00~19:00">
+      </div>
+      <div class="form-group">
+        <label>주당 근무시간</label>
+        <input type="number" id="staffWeeklyHours" placeholder="예: 15" oninput="updateStaffInsuranceHint()">
+      </div>
+      <div class="form-group">
+        <label>근무 예상기간</label>
+        <select id="staffExpect3Months" onchange="updateStaffInsuranceHint()">
+          <option value="yes">3개월 이상 근무 예정</option>
+          <option value="no">3개월 미만(단기)</option>
+        </select>
+      </div>
+      <div class="form-group full">
+        <label style="display:flex; align-items:center; gap:6px; font-weight:400;">
+          <input type="checkbox" id="staffFamilyUnpaid" style="width:auto;" onchange="updateStaffInsuranceHint()">
+          배우자·자녀 등 동거친족이며 무보수로 돕고 있음
+        </label>
+      </div>
     </div>
+    <div id="staffInsuranceHint" style="font-size:12px; color:#555; margin-top:-6px; margin-bottom:10px;"></div>
     <div class="modal-actions">
       <button class="btn btn-danger" id="staffDeleteBtn" style="display:none;" onclick="deleteStaff()">삭제</button>
+      <button class="btn btn-secondary" id="staffContractBtn" style="display:none;" onclick="printLaborContract()">📄 근로계약서</button>
       <button class="btn btn-secondary" onclick="closeStaffModal()">취소</button>
       <button class="btn btn-primary" onclick="saveStaff()">저장</button>
     </div>
@@ -1910,7 +1960,7 @@
 
 <script>
   // ===== 버전 정보 (콘솔에서 확인: APP_VERSION 또는 페이지 로드시 자동 출력) =====
-  const APP_VERSION = 'v7.5';
+  const APP_VERSION = 'v7.9';
   const APP_VERSION_LOG = [
     'v1.0 — 탭 구조 + UI 껍데기',
     'v1.1 — AI 문제 생성 + 개념 사다리',
@@ -1960,7 +2010,11 @@
     'v7.2 — 직원 명부: 수정·삭제 기능은 원래 구현돼 있었으나(행 클릭 → 수정 모달 → 삭제 버튼) 안내가 없어 몰랐던 것으로 확인됨 → "명단의 직원 행을 클릭하면 정보 수정·삭제가 가능해요" 안내 문구 추가',
     'v7.3 — 상담 상세 모달: 이름·연락처·학년·유입경로가 텍스트로만 표시되어 수정이 불가능했던 문제 수정 — 입력칸으로 바꾸고 "기본정보 저장" 버튼 추가',
     'v7.4 — 상담일지 단체 문자 보내기: 전체선택·초등만·중등만·선택해제 빠른 선택 버튼 추가 (연락처 있는 대상만, 현재 검색·필터 결과 기준)',
-    'v7.5 — [신규] 법정 서류함에 "현금출납장" 추가 — 수입은 수납관리(paid=true) 데이터에서 자동 연동, 지출은 직접 입력(분류·항목·금액·메모), 월별 요약·A4인쇄 지원. 은행·카드 CSV 명세서 업로드시 이번 달 장부 순액과 비교하는 대사(맞춰보기) 기능도 추가(참고용, 완벽한 자동인식은 아님)'
+    'v7.5 — [신규] 법정 서류함에 "현금출납장" 추가 — 수입은 수납관리(paid=true) 데이터에서 자동 연동, 지출은 직접 입력(분류·항목·금액·메모), 월별 요약·A4인쇄 지원. 은행·카드 CSV 명세서 업로드시 이번 달 장부 순액과 비교하는 대사(맞춰보기) 기능도 추가(참고용, 완벽한 자동인식은 아님)',
+    'v7.6 — [신규, 채용 반자동화 1단계] 직원 명부에 근무형태·임금·근무일·근무시간 필드 추가, "📄 근로계약서" 버튼으로 표준근로계약서 양식 자동채움+A4인쇄 지원 (사업주 정보는 학원 설정에서, 근로자 정보는 직원명부에서 자동 반영)',
+    'v7.7 — [신규, 채용 반자동화 2단계] 법정 서류함에 "4대보험·원천징수 마감일 리마인더" 카드 추가 — 직원 채용일·해임일 기준으로 취득·상실신고 마감일(14일 이내) 자동계산, 급여 지급 중인 직원 있으면 매월 원천징수신고(10일) 마감도 함께 안내. 임박(7일 이내)·기한지남 항목은 색으로 구분 표시',
+    'v7.8 — [채용 반자동화 2.5단계] 직원 명부에 "주당 근무시간"·"근무 예상기간(3개월 이상 여부)" 필드 추가 → 산재보험(무조건)·고용보험(주15시간↑ 또는 3개월↑예정)·국민연금(주15시간↑ 또는 월소득220만원↑)·건강보험(주15시간↑) 기준으로 실제 가입 대상 여부를 자동 판별. 직원 모달에 실시간 힌트로 표시, 근로계약서 사회보험란도 자동 체크되도록 반영, 마감일 리마인더도 "4대보험 전체"가 아니라 실제 해당하는 보험만 안내하도록 개선(예: "산재보험만" / "고용보험·산재보험 취득신고")',
+    'v7.9 — [채용 반자동화 2.9단계] 직원 명부에 "배우자·자녀 등 동거친족이며 무보수" 체크박스 추가 — 체크 시 근로자성이 인정되지 않는다고 보고 4대보험 판정·마감일 리마인더에서 자동 제외, 근로계약서 사회보험란도 전부 미가입 표시+안내문구 추가'
   ];
   console.log(`%c글답 학습기 ${APP_VERSION}`, 'font-weight:bold; font-size:14px; color:#0d1b4b;');
   console.groupCollapsed('%c버전 기록 (클릭해서 펼치기)', 'color:#888; font-size:11px;');
@@ -3618,6 +3672,7 @@ ${a.name}`;
   // ===== 법정 서류함 =====
   function renderLegalDocs() {
     renderCashLedger();
+    renderHrReminders();
     // 수강생 대장 미리보기
     const activeStudents = _students.slice().sort((a,b)=> (a.date||'').localeCompare(b.date||''));
     const rosterRows = activeStudents.map((s,i) => `
@@ -3709,8 +3764,18 @@ ${a.name}`;
     document.getElementById('staffDuty').value = '';
     document.getElementById('staffHireDate').value = todayLocalDateStr();
     document.getElementById('staffLeaveDate').value = '';
+    document.getElementById('staffWorkType').value = '상용';
+    document.getElementById('staffWage').value = '';
+    document.getElementById('staffWageType').value = '월급';
+    document.getElementById('staffWorkDays').value = '';
+    document.getElementById('staffWorkHours').value = '';
+    document.getElementById('staffWeeklyHours').value = '';
+    document.getElementById('staffExpect3Months').value = 'yes';
+    document.getElementById('staffFamilyUnpaid').checked = false;
     document.getElementById('staffDeleteBtn').style.display = 'none';
+    document.getElementById('staffContractBtn').style.display = 'none';
     document.getElementById('staffModal').classList.add('open');
+    updateStaffInsuranceHint();
   }
   function editStaff(id) {
     const st = (window._staff||[]).find(x=>x.id===id);
@@ -3724,9 +3789,57 @@ ${a.name}`;
     document.getElementById('staffDuty').value = st.duty || '';
     document.getElementById('staffHireDate').value = st.hireDate || '';
     document.getElementById('staffLeaveDate').value = st.leaveDate || '';
+    document.getElementById('staffWorkType').value = st.workType || '상용';
+    document.getElementById('staffWage').value = st.wage || '';
+    document.getElementById('staffWageType').value = st.wageType || '월급';
+    document.getElementById('staffWorkDays').value = st.workDays || '';
+    document.getElementById('staffWorkHours').value = st.workHours || '';
+    document.getElementById('staffWeeklyHours').value = st.weeklyHours || '';
+    document.getElementById('staffExpect3Months').value = st.expect3Months || 'yes';
+    document.getElementById('staffFamilyUnpaid').checked = !!st.familyUnpaid;
     document.getElementById('staffDeleteBtn').style.display = 'inline-block';
+    document.getElementById('staffContractBtn').style.display = 'inline-block';
     document.getElementById('staffModal').classList.add('open');
+    updateStaffInsuranceHint();
   }
+
+  // 시간강사·알바 등 시간제 근로자의 4대보험 적용 여부를 근무시간·기간·임금 기준으로 판별
+  function judgeInsuranceEligibility({ weeklyHours, expect3Months, wage, wageType, familyUnpaid }) {
+    if (familyUnpaid) {
+      // 배우자·자녀 등 동거친족이며 무보수인 경우, 근로기준법상 근로자성이 인정되지 않는 게 원칙이라
+      // 4대보험 신고 대상에서 사실상 제외된다(참고용 판정, 100% 무보수 전제).
+      return { 산재보험: false, 고용보험: false, 국민연금: false, 건강보험: false, monthlyWage: 0, familyException: true };
+    }
+    const wh = Number(weeklyHours) || 0;
+    const isLong = wh >= 15;
+    const monthlyWage = wageType === '시급' ? Math.round((Number(wage)||0) * wh * 4.345) : (Number(wage)||0);
+    return {
+      산재보험: true, // 예외 없이 전원 가입
+      고용보험: isLong || expect3Months === 'yes',
+      국민연금: isLong || monthlyWage >= 2200000,
+      건강보험: isLong,
+      monthlyWage
+    };
+  }
+
+  function updateStaffInsuranceHint() {
+    const box = document.getElementById('staffInsuranceHint');
+    if (!box) return;
+    const familyUnpaid = document.getElementById('staffFamilyUnpaid').checked;
+    if (familyUnpaid) {
+      box.innerHTML = `💡 배우자·자녀 등 동거친족이며 무보수로 돕고 계신 경우, 근로자성이 인정되지 않아 4대보험 신고 대상에서 사실상 제외돼요.<br><span style="color:#999;">※ 나중에 실제 급여를 지급하기 시작하시면 이 체크를 해제하고 다시 판정해주세요.</span>`;
+      return;
+    }
+    const weeklyHours = document.getElementById('staffWeeklyHours').value;
+    const expect3Months = document.getElementById('staffExpect3Months').value;
+    const wage = document.getElementById('staffWage').value;
+    const wageType = document.getElementById('staffWageType').value;
+    if (!weeklyHours) { box.textContent = '주당 근무시간을 입력하면 4대보험 중 어떤 것이 가입 대상인지 안내해드려요.'; return; }
+    const r = judgeInsuranceEligibility({ weeklyHours, expect3Months, wage, wageType, familyUnpaid });
+    const list = ['산재보험','고용보험','국민연금','건강보험'].map(k => `${k} ${r[k]?'✅ 대상':'⬜ 제외 가능'}`).join(' · ');
+    box.innerHTML = `💡 ${list}<br><span style="color:#999;">※ 참고용 간이 판정이에요. 실제 가입 여부는 4대사회보험 정보연계센터(4insure.or.kr) 또는 노무사 확인을 권장해요.</span>`;
+  }
+
   function closeStaffModal() { document.getElementById('staffModal').classList.remove('open'); }
   async function saveStaff() {
     const name = document.getElementById('staffName').value.trim();
@@ -3738,7 +3851,15 @@ ${a.name}`;
       phone: document.getElementById('staffPhone').value.trim(),
       duty: document.getElementById('staffDuty').value.trim(),
       hireDate: document.getElementById('staffHireDate').value,
-      leaveDate: document.getElementById('staffLeaveDate').value
+      leaveDate: document.getElementById('staffLeaveDate').value,
+      workType: document.getElementById('staffWorkType').value,
+      wage: Number(document.getElementById('staffWage').value) || 0,
+      wageType: document.getElementById('staffWageType').value,
+      workDays: document.getElementById('staffWorkDays').value.trim(),
+      workHours: document.getElementById('staffWorkHours').value.trim(),
+      weeklyHours: Number(document.getElementById('staffWeeklyHours').value) || 0,
+      expect3Months: document.getElementById('staffExpect3Months').value,
+      familyUnpaid: document.getElementById('staffFamilyUnpaid').checked
     };
     window._staff = window._staff || [];
     if (editingStaffId) {
@@ -3762,6 +3883,67 @@ ${a.name}`;
     if (window._fbReady) { try { await window._deleteByFieldId('geuldap_staff', editingStaffId); } catch(e) { console.error('직원 삭제 오류', e); } }
     closeStaffModal();
     renderLegalDocs();
+  }
+
+  function printLaborContract() {
+    const st = (window._staff||[]).find(x=>x.id===editingStaffId);
+    if (!st) return;
+    const as = window._academySettings || {};
+    const academyName = as.name || '글답국어독서논술학원';
+    const owner = as.owner || '';
+    const address = as.address || '';
+    const wageLine = st.wageType === '시급'
+      ? `시급 ${(st.wage||0).toLocaleString()}원 (근로시간에 따라 산정, 주휴수당 별도 지급)`
+      : `월급 ${(st.wage||0).toLocaleString()}원`;
+    const elig = judgeInsuranceEligibility({ weeklyHours: st.weeklyHours, expect3Months: st.expect3Months, wage: st.wage, wageType: st.wageType, familyUnpaid: st.familyUnpaid });
+    const insBox = (k) => elig[k] ? '☑' : '☐';
+    const familyNote = st.familyUnpaid ? '<p style="font-size:12px; color:#a15c00;">※ 동거친족 무보수로 등록되어 있어, 사회보험 적용여부는 전부 미가입으로 표시됩니다. 실제 급여 지급이 시작되면 다시 확인해주세요.</p>' : '';
+    const w = window.open('', '_blank');
+    w.document.write(`<html><head><title>근로계약서 - ${escapeHtml(st.name)}</title>
+      <style>
+        body { font-family:'Malgun Gothic',sans-serif; padding:30px; line-height:1.9; font-size:14px; }
+        h1 { text-align:center; font-size:22px; letter-spacing:8px; margin-bottom:30px; }
+        table { width:100%; border-collapse:collapse; margin:14px 0; }
+        td, th { border:1px solid #999; padding:8px 10px; font-size:13.5px; text-align:left; }
+        th { background:#f5f5f5; width:150px; }
+        .sign { display:flex; justify-content:space-between; margin-top:50px; }
+        .sign div { width:45%; }
+        .sign .line { border-top:1px solid #333; margin-top:40px; padding-top:6px; text-align:center; }
+      </style></head><body>
+      <h1>${st.workType==='시간제'?'단시간근로자 ':''}근로계약서</h1>
+      <p>${escapeHtml(academyName)} (이하 "사업주"라 함)과(와) ${escapeHtml(st.name)}(이하 "근로자"라 함)은 다음과 같이 근로계약을 체결한다.</p>
+      <table>
+        <tr><th>근로계약기간</th><td>${st.hireDate||'-'} 부터 ${st.leaveDate ? st.leaveDate+' 까지' : '(기간의 정함 없음)'}</td></tr>
+        <tr><th>근무장소</th><td>${escapeHtml(address)}</td></tr>
+        <tr><th>업무의 내용</th><td>${escapeHtml(st.duty||'-')}</td></tr>
+        <tr><th>근로일 / 휴일</th><td>${escapeHtml(st.workDays||'-')} / 그 외 요일 휴무</td></tr>
+        <tr><th>근무시간</th><td>${escapeHtml(st.workHours||'-')} (휴게시간 별도)</td></tr>
+        <tr><th>임금</th><td>${wageLine}</td></tr>
+        <tr><th>임금지급일</th><td>매월 말일 (근로자 명의 계좌로 지급)</td></tr>
+        <tr><th>사회보험 적용여부</th><td>${insBox('고용보험')} 고용보험 ${insBox('산재보험')} 산재보험 ${insBox('국민연금')} 국민연금 ${insBox('건강보험')} 건강보험 <span style="font-size:11px; color:#888;">(주당 근무시간·근무기간 기준 간이 판정, 실제 적용은 4insure.or.kr에서 최종 확인)</span></td></tr>
+      </table>
+      ${familyNote}
+      <p style="font-size:12.5px; color:#555;">
+        1. 사업주는 근로계약을 체결함과 동시에 본 계약서를 근로자에게 교부한다.(근로기준법 제17조 이행)<br>
+        2. 근로계약, 취업규칙 등의 규정을 지키며 성실하게 이행하여야 한다.<br>
+        3. 근로계약서에 명시되지 않은 사항은 근로기준법령에 의한다.
+      </p>
+      <div class="sign">
+        <div>
+          <div>사업주 : ${escapeHtml(academyName)}</div>
+          <div>대표자 : ${escapeHtml(owner)} (인)</div>
+          <div>주소 : ${escapeHtml(address)}</div>
+        </div>
+        <div>
+          <div>근로자 : ${escapeHtml(st.name)} (인)</div>
+          <div>주소 : ${escapeHtml(st.address||'')}</div>
+          <div>연락처 : ${escapeHtml(st.phone||'')}</div>
+        </div>
+      </div>
+      <div style="margin-top:40px; text-align:center;">작성일자 : ${todayLocalDateStr()}</div>
+    </body></html>`);
+    w.document.close();
+    setTimeout(()=>w.print(), 300);
   }
 
   // ===== 현금출납장 =====
@@ -3879,6 +4061,66 @@ ${a.name}`;
       </tr>${rows || '<tr><td colspan="6" style="padding:12px; text-align:center; color:#888;">이번 달 내역이 없습니다</td></tr>'}`;
     document.getElementById('bankReconcileResult').innerHTML = '';
     document.getElementById('bankFileInput').value = '';
+  }
+
+  // ===== 4대보험·원천징수 마감일 리마인더 =====
+  function addDaysToDateStr(dateStr, days) {
+    const d = new Date(dateStr + 'T00:00:00');
+    d.setDate(d.getDate() + days);
+    const y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,'0'), day = String(d.getDate()).padStart(2,'0');
+    return `${y}-${m}-${day}`;
+  }
+
+  function computeHrDeadlines() {
+    const today = todayLocalDateStr();
+    const items = [];
+    (window._staff||[]).forEach(st => {
+      if (st.familyUnpaid) return; // 동거친족 무보수는 4대보험 신고 대상 아님 — 리마인더 생략
+      const elig = judgeInsuranceEligibility({ weeklyHours: st.weeklyHours, expect3Months: st.expect3Months, wage: st.wage, wageType: st.wageType, familyUnpaid: st.familyUnpaid });
+      const applicable = ['고용보험','국민연금','건강보험'].filter(k => elig[k]);
+      const insLabel = applicable.length ? applicable.join('·') : '산재보험만';
+      if (st.hireDate) {
+        const due = addDaysToDateStr(st.hireDate, 14);
+        // 취득일로부터 60일 이내면 아직 신고 의미가 있는 최근 채용으로 보고 안내(그 이후는 오래된 직원이라 생략)
+        if (addDaysToDateStr(st.hireDate, 60) >= today) {
+          items.push({ label: `${st.name} — ${insLabel} 취득신고`, due, type: '취득신고' });
+        }
+      }
+      if (st.leaveDate) {
+        const due = addDaysToDateStr(st.leaveDate, 14);
+        if (addDaysToDateStr(st.leaveDate, 60) >= today) {
+          items.push({ label: `${st.name} — ${insLabel} 상실신고`, due, type: '상실신고' });
+        }
+      }
+    });
+    // 원천징수 신고: 매월 10일까지 (급여 지급 중인 직원이 있을 때만 안내)
+    const hasActiveStaff = (window._staff||[]).some(st => st.hireDate && !st.leaveDate && !st.familyUnpaid);
+    if (hasActiveStaff) {
+      const y = Number(today.slice(0,4)), m = Number(today.slice(5,7)), d = Number(today.slice(8,10));
+      let dueY = y, dueM = m;
+      if (d > 10) { dueM += 1; if (dueM > 12) { dueM = 1; dueY += 1; } }
+      const due = `${dueY}-${String(dueM).padStart(2,'0')}-10`;
+      items.push({ label: '원천징수이행상황신고서 제출', due, type: '원천징수' });
+    }
+    items.sort((a,b) => a.due.localeCompare(b.due));
+    return items;
+  }
+
+  function renderHrReminders() {
+    const box = document.getElementById('hrReminderList');
+    if (!box) return;
+    const today = todayLocalDateStr();
+    const items = computeHrDeadlines();
+    if (items.length === 0) { box.innerHTML = '<div style="color:#888; font-size:13px;">현재 안내할 마감일이 없습니다.</div>'; return; }
+    box.innerHTML = items.map(it => {
+      const overdue = it.due < today;
+      const soon = !overdue && addDaysToDateStr(today, 7) >= it.due;
+      const color = overdue ? '#b3261e' : (soon ? '#a15c00' : '#333');
+      const bg = overdue ? '#fdeceb' : (soon ? '#fff8e6' : '#f7f7f5');
+      return `<div style="padding:8px 10px; margin-bottom:6px; background:${bg}; border-radius:6px; font-size:13px; color:${color};">
+        ${overdue ? '⚠️ 기한 지남 — ' : (soon ? '🔔 임박 — ' : '· ')}${it.label} <b>${it.due}</b>까지
+      </div>`;
+    }).join('');
   }
 
   function printCashLedger() {
