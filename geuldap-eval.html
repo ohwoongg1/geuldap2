@@ -806,6 +806,12 @@
       </div>
       <div style="margin:14px 0; padding:12px; background:#faf8f3; border-radius:8px;">
         <div style="font-size:13px; font-weight:600; margin-bottom:8px;">📢 단체 문자 보내기 (이벤트·공지 등)</div>
+        <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px;">
+          <button class="btn btn-secondary btn-sm" onclick="quickSelectLeads('all')">전체선택</button>
+          <button class="btn btn-secondary btn-sm" onclick="quickSelectLeads('elementary')">초등만</button>
+          <button class="btn btn-secondary btn-sm" onclick="quickSelectLeads('middle')">중등만</button>
+          <button class="btn btn-secondary btn-sm" onclick="quickSelectLeads('none')">선택해제</button>
+        </div>
         <textarea id="bulkSmsMessage" rows="3" placeholder="여러 명에게 한 번에 보낼 문구를 입력하세요" style="width:100%; margin-bottom:8px;"></textarea>
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
           <span id="bulkSmsCount" style="font-size:12px; color:#888;">아래 목록에서 보낼 대상을 체크해주세요</span>
@@ -1843,7 +1849,7 @@
 
 <script>
   // ===== 버전 정보 (콘솔에서 확인: APP_VERSION 또는 페이지 로드시 자동 출력) =====
-  const APP_VERSION = 'v7.3';
+  const APP_VERSION = 'v7.4';
   const APP_VERSION_LOG = [
     'v1.0 — 탭 구조 + UI 껍데기',
     'v1.1 — AI 문제 생성 + 개념 사다리',
@@ -1891,7 +1897,8 @@
     'v7.0 — [신규] "📁 법정 서류함" 탭 추가 — 학원의 설립·운영 및 과외교습에 관한 법률 시행규칙 [별표2] 기준 필수 장부·서류 정리. 수강생 대장(자동생성+A4인쇄, 이를 위해 학생 정보에 주소·퇴원연월일 필드 추가), 직원 명부(신규 기능 — 등록/수정/삭제 + A4인쇄), 교습비등영수증원부(기존 수납관리 기능으로 바로가기). 시스템이 대신 못 만드는 서류(원칙, 학원설립운영등록증명서)와 아직 없는 지출장부는 안내 문구로 명시',
     'v7.1 — 교습비등영수증(개별 발급분)과 영수증원부 둘 다에 "교습기간" 항목 추가 (법정 별지 제24호서식 필수항목은 아니지만, 카드매출전표 대체 시 요구되는 항목과 통일하고 학부모 안내 명확화 차원)',
     'v7.2 — 직원 명부: 수정·삭제 기능은 원래 구현돼 있었으나(행 클릭 → 수정 모달 → 삭제 버튼) 안내가 없어 몰랐던 것으로 확인됨 → "명단의 직원 행을 클릭하면 정보 수정·삭제가 가능해요" 안내 문구 추가',
-    'v7.3 — 상담 상세 모달: 이름·연락처·학년·유입경로가 텍스트로만 표시되어 수정이 불가능했던 문제 수정 — 입력칸으로 바꾸고 "기본정보 저장" 버튼 추가'
+    'v7.3 — 상담 상세 모달: 이름·연락처·학년·유입경로가 텍스트로만 표시되어 수정이 불가능했던 문제 수정 — 입력칸으로 바꾸고 "기본정보 저장" 버튼 추가',
+    'v7.4 — 상담일지 단체 문자 보내기: 전체선택·초등만·중등만·선택해제 빠른 선택 버튼 추가 (연락처 있는 대상만, 현재 검색·필터 결과 기준)'
   ];
   console.log(`%c글답 학습기 ${APP_VERSION}`, 'font-weight:bold; font-size:14px; color:#0d1b4b;');
   console.groupCollapsed('%c버전 기록 (클릭해서 펼치기)', 'color:#888; font-size:11px;');
@@ -2207,6 +2214,31 @@
   function toggleLeadSelected(id, checked) {
     if (checked) selectedLeadIds.add(id); else selectedLeadIds.delete(id);
     updateBulkSmsCount();
+  }
+
+  function quickSelectLeads(mode) {
+    const search = (document.getElementById('leadSearch').value || '').trim().toLowerCase();
+    const tagFilter = document.getElementById('leadTagFilter').value;
+    const statusFilter = document.getElementById('leadStatusFilter').value;
+    let leads = window._leads.slice();
+    if (search) {
+      leads = leads.filter(l => {
+        const memoMatch = l.consultations.some(c => (c.memo||'').toLowerCase().includes(search));
+        return l.name.toLowerCase().includes(search) || (l.phone||'').includes(search) || memoMatch;
+      });
+    }
+    if (tagFilter) leads = leads.filter(l => l.consultations.some(c => (c.tags||[]).includes(tagFilter)));
+    if (statusFilter) leads = leads.filter(l => l.status === statusFilter);
+
+    if (mode === 'none') {
+      selectedLeadIds.clear();
+    } else {
+      selectedLeadIds.clear();
+      if (mode === 'elementary') leads = leads.filter(l => (l.grade||'').includes('초등'));
+      else if (mode === 'middle') leads = leads.filter(l => (l.grade||'').includes('중학교'));
+      leads.filter(l => l.phone).forEach(l => selectedLeadIds.add(l.id));
+    }
+    renderLeads();
   }
 
   function updateBulkSmsCount() {
