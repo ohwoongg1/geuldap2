@@ -68,7 +68,7 @@
     .admin-panel.open { display: block; }
     .admin-panel input, .admin-panel select, .admin-panel textarea { width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; margin-bottom: 10px; font-family: inherit; }
     .admin-panel textarea { min-height: 220px; resize: vertical; line-height: 1.7; }
-    .admin-panel button { background: #0d1b4b; color: #fff; border: none; padding: 11px 22px; border-radius: 8px; font-weight: 700; font-size: 14px; cursor: pointer; }
+    .admin-panel button { background: #0d1b4b; color: #fff; border: none; padding: 16px 36px; border-radius: 10px; font-weight: 700; font-size: 17px; cursor: pointer; }
     .admin-panel .row { display: flex; gap: 10px; }
     .post-card-admin-actions { margin-top: 8px; }
     .post-card-admin-actions button { font-size: 12px; padding: 4px 10px; border-radius: 6px; border: 1px solid #ddd; background: #fff; cursor: pointer; margin-right: 6px; }
@@ -199,7 +199,7 @@
     const panel = document.getElementById('adminPanel');
     if (panel.classList.contains('open')) { panel.classList.remove('open'); return; }
     const pw = prompt('원장님 확인용 비밀번호를 입력해주세요');
-    if (pw === '글답2026') panel.classList.add('open');
+    if (pw === '0147') panel.classList.add('open');
     else if (pw !== null) alert('비밀번호가 일치하지 않습니다.');
   };
 
