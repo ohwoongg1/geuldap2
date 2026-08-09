@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="ko" style="scroll-behavior: smooth;">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>글답 이야기 — 글답국어독서논술 학습 칼럼</title>
+  <meta name="description" content="옥길동·범박동 국어독서논술 전문 글답학원 원장이 직접 쓰는 독서법·글쓰기·맞춤법 학습 칼럼입니다.">
+  <meta name="naver-site-verification" content="091353b99028ec91a1833d9da32a37a67fb5e943" />
+  <meta name="google-site-verification" content="DXKxF_k6fwjGMh5yg_b01l4se-65lT5iZjs62M2MOYU" />
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <link rel="apple-touch-icon" sizes="180x180" href="favicon_180.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon_32.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600;700&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: #FDFBF7;
+      font-family: 'Pretendard', 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+      -webkit-font-smoothing: antialiased;
+      color: #1a1a2e;
+    }
+    .navbar {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+      background: rgba(13,27,75,0.97); backdrop-filter: blur(10px);
+      padding: 12px 24px;
+      display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 1px solid rgba(197,161,73,0.2);
+    }
+    .navbar-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .navbar-logo img { width: 32px; height: 32px; object-fit: contain; background: #fff; border-radius: 6px; padding: 1px; border: 1.5px solid #c5a149; }
+    .navbar-logo span { font-size: 15px; font-weight: 700; color: #fff; font-family: 'Noto Serif KR', serif; }
+    .navbar a.back { font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.8); text-decoration: none; }
+
+    .wrap { max-width: 720px; margin: 0 auto; padding: 90px 20px 80px; }
+    .page-title { font-size: 30px; font-weight: 700; color: #0d1b4b; font-family: 'Noto Serif KR', serif; margin-bottom: 6px; }
+    .page-sub { font-size: 15px; color: #888; margin-bottom: 32px; line-height: 1.6; }
+
+    /* 목록 */
+    .post-card { display: block; background: #fff; border: 1px solid #e8e0cc; border-radius: 12px; padding: 20px 22px; margin-bottom: 14px; text-decoration: none; color: inherit; transition: box-shadow 0.2s, transform 0.2s; }
+    .post-card:hover { box-shadow: 0 6px 20px rgba(13,27,75,0.08); transform: translateY(-1px); }
+    .post-card .tag { display: inline-block; font-size: 11px; font-weight: 700; color: #c5a149; letter-spacing: 0.5px; background: #F5F1E8; padding: 3px 10px; border-radius: 20px; margin-bottom: 8px; }
+    .post-card h2 { font-size: 18px; font-weight: 700; color: #0d1b4b; line-height: 1.4; margin-bottom: 6px; font-family: 'Noto Serif KR', serif; }
+    .post-card p { font-size: 14px; color: #777; line-height: 1.6; margin-bottom: 8px; }
+    .post-card .meta { font-size: 12px; color: #aaa; }
+
+    /* 상세 */
+    .post-detail { background: #fff; border: 1px solid #e8e0cc; border-radius: 14px; padding: 32px 28px; }
+    .post-detail .tag { display: inline-block; font-size: 11px; font-weight: 700; color: #c5a149; letter-spacing: 0.5px; background: #F5F1E8; padding: 3px 10px; border-radius: 20px; margin-bottom: 12px; }
+    .post-detail h1 { font-size: 26px; font-weight: 700; color: #0d1b4b; line-height: 1.4; margin-bottom: 10px; font-family: 'Noto Serif KR', serif; }
+    .post-detail .meta { font-size: 13px; color: #999; margin-bottom: 24px; padding-bottom: 20px; border-bottom: 1px solid #f0ebe0; }
+    .post-detail .body { font-size: 16.5px; color: #333; line-height: 2; white-space: pre-wrap; }
+    .back-link { display: inline-block; margin-bottom: 20px; font-size: 14px; color: #888; text-decoration: none; }
+    .back-link:hover { color: #0d1b4b; }
+
+    .empty-state { text-align: center; padding: 60px 20px; color: #999; }
+
+    .cta-box { margin-top: 36px; background: #0d1b4b; border-radius: 14px; padding: 28px; text-align: center; }
+    .cta-box p { color: rgba(255,255,255,0.85); font-size: 15px; margin-bottom: 14px; }
+    .cta-box a { display: inline-block; background: linear-gradient(135deg, #c5a149, #e8c96a); color: #0d1b4b; font-weight: 700; font-size: 15px; padding: 12px 28px; border-radius: 8px; text-decoration: none; }
+
+    /* 관리자 글쓰기 */
+    .admin-toggle { position: fixed; bottom: 20px; right: 20px; font-size: 11px; color: #ccc; text-decoration: none; z-index: 500; }
+    .admin-panel { display: none; background: #fff; border: 2px solid #0d1b4b; border-radius: 14px; padding: 24px; margin-bottom: 30px; }
+    .admin-panel.open { display: block; }
+    .admin-panel input, .admin-panel select, .admin-panel textarea { width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; margin-bottom: 10px; font-family: inherit; }
+    .admin-panel textarea { min-height: 220px; resize: vertical; line-height: 1.7; }
+    .admin-panel button { background: #0d1b4b; color: #fff; border: none; padding: 11px 22px; border-radius: 8px; font-weight: 700; font-size: 14px; cursor: pointer; }
+    .admin-panel .row { display: flex; gap: 10px; }
+    .post-card-admin-actions { margin-top: 8px; }
+    .post-card-admin-actions button { font-size: 12px; padding: 4px 10px; border-radius: 6px; border: 1px solid #ddd; background: #fff; cursor: pointer; margin-right: 6px; }
+  </style>
+</head>
+<body>
+
+<nav class="navbar">
+  <a class="navbar-logo" href="index.html">
+    <img src="logo.png" alt="글답 로고">
+    <span>글답국어독서논술</span>
+  </a>
+  <a class="back" href="index.html">← 홈으로</a>
+</nav>
+
+<div class="wrap">
+  <div class="page-title">글답 이야기</div>
+  <div class="page-sub">옥길동 범박동 국어독서논술 학원 이야기 입니다</div>
+
+  <!-- 관리자 글쓰기 패널 (원장님 전용) -->
+  <div id="adminPanel" class="admin-panel">
+    <div class="row">
+      <input type="text" id="postTitle" placeholder="제목">
+      <select id="postTag" style="max-width:140px;">
+        <option value="옥길동">옥길동</option>
+        <option value="범박동">범박동</option>
+        <option value="학습법">학습법</option>
+        <option value="맞춤법">맞춤법</option>
+      </select>
+    </div>
+    <textarea id="postBody" placeholder="내용을 적어주세요..."></textarea>
+    <button onclick="savePost()">✏️ 게시하기</button>
+    <span id="postSaveMsg" style="font-size:13px; color:#1a7a3a; margin-left:10px;"></span>
+  </div>
+
+  <div id="listView">
+    <div id="postList"></div>
+  </div>
+
+  <div id="detailView" style="display:none;">
+    <a class="back-link" href="#" onclick="showList(); return false;">← 목록으로</a>
+    <div class="post-detail" id="postDetailBox"></div>
+    <div class="cta-box">
+      <p>글답국어독서논술이 궁금하시다면<br>편하게 전화로 상담받아보세요</p>
+      <a href="tel:07043247175">📞 070-4324-7175</a>
+    </div>
+  </div>
+</div>
+
+<a class="admin-toggle" href="#" onclick="toggleAdmin(); return false;">·</a>
+
+<!-- Firebase -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getFirestore, collection, addDoc, getDocs, query, orderBy, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+  const app = initializeApp({
+    apiKey: "AIzaSyC5nf84GbQQ_5vIDwhIvTZ5zPqf7nrnSxU",
+    authDomain: "starspoon-120d7.firebaseapp.com",
+    projectId: "starspoon-120d7",
+    storageBucket: "starspoon-120d7.firebasestorage.app",
+    messagingSenderId: "672370227821",
+    appId: "1:672370227821:web:aea1d9c6ca8587842a5d64"
+  });
+  const db = getFirestore(app);
+  const auth = getAuth(app);
+  try { await signInAnonymously(auth); } catch (e) { console.log('익명 인증 실패:', e); }
+
+  window._db = db;
+  window._col = collection;
+  window._addDoc = addDoc;
+  window._getDocs = getDocs;
+  window._query = query;
+  window._orderBy = orderBy;
+  window._doc = doc;
+  window._deleteDoc = deleteDoc;
+
+  window._posts = [];
+
+  async function loadPosts() {
+    try {
+      const q = window._query(window._col(window._db, 'geuldap_posts'), window._orderBy('createdAt', 'desc'));
+      const snap = await window._getDocs(q);
+      window._posts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    } catch (e) {
+      console.log('글답 이야기 목록 로드 실패:', e);
+      window._posts = [];
+    }
+    renderList();
+    handleRoute();
+  }
+
+  window.savePost = async function() {
+    const title = document.getElementById('postTitle').value.trim();
+    const body = document.getElementById('postBody').value.trim();
+    const tag = document.getElementById('postTag').value;
+    if (!title || !body) { alert('제목과 내용을 입력해주세요.'); return; }
+    const post = { title, body, tag, createdAt: Date.now(), dateLabel: todayLabel() };
+    try {
+      await window._addDoc(window._col(window._db, 'geuldap_posts'), post);
+      document.getElementById('postTitle').value = '';
+      document.getElementById('postBody').value = '';
+      document.getElementById('postSaveMsg').textContent = '✅ 게시되었습니다';
+      setTimeout(() => document.getElementById('postSaveMsg').textContent = '', 3000);
+      await loadPosts();
+    } catch (e) {
+      alert('저장 실패: ' + e.message);
+    }
+  };
+
+  window.deletePost = async function(id) {
+    if (!confirm('이 글을 삭제할까요?')) return;
+    try {
+      await window._deleteDoc(window._doc(window._db, 'geuldap_posts', id));
+      await loadPosts();
+    } catch (e) {
+      alert('삭제 실패: ' + e.message);
+    }
+  };
+
+  function todayLabel() {
+    const d = new Date();
+    return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}`;
+  }
+
+  window.toggleAdmin = function() {
+    const panel = document.getElementById('adminPanel');
+    if (panel.classList.contains('open')) { panel.classList.remove('open'); return; }
+    const pw = prompt('원장님 확인용 비밀번호를 입력해주세요');
+    if (pw === '글답2026') panel.classList.add('open');
+    else if (pw !== null) alert('비밀번호가 일치하지 않습니다.');
+  };
+
+  function escapeHtml(s) {
+    return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function renderList() {
+    const box = document.getElementById('postList');
+    if (window._posts.length === 0) {
+      box.innerHTML = '<div class="empty-state">아직 등록된 글이 없습니다.</div>';
+      return;
+    }
+    box.innerHTML = window._posts.map(p => `
+      <a class="post-card" href="?post=${p.id}">
+        <div class="tag">#${escapeHtml(p.tag||'')}</div>
+        <h2>${escapeHtml(p.title)}</h2>
+        <p>${escapeHtml((p.body||'').slice(0,80))}${(p.body||'').length>80?'...':''}</p>
+        <div class="meta">${escapeHtml(p.dateLabel||'')}</div>
+      </a>
+    `).join('');
+  }
+
+  window.showList = function() {
+    history.pushState({}, '', location.pathname);
+    document.getElementById('listView').style.display = 'block';
+    document.getElementById('detailView').style.display = 'none';
+    document.title = '글답 이야기 — 글답국어독서논술 학습 칼럼';
+  };
+
+  function showDetail(post) {
+    document.getElementById('listView').style.display = 'none';
+    document.getElementById('detailView').style.display = 'block';
+    const isAdmin = document.getElementById('adminPanel').classList.contains('open');
+    document.getElementById('postDetailBox').innerHTML = `
+      <div class="tag">#${escapeHtml(post.tag||'')}</div>
+      <h1>${escapeHtml(post.title)}</h1>
+      <div class="meta">${escapeHtml(post.dateLabel||'')}</div>
+      <div class="body">${escapeHtml(post.body)}</div>
+      ${isAdmin ? `<div class="post-card-admin-actions"><button onclick="deletePost('${post.id}')">🗑 삭제</button></div>` : ''}
+    `;
+    document.title = post.title + ' — 글답 이야기';
+    window.scrollTo(0,0);
+  }
+
+  function handleRoute() {
+    const params = new URLSearchParams(location.search);
+    const postId = params.get('post');
+    if (postId) {
+      const post = window._posts.find(p => p.id === postId);
+      if (post) { showDetail(post); return; }
+    }
+    showList();
+  }
+
+  window.addEventListener('popstate', handleRoute);
+  loadPosts();
+</script>
+</body>
+</html>
