@@ -63,7 +63,7 @@
     .cta-box a { display: inline-block; background: linear-gradient(135deg, #c5a149, #e8c96a); color: #0d1b4b; font-weight: 700; font-size: 15px; padding: 12px 28px; border-radius: 8px; text-decoration: none; }
 
     /* 관리자 글쓰기 */
-    .admin-toggle { position: fixed; bottom: 20px; right: 20px; font-size: 11px; color: #ccc; text-decoration: none; z-index: 500; }
+    .admin-toggle { position: fixed; bottom: 20px; right: 20px; width: auto; height: auto; padding: 12px 18px; background: #0d1b4b; border-radius: 30px; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 14px; font-weight: 700; color: #fff; text-decoration: none; z-index: 500; box-shadow: 0 4px 16px rgba(13,27,75,0.3); }
     .admin-panel { display: none; background: #fff; border: 2px solid #0d1b4b; border-radius: 14px; padding: 24px; margin-bottom: 30px; }
     .admin-panel.open { display: block; }
     .admin-panel input, .admin-panel select, .admin-panel textarea { width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; margin-bottom: 10px; font-family: inherit; }
@@ -118,7 +118,7 @@
   </div>
 </div>
 
-<a class="admin-toggle" href="#" onclick="toggleAdmin(); return false;">·</a>
+<a class="admin-toggle" href="#" onclick="toggleAdmin(); return false;">✏️ 글쓰기</a>
 
 <!-- Firebase -->
 <script type="module">
