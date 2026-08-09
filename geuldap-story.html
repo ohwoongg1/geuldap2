@@ -99,7 +99,13 @@
         <option value="맞춤법">맞춤법</option>
       </select>
     </div>
-    <textarea id="postBody" placeholder="내용을 적어주세요..."></textarea>
+    <textarea id="postBody" placeholder="내용을 적어주세요... (사진을 넣고 싶은 위치에 커서를 두고 아래 '사진 추가'를 누르면 그 자리에 삽입돼요)"></textarea>
+    <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+      <input type="file" id="postImageInput" accept="image/*" multiple style="display:none;" onchange="handleImageSelect(event)">
+      <button type="button" onclick="document.getElementById('postImageInput').click()" style="background:#F5F1E8; color:#0d1b4b; border:1px solid #e8e0cc;">📷 사진 추가</button>
+      <span id="imageUploadMsg" style="font-size:13px; color:#888;"></span>
+    </div>
+    <div id="imagePreviewRow" style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;"></div>
     <button onclick="savePost()">✏️ 게시하기</button>
     <span id="postSaveMsg" style="font-size:13px; color:#1a7a3a; margin-left:10px;"></span>
   </div>
@@ -124,6 +130,7 @@
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import { getFirestore, collection, addDoc, getDocs, query, orderBy, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  import { getStorage, ref, uploadString, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
   import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
   const app = initializeApp({
@@ -135,10 +142,15 @@
     appId: "1:672370227821:web:aea1d9c6ca8587842a5d64"
   });
   const db = getFirestore(app);
+  const storage = getStorage(app);
   const auth = getAuth(app);
   try { await signInAnonymously(auth); } catch (e) { console.log('익명 인증 실패:', e); }
 
   window._db = db;
+  window._storage = storage;
+  window._storageRef = ref;
+  window._uploadString = uploadString;
+  window._getDownloadURL = getDownloadURL;
   window._col = collection;
   window._addDoc = addDoc;
   window._getDocs = getDocs;
@@ -172,6 +184,8 @@
       await window._addDoc(window._col(window._db, 'geuldap_posts'), post);
       document.getElementById('postTitle').value = '';
       document.getElementById('postBody').value = '';
+      document.getElementById('imagePreviewRow').innerHTML = '';
+      document.getElementById('imageUploadMsg').textContent = '';
       document.getElementById('postSaveMsg').textContent = '✅ 게시되었습니다';
       setTimeout(() => document.getElementById('postSaveMsg').textContent = '', 3000);
       await loadPosts();
@@ -188,6 +202,45 @@
     } catch (e) {
       alert('삭제 실패: ' + e.message);
     }
+  };
+
+  window.handleImageSelect = async function(event) {
+    const files = Array.from(event.target.files || []);
+    if (files.length === 0) return;
+    const msg = document.getElementById('imageUploadMsg');
+    const textarea = document.getElementById('postBody');
+    for (const file of files) {
+      msg.textContent = `📤 ${file.name} 업로드 중...`;
+      try {
+        const dataUrl = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+        const path = `geuldap_posts_images/${Date.now()}_${file.name}`;
+        const r = window._storageRef(window._storage, path);
+        await window._uploadString(r, dataUrl, 'data_url');
+        const url = await window._getDownloadURL(r);
+
+        // 커서 위치에 이미지 마커 삽입 (커서 위치가 없으면 맨 끝에 추가)
+        const marker = `\n[[img:${url}]]\n`;
+        const start = textarea.selectionStart ?? textarea.value.length;
+        const end = textarea.selectionEnd ?? textarea.value.length;
+        textarea.value = textarea.value.slice(0, start) + marker + textarea.value.slice(end);
+        const newPos = start + marker.length;
+        textarea.selectionStart = textarea.selectionEnd = newPos;
+
+        const preview = document.createElement('img');
+        preview.src = url;
+        preview.style.cssText = 'width:64px; height:64px; object-fit:cover; border-radius:8px; border:1px solid #ddd;';
+        document.getElementById('imagePreviewRow').appendChild(preview);
+      } catch (e) {
+        alert('사진 업로드 실패: ' + e.message);
+      }
+    }
+    msg.textContent = '✅ 업로드 완료 — 게시하기 전 미리보기로 확인하세요';
+    event.target.value = '';
   };
 
   function todayLabel() {
@@ -207,20 +260,35 @@
     return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   }
 
+  function renderBodyHtml(body) {
+    const regex = /\[\[img:(.+?)\]\]/g;
+    let html = '', lastIndex = 0, m;
+    while ((m = regex.exec(body)) !== null) {
+      html += escapeHtml(body.slice(lastIndex, m.index));
+      html += `<img src="${m[1]}" style="max-width:100%; border-radius:10px; margin:14px 0; display:block;">`;
+      lastIndex = regex.lastIndex;
+    }
+    html += escapeHtml(body.slice(lastIndex));
+    return html;
+  }
+
   function renderList() {
     const box = document.getElementById('postList');
     if (window._posts.length === 0) {
       box.innerHTML = '<div class="empty-state">아직 등록된 글이 없습니다.</div>';
       return;
     }
-    box.innerHTML = window._posts.map(p => `
+    box.innerHTML = window._posts.map(p => {
+      const plainBody = (p.body||'').replace(/\[\[img:.+?\]\]/g, '').trim();
+      return `
       <a class="post-card" href="?post=${p.id}">
         <div class="tag">#${escapeHtml(p.tag||'')}</div>
         <h2>${escapeHtml(p.title)}</h2>
-        <p>${escapeHtml((p.body||'').slice(0,80))}${(p.body||'').length>80?'...':''}</p>
+        <p>${escapeHtml(plainBody.slice(0,80))}${plainBody.length>80?'...':''}</p>
         <div class="meta">${escapeHtml(p.dateLabel||'')}</div>
       </a>
-    `).join('');
+    `;
+    }).join('');
   }
 
   window.showList = function() {
@@ -238,7 +306,7 @@
       <div class="tag">#${escapeHtml(post.tag||'')}</div>
       <h1>${escapeHtml(post.title)}</h1>
       <div class="meta">${escapeHtml(post.dateLabel||'')}</div>
-      <div class="body">${escapeHtml(post.body)}</div>
+      <div class="body">${renderBodyHtml(post.body)}</div>
       ${isAdmin ? `<div class="post-card-admin-actions"><button onclick="deletePost('${post.id}')">🗑 삭제</button></div>` : ''}
     `;
     document.title = post.title + ' — 글답 이야기';
