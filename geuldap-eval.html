@@ -599,7 +599,11 @@
             원고지(칸이 있는 용지)로 촬영했어요 — 체크하면 AI가 더 정확하게 읽어요 (약간의 비용 발생)
           </label>
           <textarea id="writingContent" rows="8" placeholder="사진에서 자동으로 추출하거나 직접 입력하세요..."></textarea>
-          <button class="btn btn-secondary btn-sm" style="margin-top:8px;width:fit-content;" onclick="extractFromImage()">📷 사진에서 글 추출</button>
+          <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
+            <button class="btn btn-secondary btn-sm" style="width:fit-content;" onclick="extractFromImage()">📷 사진에서 글 추출</button>
+            <button class="btn btn-secondary btn-sm" style="width:fit-content;" onclick="applyProofMarksToTextarea()">🔧 번호·삭제표시 정리(교정부호 적용)</button>
+          </div>
+          <div style="font-size:11.5px; color:#999; margin-top:4px;">학생이 ①②처럼 번호로 삽입 위치를 표시했거나, ( )+구불구불한 삭제표시를 썼다면 이 버튼으로 한번에 정리돼요.</div>
         </div>
       </div>
       <div style="margin-top:20px;">
@@ -2049,7 +2053,7 @@
 
 <script>
   // ===== 버전 정보 (콘솔에서 확인: APP_VERSION 또는 페이지 로드시 자동 출력) =====
-  const APP_VERSION = 'v7.17';
+  const APP_VERSION = 'v7.18';
   const APP_VERSION_LOG = [
     'v1.0 — 탭 구조 + UI 껍데기',
     'v1.1 — AI 문제 생성 + 개념 사다리',
@@ -2111,7 +2115,8 @@
     'v7.14 — 두루누리 사회보험료 지원 기준액을 2026년 최신치(월평균보수 230만원→270만원 미만)로 정정. 채용 지원금 카드에 소상공인 경영안정 바우처(25만원, sbiz24.kr)·소상공인 정책자금 대출 안내 문구 추가(채용과 무관한 학원 자체 대상 지원)',
     'v7.15 — "🏪 소상공인(학원) 자체 지원 안내" 카드 신설 (채용지원금 카드와 별개) — 소상공인 경영안정바우처·정책자금 대출·두루누리 3개 제도별로 대상·한도·필요서류·신청처·실전팁을 표로 정리해서 안내',
     'v7.16 — 소상공인 자체 지원 카드에 ④ 부천시 소상공인 특례보증·이차보전(보증한도 5천만원, 대출이자 연2% 1년지원, 경기신용보증재단 부천지점) 추가. 지자체 지원이라 다른 지역 이전 시 재확인 필요하다는 안내 포함',
-    'v7.17 — 원고지 사진 글 추출(Claude Vision)이 교정부호를 그냥 무시하던 것을 수정 — ①본문 속 번호와 여백의 같은 번호 문장을 그 위치에 삽입, ②괄호+삭제표시(돼지꼬리)로 묶인 부분은 삭제, 두 규칙을 반영한 최종 완성 글을 추출하도록 프롬프트 재작성'
+    'v7.17 — 원고지 사진 글 추출(Claude Vision)이 교정부호를 그냥 무시하던 것을 수정 — ①본문 속 번호와 여백의 같은 번호 문장을 그 위치에 삽입, ②괄호+삭제표시(돼지꼬리)로 묶인 부분은 삭제, 두 규칙을 반영한 최종 완성 글을 추출하도록 프롬프트 재작성',
+    'v7.18 — v7.17의 번호 삽입(①②)이 AI 프롬프트에만 의존해 실제로 잘 안 합쳐지는 문제 확인 → applyProofMarks() 함수 신설, AI 판단이 아니라 프로그램이 직접 본문 속 번호와 여백의 같은 번호 문장을 찾아 기계적으로 병합하도록 변경(사진 추출 시 자동 적용). 수동으로 입력·붙여넣은 글에도 쓸 수 있게 "🔧 번호·삭제표시 정리" 버튼 신설. 삭제표시(괄호+돼지꼬리)는 손으로 그린 기호라 텍스트화 후엔 프로그램이 인식 불가 — 이 부분은 계속 AI 추출 단계(v7.17 프롬프트)에서만 처리 가능'
   ];
   console.log(`%c글답 학습기 ${APP_VERSION}`, 'font-weight:bold; font-size:14px; color:#0d1b4b;');
   console.groupCollapsed('%c버전 기록 (클릭해서 펼치기)', 'color:#888; font-size:11px;');
@@ -5065,9 +5070,39 @@ ${a.name}`;
         if (text) texts.push(text);
       }
       if (!texts.length) { alert('글자를 인식하지 못했습니다. 사진이 선명한지 확인해주세요.'); setLoading(false); return; }
-      document.getElementById('writingContent').value = texts.join('\n\n');
+      document.getElementById('writingContent').value = applyProofMarks(texts.join('\n\n'));
     } catch(e) { alert('추출 오류: '+e.message); }
     setLoading(false);
+  }
+
+  // 본문 속 번호(①②③...)와, 여백에 같은 번호로 따로 적힌 문장을 찾아 그 위치에 병합한다.
+  // 예: "...했습니다. ①" 본문 + 별도 줄의 "① 산책은 매일..." → 번호 자리에 문장을 끼워 넣고 번호는 지운다.
+  function applyProofMarks(text) {
+    const markerRe = /^([①②③④⑤⑥⑦⑧⑨⑩])\s*(.+)$/;
+    const lines = (text || '').split('\n');
+    const defs = {};
+    const bodyLines = [];
+    lines.forEach(line => {
+      const m = line.trim().match(markerRe);
+      if (m && !defs[m[1]]) { defs[m[1]] = m[2]; }
+      else { bodyLines.push(line); }
+    });
+    let body = bodyLines.join('\n');
+    Object.keys(defs).forEach(marker => {
+      if (body.includes(marker)) {
+        body = body.split(marker).join(' ' + defs[marker] + ' ');
+      }
+    });
+    return body.replace(/ {2,}/g, ' ').replace(/\n{3,}/g, '\n\n').trim();
+  }
+
+  function applyProofMarksToTextarea() {
+    const box = document.getElementById('writingContent');
+    const before = box.value;
+    const after = applyProofMarks(before);
+    if (before === after) { alert('①②처럼 번호로 표시된 부분을 찾지 못했어요. 그대로 두었습니다.'); return; }
+    box.value = after;
+    alert('번호로 표시된 부분을 정리했습니다. 결과를 한 번 확인해주세요.');
   }
 
   // ===== AI 평가 (Firebase Function 경유, 키는 서버에만 저장) =====
