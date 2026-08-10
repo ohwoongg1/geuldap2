@@ -603,7 +603,7 @@
             <button class="btn btn-secondary btn-sm" style="width:fit-content;" onclick="extractFromImage()">📷 사진에서 글 추출</button>
             <button class="btn btn-secondary btn-sm" style="width:fit-content;" onclick="applyProofMarksToTextarea()">🔧 번호·삭제표시 정리(교정부호 적용)</button>
           </div>
-          <div style="font-size:11.5px; color:#999; margin-top:4px;">① 사진에서 글 추출 → ② 번호가 빠졌거나 잘못 인식됐으면 직접 (1), (2)처럼 괄호숫자로 채워 넣고(①②로 쳐도 됨) "번호·삭제표시 정리" 버튼을 눌러주세요. (삭제표시는 추출 단계에서 이미 반영됩니다)</div>
+          <div style="font-size:11.5px; color:#999; margin-top:4px;">① 사진에서 글 추출 → ② 번호가 빠졌거나 잘못 인식됐으면 직접 (1), (2)처럼 괄호숫자로 채워 넣고(①②로 쳐도 됨) "번호·삭제표시 정리" 버튼을 눌러주세요. 마지막 번호(예: 가장 큰 번호) 뒤에 적힌 내용은 그 뒤에 나오는 모든 글이 전부 그 번호 자리에 삽입됩니다. (삭제표시는 추출 단계에서 이미 반영됩니다)</div>
         </div>
       </div>
       <div style="margin-top:20px;">
@@ -2053,7 +2053,7 @@
 
 <script>
   // ===== 버전 정보 (콘솔에서 확인: APP_VERSION 또는 페이지 로드시 자동 출력) =====
-  const APP_VERSION = 'v7.20';
+  const APP_VERSION = 'v7.22';
   const APP_VERSION_LOG = [
     'v1.0 — 탭 구조 + UI 껍데기',
     'v1.1 — AI 문제 생성 + 개념 사다리',
@@ -2118,7 +2118,9 @@
     'v7.17 — 원고지 사진 글 추출(Claude Vision)이 교정부호를 그냥 무시하던 것을 수정 — ①본문 속 번호와 여백의 같은 번호 문장을 그 위치에 삽입, ②괄호+삭제표시(돼지꼬리)로 묶인 부분은 삭제, 두 규칙을 반영한 최종 완성 글을 추출하도록 프롬프트 재작성',
     'v7.18 — v7.17의 번호 삽입(①②)이 AI 프롬프트에만 의존해 실제로 잘 안 합쳐지는 문제 확인 → applyProofMarks() 함수 신설, AI 판단이 아니라 프로그램이 직접 본문 속 번호와 여백의 같은 번호 문장을 찾아 기계적으로 병합하도록 변경(사진 추출 시 자동 적용). 수동으로 입력·붙여넣은 글에도 쓸 수 있게 "🔧 번호·삭제표시 정리" 버튼 신설. 삭제표시(괄호+돼지꼬리)는 손으로 그린 기호라 텍스트화 후엔 프로그램이 인식 불가 — 이 부분은 계속 AI 추출 단계(v7.17 프롬프트)에서만 처리 가능',
     'v7.19 — 사용자 제안으로 역할을 명확히 분리 — AI(사진추출)는 번호(①②)를 병합하려 하지 말고 보이는 그대로 옮기기만 하도록 프롬프트 단순화(삭제표시 판단은 AI가 계속 담당, 텍스트가 아닌 그림이라 프로그램은 인식 불가), 번호 병합은 오직 "🔧 번호·삭제표시 정리" 버튼을 눌렀을 때만 프로그램이 처리하도록 변경(사진 추출 시 자동 실행 제거) — 이중 처리로 인한 예측불가능한 꼬임 방지, 흐름을 ①사진추출 ②필요시 버튼클릭 2단계로 명확히 분리',
-    'v7.20 — AI가 번호 인식을 놓쳤을 때 원장님이 직접 번호를 채워 넣고 정리 버튼을 쓸 수 있도록, ①②③ 동그라미숫자 외에 일반 키보드로 치기 쉬운 (1)(2)(3) 괄호숫자 표기도 같은 걸로 인식하게 applyProofMarks() 확장'
+    'v7.20 — AI가 번호 인식을 놓쳤을 때 원장님이 직접 번호를 채워 넣고 정리 버튼을 쓸 수 있도록, ①②③ 동그라미숫자 외에 일반 키보드로 치기 쉬운 (1)(2)(3) 괄호숫자 표기도 같은 걸로 인식하게 applyProofMarks() 확장',
+    'v7.21 — [진짜 버그 수정] 실제 원고지 사진으로 테스트해보니 정의문(①②로 시작하는 설명)이 여러 줄에 걸쳐 있으면 첫 줄만 인식하고 나머지 줄은 그냥 본문에 섞여 들어가 문장이 끊기고 뒤섞이는 문제 확인 → applyProofMarks()를 여러 줄 정의문을 끝까지 수집하도록 재작성(빈 줄을 만나거나 다음 번호를 만나면 그 정의문은 끝난 것으로 판단). 마지막 번호 뒤에 삽입용이 아닌 일반 결론 문단이 더 있는 경우까지 올바르게 처리(빈 줄로 구분되면 그 뒤는 그냥 원래 자리에 남음). 사진 추출 프롬프트에도 "문단 사이 여백은 빈 줄로 살려서 옮겨달라" 지시 추가(이 새 로직이 기대는 빈 줄 정보를 AI가 만들어주도록)',
+    'v7.22 — [v7.21 정정] "마지막 번호 뒤엔 빈 줄에서 끊는다"는 v7.21 판단이 틀렸음을 확인 — 사용자 의도는 원래 말씀대로 "3번이 없으면 마지막까지 전부 2번 자리에 삽입"이 맞았음(예시의 "비염이 있으시지만..." 결론 문단도 ②자리에 삽입되는 게 맞음, 의미 훼손 없음). applyProofMarks()에서 빈 줄 만나면 블록을 끝내던 로직 제거 — 이제 빈 줄은 무시하고 다음 번호를 만나거나 글이 끝날 때까지 계속 이어붙임(여러 줄 수집 버그 수정은 유지). 관련 안내 문구도 정정'
   ];
   console.log(`%c글답 학습기 ${APP_VERSION}`, 'font-weight:bold; font-size:14px; color:#0d1b4b;');
   console.groupCollapsed('%c버전 기록 (클릭해서 펼치기)', 'color:#888; font-size:11px;');
@@ -5038,6 +5040,7 @@ ${a.name}`;
     const prompt = [
       '이 사진은 학생이 원고지에 손으로 쓴 글입니다. 사진 속 글자를 빠짐없이 정확하게 그대로 옮겨 적어주세요.',
       '단, ①②③ 같은 동그라미 숫자가 쓰여 있다면 지우거나 무시하지 말고 보이는 그대로 옮겨 적어주세요(나중에 프로그램이 처리합니다).',
+      '원본에서 문단이 바뀌거나, 줄과 줄 사이에 눈에 띄는 여백(빈 줄)이 있다면, 옮겨 적을 때도 그 자리에 빈 줄을 하나 넣어서 문단 구분을 그대로 살려주세요. 이건 나중에 프로그램이 어디까지가 한 덩어리인지 판단하는 데 중요합니다.',
       '괄호( ) 안에 글자가 있고 그 위나 옆에 구불구불한 삭제 표시(흔히 "돼지꼬리"라 부르는, 동그랗게 말린 줄표 모양)가 되어 있다면, 그 괄호 안 내용만 옮기지 말고 빼주세요.',
       '원고지 칸 구분, 페이지 번호는 무시하세요. 설명이나 사족 없이 옮겨 적은 글 내용만 출력하세요.'
     ].join('\n');
@@ -5073,29 +5076,36 @@ ${a.name}`;
     setLoading(false);
   }
 
-  // 본문 속 번호(①②③... 또는 타이핑하기 쉬운 (1)(2)(3)...)와, 여백에 같은 번호로 따로 적힌 문장을 찾아 그 위치에 병합한다.
-  // 예: "...했습니다. ①" 또는 "...했습니다. (1)" 본문 + 별도 줄의 "① 산책은..." 또는 "(1) 산책은..." → 번호 자리에 문장을 끼워 넣고 번호는 지운다.
+  // 본문 속 번호(①②③... 또는 (1)(2)(3)...)와, 여백에 같은 번호로 따로 적힌 "정의문"을 찾아 그 위치에 병합한다.
+  // 정의문은 여러 줄에 걸쳐 있을 수 있고, 다음 번호를 만나거나 글이 끝날 때까지 전부 그 번호의 내용으로 본다(중간 빈 줄은 무시하고 계속 이어붙임).
   function applyProofMarks(text) {
     const circled = ['①','②','③','④','⑤','⑥','⑦','⑧','⑨','⑩'];
-    // "(1)"~"(10)"을 같은 순번의 동그라미 숫자와 동일하게 취급 — 손으로 편하게 타이핑할 수 있게
     let normalized = (text || '');
     circled.forEach((mark, i) => {
       const n = i + 1;
       normalized = normalized.split(`(${n})`).join(mark).split(`（${n}）`).join(mark);
     });
-    const markerRe = /^([①②③④⑤⑥⑦⑧⑨⑩])\s*(.+)$/;
+    const markerRe = /^([①②③④⑤⑥⑦⑧⑨⑩])\s*(.*)$/;
     const lines = normalized.split('\n');
     const defs = {};
     const bodyLines = [];
+    let currentMarker = null;
     lines.forEach(line => {
-      const m = line.trim().match(markerRe);
-      if (m && !defs[m[1]]) { defs[m[1]] = m[2]; }
-      else { bodyLines.push(line); }
+      const stripped = line.trim();
+      const m = stripped.match(markerRe);
+      if (m && !(m[1] in defs)) {
+        currentMarker = m[1];
+        defs[currentMarker] = m[2] || '';
+      } else if (currentMarker) {
+        if (stripped !== '') { defs[currentMarker] += ' ' + stripped; }
+      } else {
+        bodyLines.push(line);
+      }
     });
     let body = bodyLines.join('\n');
     Object.keys(defs).forEach(marker => {
       if (body.includes(marker)) {
-        body = body.split(marker).join(' ' + defs[marker] + ' ');
+        body = body.split(marker).join(' ' + defs[marker].trim() + ' ');
       }
     });
     return body.replace(/ {2,}/g, ' ').replace(/\n{3,}/g, '\n\n').trim();
