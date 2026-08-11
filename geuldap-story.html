@@ -85,6 +85,24 @@
     .redact-modal canvas { touch-action: none; cursor: crosshair; max-width: 100%; border-radius: 6px; }
     .redact-modal button { background: #0d1b4b; color: #fff; border: none; padding: 10px 18px; border-radius: 8px; font-weight: 700; font-size: 13px; cursor: pointer; }
     .redact-modal button.secondary { background: #eee; color: #333; }
+
+    /* 사진 확대보기(라이트박스) */
+    .lightbox-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.88); z-index: 3000; align-items: center; justify-content: center; padding: 20px; cursor: zoom-out; }
+    .lightbox-bg.open { display: flex; }
+    .lightbox-bg img { max-width: 100%; max-height: 90vh; border-radius: 8px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
+    .lightbox-close { position: absolute; top: 18px; right: 24px; color: #fff; font-size: 32px; font-weight: 300; cursor: pointer; line-height: 1; }
+
+    /* 본문 사진 갤러리 */
+    .body-gallery { display: grid; gap: 8px; margin: 14px 0; }
+    .body-gallery img { width: 100%; height: 100%; object-fit: cover; border-radius: 10px; cursor: zoom-in; display: block; }
+    .body-gallery.g1 { grid-template-columns: 1fr; }
+    .body-gallery.g1 img { max-height: 520px; object-fit: contain; background: #f3f1ea; }
+    .body-gallery.g2 { grid-template-columns: 1fr 1fr; }
+    .body-gallery.g2 img { aspect-ratio: 3/4; }
+    .body-gallery.g3 { grid-template-columns: repeat(3, 1fr); }
+    .body-gallery.g3 img { aspect-ratio: 3/4; }
+    .body-gallery.gmany { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); }
+    .body-gallery.gmany img { aspect-ratio: 1/1; }
   </style>
 </head>
 <body>
@@ -155,6 +173,11 @@
       <button type="button" onclick="confirmRedact()">✅ 이대로 사용</button>
     </div>
   </div>
+</div>
+
+<div class="lightbox-bg" id="lightboxBg" onclick="closeLightbox()">
+  <span class="lightbox-close">&times;</span>
+  <img id="lightboxImg" src="" onclick="event.stopPropagation()">
 </div>
 
 <!-- Firebase -->
@@ -453,6 +476,14 @@
     return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   }
 
+  window.openLightbox = function(url) {
+    document.getElementById('lightboxImg').src = url;
+    document.getElementById('lightboxBg').classList.add('open');
+  };
+  window.closeLightbox = function() {
+    document.getElementById('lightboxBg').classList.remove('open');
+  };
+
   function renderBodyHtml(body) {
     const regex = /\[\[img:(.+?)\]\]/g;
     const tokens = [];
@@ -481,10 +512,11 @@
         else break;
       }
       if (group.length === 1) {
-        html += `<img src="${group[0]}" style="max-width:100%; border-radius:10px; margin:14px 0; display:block;">`;
+        html += `<div class="body-gallery g1"><img src="${group[0]}" onclick="openLightbox('${group[0]}')"></div>`;
       } else {
-        html += `<div style="display:flex; gap:8px; margin:14px 0; overflow-x:auto; padding-bottom:4px;">` +
-          group.map(u => `<img src="${u}" style="height:220px; width:auto; border-radius:10px; flex-shrink:0; object-fit:cover;">`).join('') +
+        const cls = group.length === 2 ? 'g2' : (group.length === 3 ? 'g3' : 'gmany');
+        html += `<div class="body-gallery ${cls}">` +
+          group.map(u => `<img src="${u}" onclick="openLightbox('${u}')">`).join('') +
           `</div>`;
       }
     }
