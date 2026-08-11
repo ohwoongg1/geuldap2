@@ -286,11 +286,14 @@
   let redactCanvas = null, redactCtx = null;
   let redactCurrentFileName = '';
   let redactDrawing = false, redactStartX = 0, redactStartY = 0, redactCurX = 0, redactCurY = 0;
+  let pendingInsertPos = null; // 사진 선택하는 순간의 커서 위치를 미리 기억해둔다(가리기 창이 뜨는 동안 포커스가 빠져나가도 안전하게)
 
   window.handleImageSelect = function(event) {
     const files = Array.from(event.target.files || []);
     event.target.value = '';
     if (files.length === 0) return;
+    const textarea = document.getElementById('postBody');
+    pendingInsertPos = textarea.selectionStart ?? textarea.value.length;
     redactQueue = files;
     processNextRedactFile();
   };
@@ -385,11 +388,10 @@
       const url = await window._getDownloadURL(r);
 
       const marker = `\n[[img:${url}]]\n`;
-      const start = textarea.selectionStart ?? textarea.value.length;
-      const end = textarea.selectionEnd ?? textarea.value.length;
-      textarea.value = textarea.value.slice(0, start) + marker + textarea.value.slice(end);
-      const newPos = start + marker.length;
-      textarea.selectionStart = textarea.selectionEnd = newPos;
+      const start = pendingInsertPos ?? textarea.value.length;
+      textarea.value = textarea.value.slice(0, start) + marker + textarea.value.slice(start);
+      pendingInsertPos = start + marker.length; // 다음 사진(같이 선택한 여러 장)은 방금 넣은 사진 바로 뒤에 이어붙게 됨
+      textarea.selectionStart = textarea.selectionEnd = pendingInsertPos;
 
       refreshImagePreviewFromBody();
       msg.textContent = '✅ 업로드 완료 — 썸네일을 클릭하면 삭제할 수 있어요';
