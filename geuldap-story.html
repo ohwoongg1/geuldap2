@@ -408,9 +408,9 @@
 
   window.toggleAdmin = function() {
     const panel = document.getElementById('adminPanel');
-    if (panel.classList.contains('open')) { panel.classList.remove('open'); return; }
+    if (panel.classList.contains('open')) { panel.classList.remove('open'); renderList(); return; }
     const pw = prompt('원장님 확인용 비밀번호를 입력해주세요');
-    if (pw === '0147') panel.classList.add('open');
+    if (pw === '0147') { panel.classList.add('open'); renderList(); }
     else if (pw !== null) alert('비밀번호가 일치하지 않습니다.');
   };
 
@@ -436,18 +436,28 @@
       box.innerHTML = '<div class="empty-state">아직 등록된 글이 없습니다.</div>';
       return;
     }
+    const isAdmin = document.getElementById('adminPanel').classList.contains('open');
     box.innerHTML = window._posts.map(p => {
       const plainBody = (p.body||'').replace(/\[\[img:.+?\]\]/g, '').trim();
       return `
-      <a class="post-card" href="?post=${p.id}">
+      <div class="post-card" style="cursor:pointer;" onclick="goToPost(event, '${p.id}')">
         <div class="tag">#${escapeHtml(p.tag||'')}</div>
         <h2>${escapeHtml(p.title)}</h2>
         <p>${escapeHtml(plainBody.slice(0,80))}${plainBody.length>80?'...':''}</p>
         <div class="meta">${escapeHtml(p.dateLabel||'')}</div>
-      </a>
+        ${isAdmin ? `<div class="post-card-admin-actions" onclick="event.preventDefault(); event.stopPropagation();">
+          <button onclick="editPost('${p.id}')">✏️ 수정</button><button onclick="deletePost('${p.id}')">🗑 삭제</button>
+        </div>` : ''}
+      </div>
     `;
     }).join('');
   }
+
+  window.goToPost = function(event, id) {
+    history.pushState({}, '', '?post=' + id);
+    const post = window._posts.find(p => p.id === id);
+    if (post) showDetail(post);
+  };
 
   window.showList = function() {
     history.pushState({}, '', location.pathname);
