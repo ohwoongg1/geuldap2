@@ -251,7 +251,7 @@
     document.getElementById('postTitle').value = post.title;
     document.getElementById('postTag').value = post.tag || '옥길동';
     document.getElementById('postBody').value = post.body;
-    document.getElementById('imagePreviewRow').innerHTML = '';
+    refreshImagePreviewFromBody();
     document.getElementById('postSubmitBtn').textContent = '💾 수정 저장';
     document.getElementById('postCancelBtn').style.display = 'inline-block';
     document.getElementById('adminPanel').scrollIntoView({ behavior: 'smooth' });
@@ -391,15 +391,48 @@
       const newPos = start + marker.length;
       textarea.selectionStart = textarea.selectionEnd = newPos;
 
-      const preview = document.createElement('img');
-      preview.src = url;
-      preview.style.cssText = 'width:64px; height:64px; object-fit:cover; border-radius:8px; border:1px solid #ddd;';
-      document.getElementById('imagePreviewRow').appendChild(preview);
-      msg.textContent = '✅ 업로드 완료 — 게시하기 전 미리보기로 확인하세요';
+      refreshImagePreviewFromBody();
+      msg.textContent = '✅ 업로드 완료 — 썸네일을 클릭하면 삭제할 수 있어요';
     } catch (e) {
       alert('사진 업로드 실패: ' + e.message);
     }
   }
+
+  // "글 내용" 칸(postBody)에 실제로 들어있는 [[img:...]] 마커들을 기준으로 미리보기 썸네일을 다시 그린다.
+  // 썸네일을 클릭하면 본문에서 그 사진 마커를 지운다.
+  function refreshImagePreviewFromBody() {
+    const body = document.getElementById('postBody').value;
+    const urls = [];
+    const regex = /\[\[img:(.+?)\]\]/g;
+    let m;
+    while ((m = regex.exec(body)) !== null) urls.push(m[1]);
+    const row = document.getElementById('imagePreviewRow');
+    row.innerHTML = '';
+    urls.forEach(url => {
+      const wrap = document.createElement('div');
+      wrap.style.cssText = 'position:relative; width:64px; height:64px;';
+      const img = document.createElement('img');
+      img.src = url;
+      img.title = '클릭하면 이 사진을 글에서 삭제해요';
+      img.style.cssText = 'width:64px; height:64px; object-fit:cover; border-radius:8px; border:1px solid #ddd; cursor:pointer;';
+      img.onclick = () => removeImageFromBody(url);
+      const x = document.createElement('div');
+      x.textContent = '×';
+      x.style.cssText = 'position:absolute; top:-6px; right:-6px; width:18px; height:18px; background:#b3261e; color:#fff; border-radius:50%; font-size:12px; line-height:18px; text-align:center; pointer-events:none;';
+      wrap.appendChild(img);
+      wrap.appendChild(x);
+      row.appendChild(wrap);
+    });
+  }
+
+  window.removeImageFromBody = function(url) {
+    if (!confirm('이 사진을 글에서 삭제할까요?')) return;
+    const textarea = document.getElementById('postBody');
+    const escaped = url.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const re = new RegExp('\\n?\\[\\[img:' + escaped + '\\]\\]\\n?', 'g');
+    textarea.value = textarea.value.replace(re, '\n');
+    refreshImagePreviewFromBody();
+  };
 
   function todayLabel() {
     const d = new Date();
@@ -420,13 +453,39 @@
 
   function renderBodyHtml(body) {
     const regex = /\[\[img:(.+?)\]\]/g;
-    let html = '', lastIndex = 0, m;
+    const tokens = [];
+    let lastIndex = 0, m;
     while ((m = regex.exec(body)) !== null) {
-      html += escapeHtml(body.slice(lastIndex, m.index));
-      html += `<img src="${m[1]}" style="max-width:100%; border-radius:10px; margin:14px 0; display:block;">`;
+      if (m.index > lastIndex) tokens.push({ type: 'text', value: body.slice(lastIndex, m.index) });
+      tokens.push({ type: 'img', url: m[1] });
       lastIndex = regex.lastIndex;
     }
-    html += escapeHtml(body.slice(lastIndex));
+    if (lastIndex < body.length) tokens.push({ type: 'text', value: body.slice(lastIndex) });
+
+    let html = '';
+    let i = 0;
+    while (i < tokens.length) {
+      const t = tokens[i];
+      if (t.type === 'text') {
+        html += escapeHtml(t.value);
+        i++;
+        continue;
+      }
+      // 이미지가 연속으로 나오면(사이에 공백·줄바꿈만 있어도) 한 줄 가로 갤러리로 묶는다
+      const group = [];
+      while (i < tokens.length) {
+        if (tokens[i].type === 'img') { group.push(tokens[i].url); i++; }
+        else if (tokens[i].type === 'text' && tokens[i].value.trim() === '') { i++; }
+        else break;
+      }
+      if (group.length === 1) {
+        html += `<img src="${group[0]}" style="max-width:100%; border-radius:10px; margin:14px 0; display:block;">`;
+      } else {
+        html += `<div style="display:flex; gap:8px; margin:14px 0; overflow-x:auto; padding-bottom:4px;">` +
+          group.map(u => `<img src="${u}" style="height:220px; width:auto; border-radius:10px; flex-shrink:0; object-fit:cover;">`).join('') +
+          `</div>`;
+      }
+    }
     return html;
   }
 
