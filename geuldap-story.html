@@ -557,6 +557,12 @@
     document.getElementById('listView').style.display = 'block';
     document.getElementById('detailView').style.display = 'none';
     document.title = '글답 이야기 — 글답국어독서논술 학습 칼럼';
+    const defaultDesc = '옥길동·범박동 국어독서논술 전문 글답학원 원장이 직접 쓰는 독서법·글쓰기·맞춤법 학습 칼럼입니다.';
+    const setMeta = (selector, attr, value) => { const el = document.querySelector(selector); if (el) el.setAttribute(attr, value); };
+    setMeta('meta[name="description"]', 'content', defaultDesc);
+    setMeta('meta[property="og:title"]', 'content', '글답 이야기 — 글답국어독서논술 학습 칼럼');
+    setMeta('meta[property="og:description"]', 'content', defaultDesc);
+    setMeta('meta[property="og:url"]', 'content', 'https://geuldap.co.kr/geuldap-story.html');
   };
 
   function showDetail(post) {
@@ -571,7 +577,23 @@
       ${isAdmin ? `<div class="post-card-admin-actions"><button onclick="editPost('${post.id}')">✏️ 수정</button><button onclick="deletePost('${post.id}')">🗑 삭제</button></div>` : ''}
     `;
     document.title = post.title + ' — 글답 이야기';
+    updatePostMetaTags(post);
     window.scrollTo(0,0);
+  }
+
+  // 글마다 검색결과에 뜨는 설명(meta description)과 카카오톡 공유용 태그(OG)를 그 글 내용에 맞게 바꿔준다.
+  // 원래는 모든 글이 "글답 이야기" 대표 설명 하나로 고정돼 있어서, 구글이 각 글을 서로 다른 콘텐츠로 구분하기 어려웠음.
+  function updatePostMetaTags(post) {
+    const plainBody = (post.body || '').replace(/\[\[img:.+?\]\]/g, '').replace(/\s+/g, ' ').trim();
+    const desc = plainBody.slice(0, 110) + (plainBody.length > 110 ? '...' : '');
+    const setMeta = (selector, attr, value) => {
+      const el = document.querySelector(selector);
+      if (el) el.setAttribute(attr, value);
+    };
+    setMeta('meta[name="description"]', 'content', desc);
+    setMeta('meta[property="og:title"]', 'content', post.title + ' — 글답 이야기');
+    setMeta('meta[property="og:description"]', 'content', desc);
+    setMeta('meta[property="og:url"]', 'content', location.href);
   }
 
   function handleRoute() {
