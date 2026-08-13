@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /geuldap-eval.html
+
+Sitemap: https://geuldap.co.kr/sitemap.xml
