@@ -398,6 +398,11 @@
       <div style="font-size:13px; color:#888;" id="spQuizReviewSummary">선생님이 채점해주신 문제집 결과와 해설을 볼 수 있어요</div>
     </div>
 
+    <div class="card" style="margin-bottom:16px;" id="spWritingRecordsCard">
+      <div class="card-title">✍️ 글쓰기 평가 기록</div>
+      <div id="spWritingRecordsList" style="font-size:13px; color:#888;">아직 평가 기록이 없어요</div>
+    </div>
+
     <div class="card" style="margin-bottom:16px;" id="spWeakCard">
       <div class="card-title">🎯 나의 취약 유형</div>
       <div id="spWeakBody" style="font-size:13px; color:#888;">아직 분석할 데이터가 부족해요. 문제를 더 풀어보세요!</div>
@@ -2059,7 +2064,7 @@
 
 <script>
   // ===== 버전 정보 (콘솔에서 확인: APP_VERSION 또는 페이지 로드시 자동 출력) =====
-  const APP_VERSION = 'v7.25';
+  const APP_VERSION = 'v7.26';
   const APP_VERSION_LOG = [
     'v1.0 — 탭 구조 + UI 껍데기',
     'v1.1 — AI 문제 생성 + 개념 사다리',
@@ -2129,7 +2134,8 @@
     'v7.22 — [v7.21 정정] "마지막 번호 뒤엔 빈 줄에서 끊는다"는 v7.21 판단이 틀렸음을 확인 — 사용자 의도는 원래 말씀대로 "3번이 없으면 마지막까지 전부 2번 자리에 삽입"이 맞았음(예시의 "비염이 있으시지만..." 결론 문단도 ②자리에 삽입되는 게 맞음, 의미 훼손 없음). applyProofMarks()에서 빈 줄 만나면 블록을 끝내던 로직 제거 — 이제 빈 줄은 무시하고 다음 번호를 만나거나 글이 끝날 때까지 계속 이어붙임(여러 줄 수집 버그 수정은 유지). 관련 안내 문구도 정정',
     'v7.23 — 수납 관리에서 완납 처리된 건에 "수납방법" 선택칸(카드/현금영수증/결제선생/계좌이체/현금(증빙없음)) 추가 — 청구 문자 버튼 옆에 위치, geuldap_payments에 method 필드로 저장',
     'v7.24 — AI 글쓰기 채점 3가지 개선: ①점수가 너무 박해서 아이들 의욕이 꺾인다는 지적에 채점 기준을 70~75점→78~82점 기준으로 상향하고 "애매하면 후하게" 지침 추가 ②맞춤법·오타는 사진 인식(OCR) 과정에서 실제와 다르게 읽혔을 수 있어 부정확할 수 있다는 이유로 채점항목(8→7개)·잘된점·아쉬운점·학부모코멘트 어디에서도 지적하지 않도록 변경(글 다듬기용 correctedContent는 조용히 유지) ③AI 성장 리포트에 기간(시작일~종료일) 선택 기능 추가 — 지정한 기간 동안의 성장과 상황을 이야기 형태로 서술하도록 프롬프트 개선',
-    'v7.25 — AI 학습기(7단계 반복학습) 개선 2가지: ①주관식(단답형) 문제 전면 삭제 — 회차별 문제생성·마스터도전시험·취약유형집중학습 전부 5문제 100% 객관식(4지선다)으로 통일, 수학/과학도 단답형 대신 계산이 필요한 객관식으로 전환(오답은 흔한 계산실수로 구성) ②"복습하기"로 이미 마스터한 회차를 다시 볼 때 캐시된 문제(이미 다 맞힌 문제)가 그대로 재사용되던 버그 수정 — 이미 완료한 회차를 다시 시작하면 캐시를 건너뛰고 매번 새로 생성하도록 변경(다른 학생의 첫 시도는 기존처럼 캐시로 빠르게 시작됨)'
+    'v7.25 — AI 학습기(7단계 반복학습) 개선 2가지: ①주관식(단답형) 문제 전면 삭제 — 회차별 문제생성·마스터도전시험·취약유형집중학습 전부 5문제 100% 객관식(4지선다)으로 통일, 수학/과학도 단답형 대신 계산이 필요한 객관식으로 전환(오답은 흔한 계산실수로 구성) ②"복습하기"로 이미 마스터한 회차를 다시 볼 때 캐시된 문제(이미 다 맞힌 문제)가 그대로 재사용되던 버그 수정 — 이미 완료한 회차를 다시 시작하면 캐시를 건너뛰고 매번 새로 생성하도록 변경(다른 학생의 첫 시도는 기존처럼 캐시로 빠르게 시작됨)',
+    'v7.26 — [신규] 학생 로그인 화면(자녀 접속코드로 학부모도 함께 볼 수 있음)에 "✍️ 글쓰기 평가 기록" 카드 추가 — 그동안 선생님이 채점한 글쓰기 평가(점수·잘된점·보완할점·총평·원본글)를 목록에서 클릭해 바로 볼 수 있음. 기존 "문제집 채점 결과" 카드와 같은 위치·방식으로 구현'
   ];
   console.log(`%c글답 학습기 ${APP_VERSION}`, 'font-weight:bold; font-size:14px; color:#0d1b4b;');
   console.groupCollapsed('%c버전 기록 (클릭해서 펼치기)', 'color:#888; font-size:11px;');
@@ -6990,6 +6996,7 @@ ${(parsed.concepts || []).join(', ')}
 
   function renderSpDashboard(id) {
     selectedLrPreviewStudent = _students.find(s=>s.id===id);
+    renderSpWritingRecords(id);
     const exam = getSelectedOrActiveLrExam(id);
     if(!exam) {
       document.getElementById('spQuizArea').style.display='none';
@@ -8436,6 +8443,35 @@ ${isMathSubject ? '- 수학/과학은 실제 계산이 필요한 문제로 내�
   function closeSpContentModal() { document.getElementById('spContentModal').classList.remove('open'); }
 
   // ===== 문제집 채점 결과 (선생님이 사진으로 채점해준 것 — AI 학습기 오답노트와는 별개) =====
+  // ===== 글쓰기 평가 기록 (학생 화면 - 학부모도 자녀 로그인으로 함께 볼 수 있음) =====
+  function renderSpWritingRecords(id) {
+    const listEl = document.getElementById('spWritingRecordsList');
+    if (!listEl) return;
+    const recs = _records.filter(r => r.studentId === id).sort((a,b) => (a.id < b.id ? 1 : -1));
+    if (!recs.length) { listEl.innerHTML = '아직 평가 기록이 없어요'; return; }
+    listEl.innerHTML = recs.map(r => `
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-top:1px solid #f0f0f0; cursor:pointer;" onclick="spOpenWritingRecord('${r.id}')">
+        <div>
+          <div style="font-weight:600; font-size:13.5px; color:#0d1b4b;">${escapeHtml(r.title||r.type)}</div>
+          <div style="font-size:11.5px; color:#aaa; margin-top:2px;">${r.date} · ${escapeHtml(r.type||'')}</div>
+        </div>
+        <div style="font-weight:700; font-size:15px; color:#c5a149;">${r.totalScore}<span style="font-size:11px; color:#aaa; font-weight:400;">점</span></div>
+      </div>`).join('');
+  }
+
+  function spOpenWritingRecord(id) {
+    const r = _records.find(x=>x.id===id);
+    if (!r) return;
+    document.getElementById('spContentTitle').textContent = '✍️ 글쓰기 평가 기록';
+    document.getElementById('spContentBody').innerHTML = `
+      <div class="eval-header">${evalHeaderHTML(r)}</div>
+      <div class="score-grid" style="margin-top:16px;">${scoreGridHTML(r.scores)}</div>
+      <div style="margin-top:16px;">${evalSummaryHTML(r)}</div>
+      ${r.content ? `<div style="margin-top:16px;"><div style="font-size:13px; font-weight:700; color:#0d1b4b; margin-bottom:8px;">원본 글</div><div class="eval-text" style="white-space:pre-wrap;">${escapeHtml(r.content)}</div></div>` : ''}
+    `;
+    document.getElementById('spContentModal').classList.add('open');
+  }
+
   function spOpenQuizReview() {
     const sid = window._spStudent ? window._spStudent.id : (selectedLrPreviewStudent ? selectedLrPreviewStudent.id : null);
     if (!sid) return;
