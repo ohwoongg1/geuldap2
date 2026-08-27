@@ -5776,6 +5776,14 @@ ${a.name}`;
     window._records = _records.filter(x=>x.id!==id);
     localStorage.setItem('gr', JSON.stringify(_records));
     if (window._fbReady) window._deleteByFieldId('geuldap_records', id).catch(console.error);
+    // 이 평가 기록과 연동된 독서 기록도 함께 지운다(안 하면 삭제한 글의 참고 도서가 독서 기록에 그대로 남아있게 됨).
+    const readingIdx = window._readings.findIndex(rd => rd.recordId === id);
+    if (readingIdx > -1) {
+      const removedReading = window._readings[readingIdx];
+      window._readings.splice(readingIdx, 1);
+      localStorage.setItem('grd', JSON.stringify(window._readings));
+      if (window._fbReady) window._deleteByFieldId('geuldap_readings', removedReading.id).catch(console.error);
+    }
     closeRecordDetail();
     if (r) showRecords(r.studentId);
     renderStudents();
