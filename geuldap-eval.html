@@ -589,6 +589,12 @@
           </div>
         </div>
         <div class="form-group full">
+          <label style="display:flex; align-items:center; gap:6px; font-weight:normal; background:#fefbf3; border:1px solid #eee0c0; border-radius:8px; padding:10px 12px;">
+            <input type="checkbox" id="readingOnlyMode" style="width:auto;" onchange="toggleReadingOnlyMode()">
+            📖 독서만 기록 (글쓰기 없음) — 책만 읽고 글은 안 쓴 경우, 참고 도서/장르만으로 독서 기록에 저장해요
+          </label>
+        </div>
+        <div class="form-group full" id="photoUploadGroup">
           <label>사진 업로드 (여러 장 가능)</label>
           <div class="upload-area" onclick="document.getElementById('fileInput').click()">
             <div style="font-size:36px; margin-bottom:10px;">📸</div>
@@ -597,7 +603,7 @@
           </div>
           <input type="file" id="fileInput" accept="image/*" multiple style="display:none;" onchange="previewImage(this)">
         </div>
-        <div class="form-group full">
+        <div class="form-group full" id="writingContentGroup">
           <label>글 내용</label>
           <label style="display:flex; align-items:center; gap:6px; font-size:13px; color:#666; font-weight:normal; margin-bottom:6px;">
             <input type="checkbox" id="isManuscript" style="width:auto;">
@@ -612,7 +618,7 @@
         </div>
       </div>
       <div style="margin-top:20px; display:flex; gap:8px; flex-wrap:wrap;">
-        <button class="btn btn-primary" onclick="evaluateWriting()">🤖 AI 평가 시작</button>
+        <button class="btn btn-primary" id="evalBtn" onclick="evaluateWriting()">🤖 AI 평가 시작</button>
         <button class="btn btn-primary" id="reevalAutoSaveBtn" style="display:none; background:#4a7c59;" onclick="reevaluateAndAutoSave()">🔄 재평가 후 자동 등록</button>
       </div>
       <div id="reevalAutoSaveHint" style="display:none; font-size:11.5px; color:#4a7c59; margin-top:4px;">기존 기록을 수정 중이에요 — 이 버튼을 누르면 AI가 새로 채점하고, 그 결과가 바로 저장돼요(다시 확인 후 누를 필요 없음).</div>
@@ -5203,14 +5209,45 @@ ${a.name}`;
     return data.text;
   }
 
+  // 체크하면 "글 내용" 칸과 사진 업로드 칸을 숨기고, 저장 버튼도 AI 평가가 아니라 독서 기록 저장으로 바뀐다.
+  function toggleReadingOnlyMode() {
+    const on = document.getElementById('readingOnlyMode').checked;
+    document.getElementById('writingContentGroup').style.display = on ? 'none' : '';
+    document.getElementById('photoUploadGroup').style.display = on ? 'none' : '';
+    document.getElementById('evalBtn').textContent = on ? '📖 독서 기록 저장' : '🤖 AI 평가 시작';
+  }
+
+  // 책만 읽고 글은 안 쓴 경우: AI 평가 없이 참고 도서/주제·장르만으로 바로 저장한다(글쓰기 평가 기록에는 남지 않고 독서 기록에만 쌓임).
+  async function saveReadingOnlyRecord() {
+    const topic = document.getElementById('writingTopic').value.trim();
+    if (!topic) { alert('참고 도서/주제(책 제목)를 입력해주세요'); return; }
+    const genre = document.getElementById('writingGenre').value;
+    const dateVal = document.getElementById('writingDate').value;
+    const date = dateVal ? new Date(dateVal).toLocaleDateString('ko-KR') : new Date().toLocaleDateString('ko-KR');
+    const id = Date.now().toString();
+    const r = {
+      id, studentId: selectedStudent.id, studentName: selectedStudent.name, grade: selectedStudent.grade,
+      type: '독서기록', topic, genre, date, content: '', readingOnly: true,
+      title: topic, completionStatus: '완성'
+    };
+    _records.push(r);
+    localStorage.setItem('gr', JSON.stringify(_records));
+    if (window._fbReady) await window._add(window._col(window._db,'geuldap_records'), r).catch(console.error);
+    await syncReadingFromRecord(r);
+    alert('독서 기록으로 저장되었습니다!');
+    resetUpload();
+    renderStudents();
+  }
+
   async function evaluateWriting() {
     if (!selectedStudent) { alert('학생을 선택해주세요'); return; }
+    if (document.getElementById('readingOnlyMode').checked) { await saveReadingOnlyRecord(); return; }
     const content = document.getElementById('writingContent').value.trim();
     if (!content) { alert('글 내용을 입력해주세요'); return; }
     const type = document.getElementById('writingType').value;
     const topic = document.getElementById('writingTopic').value;
     const dateVal = document.getElementById('writingDate').value;
-    const prevRecs = _records.filter(r=>r.studentId===selectedStudent.id).slice(-3);
+    const prevRecs = _records.filter(r=>r.studentId===selectedStudent.id && !r.readingOnly).slice(-3);
     const prevInfo = prevRecs.length>0 ? '이전 글: '+prevRecs.map(r=>`[${r.date}] ${r.totalScore}점`).join(', ') : '첫 번째 글';
     setLoading(true,'AI가 글을 분석하고 있습니다...');
     document.getElementById('evalResult').style.display='none';
@@ -5591,8 +5628,9 @@ ${a.name}`;
     document.getElementById('recordListTitle').textContent=`${s.name} 평가 기록 (${recs.length}편)`;
 
     // 성장 리포트 영역 초기화
+    const writingRecs = recs.filter(r=>!r.readingOnly);
     document.getElementById('growthReportSection').style.display = recs.length>0 ? 'block' : 'none';
-    document.getElementById('growthReportBody').innerHTML = recs.length>=2
+    document.getElementById('growthReportBody').innerHTML = writingRecs.length>=2
       ? '기록이 2편 이상 쌓이면, 꾸준히 좋아지는 점과 계속 반복되는 아쉬운 점을 AI가 정리해드려요. 버튼을 눌러주세요.'
       : '기록이 2편 이상 쌓이면 성장 리포트를 만들 수 있어요.';
 
@@ -5620,18 +5658,19 @@ ${a.name}`;
     document.getElementById('recordList').innerHTML = filtered.map((r)=>{
       const i = recs.indexOf(r);
       const prev = recs[i+1];
-      const diff = prev ? (r.totalScore-prev.totalScore).toFixed(1) : null;
+      const diff = (prev && !r.readingOnly && !prev.readingOnly) ? (r.totalScore-prev.totalScore).toFixed(1) : null;
       const ch = diff===null?'':(diff>0?`<span class="record-change up">▲${diff}</span>`:`<span class="record-change down">▼${Math.abs(diff)}</span>`);
       const status = r.completionStatus || '완성';
       const statusBadge = `<span style="font-size:11px; color:#fff; background:${status==='완성'?'#4a7c59':'#c0392b'}; padding:2px 7px; border-radius:8px; margin-left:6px;">${status}</span>`;
-      return `<div class="record-item" onclick="openRecordDetail('${r.id}')"><div class="record-date">${r.date}</div><div><div class="record-title">${r.title}${statusBadge}</div><div style="font-size:12px;color:#888;">${r.type}</div></div>${ch}<div class="record-score">${r.totalScore}</div></div>`;
+      const scoreCell = r.readingOnly ? `<div class="record-score" style="font-size:20px;">📖</div>` : `<div class="record-score">${r.totalScore}</div>`;
+      return `<div class="record-item" onclick="openRecordDetail('${r.id}')"><div class="record-date">${r.date}</div><div><div class="record-title">${r.title}${statusBadge}</div><div style="font-size:12px;color:#888;">${r.type}</div></div>${ch}${scoreCell}</div>`;
     }).join('');
   }
 
   // ===== 점수 추이 그래프 (오래된 글 → 최신 글 순) =====
   function renderGrowthChart(recsNewestFirst) {
     const section = document.getElementById('growthChartSection');
-    const recs = [...recsNewestFirst].reverse(); // 오래된 순
+    const recs = [...recsNewestFirst].reverse().filter(r=>!r.readingOnly); // 오래된 순, 독서만 기록한 항목은 점수가 없어 제외
     if (recs.length < 2) { section.style.display = 'none'; return; }
     section.style.display = 'block';
     const W = 640, H = 160, PAD = 30;
@@ -5675,7 +5714,7 @@ ${a.name}`;
     const to = document.getElementById('growthReportTo').value;
     const fromDate = from ? new Date(from + 'T00:00:00') : null;
     const toDate = to ? new Date(to + 'T23:59:59') : null;
-    let recs = _records.filter(r=>r.studentId===id);
+    let recs = _records.filter(r=>r.studentId===id && !r.readingOnly);
     if (fromDate) recs = recs.filter(r => { const d = parseRecordDate(r.date); return d && d >= fromDate; });
     if (toDate) recs = recs.filter(r => { const d = parseRecordDate(r.date); return d && d <= toDate; });
     recs = recs.sort((a,b)=> (a.id > b.id ? 1 : -1));
@@ -5705,11 +5744,22 @@ ${a.name}`;
     if (!r) return;
     viewingRecordId = id;
     document.getElementById('recordDetailTitle').textContent = `${r.studentName} · ${r.date}`;
-    document.getElementById('recordDetailHeader').innerHTML = evalHeaderHTML(r);
-    document.getElementById('recordDetailScoreGrid').innerHTML = scoreGridHTML(r.scores);
-    document.getElementById('recordDetailSummary').innerHTML = evalSummaryHTML(r);
-    document.getElementById('recordDetailCompare').innerHTML = `<div class="eval-text">${r.compare||''}</div>`;
-    document.getElementById('recordDetailContent').textContent = r.content || '(저장된 원본 글이 없습니다)';
+    if (r.readingOnly) {
+      document.getElementById('recordDetailHeader').innerHTML = `<div class="eval-student">${r.studentName} · ${r.grade||''}</div><div class="eval-title">📖 ${r.title}</div><div class="eval-date">${r.date}</div>`;
+      document.getElementById('recordDetailScoreGrid').innerHTML = '';
+      document.getElementById('recordDetailSummary').innerHTML = `<div class="eval-text">글쓰기 평가 없이 독서 기록으로만 저장된 항목입니다.${r.genre?' (장르: '+r.genre+')':''}</div>`;
+      document.getElementById('recordDetailCompare').innerHTML = '';
+      document.getElementById('recordDetailContent').textContent = '';
+    } else {
+      document.getElementById('recordDetailHeader').innerHTML = evalHeaderHTML(r);
+      document.getElementById('recordDetailScoreGrid').innerHTML = scoreGridHTML(r.scores);
+      document.getElementById('recordDetailSummary').innerHTML = evalSummaryHTML(r);
+      document.getElementById('recordDetailCompare').innerHTML = `<div class="eval-text">${r.compare||''}</div>`;
+      document.getElementById('recordDetailContent').textContent = r.content || '(저장된 원본 글이 없습니다)';
+    }
+    document.querySelectorAll('#recordDetailModal .modal-actions .btn-secondary[onclick*="openParentReport"], #recordDetailModal .modal-actions .btn-primary[onclick*="editAndReevaluate"]').forEach(btn => {
+      btn.style.display = r.readingOnly ? 'none' : '';
+    });
     document.getElementById('recordDetailModal').classList.add('open');
   }
 
@@ -5772,6 +5822,8 @@ ${a.name}`;
     document.getElementById('evalResult').style.display='none';
     document.getElementById('reevalAutoSaveBtn').style.display='none';
     document.getElementById('reevalAutoSaveHint').style.display='none';
+    document.getElementById('readingOnlyMode').checked = false;
+    toggleReadingOnlyMode();
     uploadedImages=[]; currentEval=null; editingRecordId=null;
     window.scrollTo(0,0);
   }
