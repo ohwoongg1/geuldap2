@@ -889,10 +889,15 @@
         <span>수납 관리</span>
         <div style="display:flex; gap:6px;">
           <input type="month" id="payMonth" style="width:auto;" onchange="loadPayments(this.value)">
+          <button class="btn btn-secondary btn-sm" onclick="togglePaymentCalendar()">📅 캘린더 보기</button>
           <button class="btn btn-secondary btn-sm" onclick="openAcademySettings()">🏫 학원 정보 설정</button>
         </div>
       </div>
       <div id="paySummary" style="font-size:13px; color:#888; margin-bottom:10px;"></div>
+      <div id="paymentCalendarSection" style="display:none; margin-bottom:16px;">
+        <div style="font-size:11.5px; color:#999; margin-bottom:8px;">결제일(매월 그 학생의 청구일) 칸에 학생들이 동그라미로 표시돼요. 초록 동그라미는 수납 완료, 빨간 동그라미는 미납이에요. 이름 위에 마우스를 올리면 학생 이름이 보여요.</div>
+        <div id="paymentCalendarGrid" style="display:grid; grid-template-columns:repeat(7,1fr); gap:4px; font-size:11px;"></div>
+      </div>
       <div style="display:flex; gap:6px; margin-bottom:10px;">
         <button class="btn btn-secondary btn-sm" id="payFilterAllBtn" onclick="filterPayments('all')">전체</button>
         <button class="btn btn-secondary btn-sm" id="payFilterUnpaidBtn" onclick="filterPayments('unpaid')">미납만</button>
@@ -2072,7 +2077,7 @@
 
 <script>
   // ===== 버전 정보 (콘솔에서 확인: APP_VERSION 또는 페이지 로드시 자동 출력) =====
-  const APP_VERSION = 'v7.31';
+  const APP_VERSION = 'v7.33';
   const APP_VERSION_LOG = [
     'v1.0 — 탭 구조 + UI 껍데기',
     'v1.1 — AI 문제 생성 + 개념 사다리',
@@ -2148,7 +2153,9 @@
     'v7.28 — 평가 기록 "✏️ 수정 후 재평가"에 "🔄 재평가 후 자동 등록" 버튼 신설 — 예전엔 내용 수정 → AI 평가 시작 → 결과 확인 → 저장까지 수동 3단계였는데, 이 버튼 하나로 재채점+저장이 한 번에 처리됨(학부모 보고서 화면은 인사말+코멘트가 섞인 문자라 자동재평가 대상에서 제외, 원본 글만 다루는 이 화면에 적용)',
     'v7.29 — [버그 수정] AI 성장 리포트 기간(시작일~종료일) 필터가 기록이 2편 이상 있어도 항상 실패하던 문제 확인 → 원인은 기록의 저장 날짜가 "2026. 8. 21." 같은 한글 표기인데 기간 입력값("2026-07-01")과 형식이 달라 문자열 비교가 안 맞았던 것. parseRecordDate()로 실제 Date 객체로 변환해서 비교하도록 수정(v7.24에서 기간 기능 추가할 때 생긴 버그)',
     'v7.30 — [버그 수정] "수정 후 재평가"로 기록을 고쳐 저장하면 작성일이 원래 날짜가 아니라 수정한 날(오늘)로 바뀌던 문제 수정 — 수정 화면 진입 시 원본 작성일(한글 표기)을 파싱해서 날짜칸에 다시 채워 넣도록 변경(코드에 이미 "원본 날짜를 알 수 없어 오늘 날짜 유지"라는 주석으로 알려진 문제였음, v7.29의 parseRecordDate() 재사용)',
-    'v7.31 — AI 성장 리포트 문체 개편: "저는 ○○ 담임교사입니다"처럼 원장이 직접 쓴 척하는 1인칭 편지 톤이 작위적이라는 지적 → "글답국어독서논술 AI 글쓰기 분석 시스템이 데이터를 분석해 발행하는 리포트"라는 객관적 시스템 주체로 재포지셔닝. "분석 결과", "데이터를 살펴보면" 같은 관찰자적 어조로 변경, 과장된 감탄 표현 지양하고 담백하게 근거 위주로 서술하도록 프롬프트 수정 — 학원의 데이터 기반 시스템력을 보여주는 방향으로 전환'
+    'v7.31 — AI 성장 리포트 문체 개편: "저는 ○○ 담임교사입니다"처럼 원장이 직접 쓴 척하는 1인칭 편지 톤이 작위적이라는 지적 → "글답국어독서논술 AI 글쓰기 분석 시스템이 데이터를 분석해 발행하는 리포트"라는 객관적 시스템 주체로 재포지셔닝. "분석 결과", "데이터를 살펴보면" 같은 관찰자적 어조로 변경, 과장된 감탄 표현 지양하고 담백하게 근거 위주로 서술하도록 프롬프트 수정 — 학원의 데이터 기반 시스템력을 보여주는 방향으로 전환',
+    'v7.32 — 수납 관리 청구문자 버튼 옆에 "비고" 입력칸 추가 — 학생별 특이사항을 자유롭게 적어둘 수 있음, geuldap_payments에 note 필드로 저장(기존처럼 하단 저장버튼 눌러야 반영)',
+    'v7.33 — [신규] 수납 관리에 "📅 캘린더 보기" 토글 추가 — 이번 달 달력에 결제일(청구일)마다 학생들을 동그라미로 표시(초록=수납완료/빨강=미납), 동그라미에 마우스 올리면 학생 이름 툴팁. 한눈에 이번 달 수납 현황을 파악할 수 있음'
   ];
   console.log(`%c글답 학습기 ${APP_VERSION}`, 'font-weight:bold; font-size:14px; color:#0d1b4b;');
   console.groupCollapsed('%c버전 기록 (클릭해서 펼치기)', 'color:#888; font-size:11px;');
@@ -2940,7 +2947,8 @@
         amount: ex ? ex.amount : (s.tuition || 0),
         paid: ex ? ex.paid : false,
         paidDate: ex ? (ex.paidDate || null) : null,
-        method: ex ? (ex.method || '') : ''
+        method: ex ? (ex.method || '') : '',
+        note: ex ? (ex.note || '') : ''
       };
     }).sort((a, b) => a.billingDay - b.billingDay);
     renderPayments();
@@ -2954,11 +2962,53 @@
     renderPayments();
   }
 
+  function togglePaymentCalendar() {
+    const sec = document.getElementById('paymentCalendarSection');
+    sec.style.display = sec.style.display === 'none' ? 'block' : 'none';
+    if (sec.style.display === 'block') renderPaymentCalendar();
+  }
+
+  // 이번 달 달력을 그리고, 각 날짜(결제일)에 그 날 청구되는 학생들을 동그라미로 표시한다.
+  function renderPaymentCalendar() {
+    const grid = document.getElementById('paymentCalendarGrid');
+    if (!grid) return;
+    const sec = document.getElementById('paymentCalendarSection');
+    if (!sec || sec.style.display === 'none') return; // 접혀있으면 굳이 안 그림
+    if (!payCurrentMonth) return;
+    const [y, m] = payCurrentMonth.split('-').map(Number);
+    const firstDow = new Date(y, m-1, 1).getDay();
+    const daysInMonth = new Date(y, m, 0).getDate();
+
+    const byDay = {};
+    payRows.forEach(r => {
+      const d = r.billingDay;
+      if (!byDay[d]) byDay[d] = [];
+      byDay[d].push(r);
+    });
+
+    const weekdayNames = ['일','월','화','수','목','금','토'];
+    let html = weekdayNames.map(w => `<div style="text-align:center; font-weight:700; color:#888; padding:4px 0;">${w}</div>`).join('');
+    for (let i=0; i<firstDow; i++) html += `<div></div>`;
+    for (let day=1; day<=daysInMonth; day++) {
+      const rows = byDay[day] || [];
+      const dots = rows.map(r => {
+        const color = r.paid ? '#4a7c59' : '#c0392b';
+        return `<span title="${escapeHtml(r.studentName)} — ${r.paid?'수납완료':'미납'}" style="display:inline-block; width:9px; height:9px; border-radius:50%; background:${color}; margin:1px;"></span>`;
+      }).join('');
+      html += `<div style="border:1px solid #eee; border-radius:6px; min-height:56px; padding:4px; background:${rows.length?'#fafafa':'#fff'};">
+        <div style="font-size:11px; color:#aaa;">${day}</div>
+        <div style="display:flex; flex-wrap:wrap;">${dots}</div>
+      </div>`;
+    }
+    grid.innerHTML = html;
+  }
+
   function renderPayments() {
     document.getElementById('payFilterAllBtn').classList.toggle('btn-primary', payFilter==='all');
     document.getElementById('payFilterAllBtn').classList.toggle('btn-secondary', payFilter!=='all');
     document.getElementById('payFilterUnpaidBtn').classList.toggle('btn-primary', payFilter==='unpaid');
     document.getElementById('payFilterUnpaidBtn').classList.toggle('btn-secondary', payFilter!=='unpaid');
+    renderPaymentCalendar();
 
     const totalBilled = payRows.reduce((a,r)=>a+(r.amount||0),0);
     const totalPaid = payRows.filter(r=>r.paid).reduce((a,r)=>a+(r.amount||0),0);
@@ -2993,6 +3043,7 @@
                </select>`
             : `<span style="font-size:11px; color:#fff; background:#c0392b; padding:2px 8px; border-radius:10px;">미납</span>`}
           <button class="btn btn-secondary btn-sm" onclick="openPaymentSms(${i})">📱 청구 문자</button>
+          <input type="text" value="${escapeHtml(r.note||'')}" placeholder="비고" style="width:130px; font-size:12px;" onchange="updatePaymentNote(${i}, this.value)">
         </div>
       `;
     }).join('');
@@ -3017,6 +3068,10 @@
     payRows[i].method = value;
   }
 
+  function updatePaymentNote(i, value) {
+    payRows[i].note = value;
+  }
+
   function openPaymentSms(i) {
     const r = payRows[i];
     if (!r.phone) { alert('저장된 연락처가 없습니다. 학생 정보에 학부모 연락처를 먼저 입력해주세요.'); return; }
@@ -3038,7 +3093,8 @@
       amount: r.amount,
       paid: r.paid,
       paidDate: r.paidDate,
-      method: r.method || ''
+      method: r.method || '',
+      note: r.note || ''
     }));
     window._payments.push(...newRecords);
     localStorage.setItem('gp', JSON.stringify(window._payments));
