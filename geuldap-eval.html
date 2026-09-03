@@ -890,6 +890,7 @@
         <div style="display:flex; gap:6px;">
           <input type="month" id="payMonth" style="width:auto;" onchange="loadPayments(this.value)">
           <button class="btn btn-secondary btn-sm" onclick="togglePaymentCalendar()">📅 캘린더 보기</button>
+          <button class="btn btn-secondary btn-sm" onclick="printPaymentCalendar()">🖨️ 캘린더 인쇄</button>
           <button class="btn btn-secondary btn-sm" onclick="openAcademySettings()">🏫 학원 정보 설정</button>
         </div>
       </div>
@@ -2077,7 +2078,7 @@
 
 <script>
   // ===== 버전 정보 (콘솔에서 확인: APP_VERSION 또는 페이지 로드시 자동 출력) =====
-  const APP_VERSION = 'v7.33';
+  const APP_VERSION = 'v7.34';
   const APP_VERSION_LOG = [
     'v1.0 — 탭 구조 + UI 껍데기',
     'v1.1 — AI 문제 생성 + 개념 사다리',
@@ -2155,7 +2156,8 @@
     'v7.30 — [버그 수정] "수정 후 재평가"로 기록을 고쳐 저장하면 작성일이 원래 날짜가 아니라 수정한 날(오늘)로 바뀌던 문제 수정 — 수정 화면 진입 시 원본 작성일(한글 표기)을 파싱해서 날짜칸에 다시 채워 넣도록 변경(코드에 이미 "원본 날짜를 알 수 없어 오늘 날짜 유지"라는 주석으로 알려진 문제였음, v7.29의 parseRecordDate() 재사용)',
     'v7.31 — AI 성장 리포트 문체 개편: "저는 ○○ 담임교사입니다"처럼 원장이 직접 쓴 척하는 1인칭 편지 톤이 작위적이라는 지적 → "글답국어독서논술 AI 글쓰기 분석 시스템이 데이터를 분석해 발행하는 리포트"라는 객관적 시스템 주체로 재포지셔닝. "분석 결과", "데이터를 살펴보면" 같은 관찰자적 어조로 변경, 과장된 감탄 표현 지양하고 담백하게 근거 위주로 서술하도록 프롬프트 수정 — 학원의 데이터 기반 시스템력을 보여주는 방향으로 전환',
     'v7.32 — 수납 관리 청구문자 버튼 옆에 "비고" 입력칸 추가 — 학생별 특이사항을 자유롭게 적어둘 수 있음, geuldap_payments에 note 필드로 저장(기존처럼 하단 저장버튼 눌러야 반영)',
-    'v7.33 — [신규] 수납 관리에 "📅 캘린더 보기" 토글 추가 — 이번 달 달력에 결제일(청구일)마다 학생들을 동그라미로 표시(초록=수납완료/빨강=미납), 동그라미에 마우스 올리면 학생 이름 툴팁. 한눈에 이번 달 수납 현황을 파악할 수 있음'
+    'v7.33 — [신규] 수납 관리에 "📅 캘린더 보기" 토글 추가 — 이번 달 달력에 결제일(청구일)마다 학생들을 동그라미로 표시(초록=수납완료/빨강=미납), 동그라미에 마우스 올리면 학생 이름 툴팁. 한눈에 이번 달 수납 현황을 파악할 수 있음',
+    'v7.34 — [신규] 수납 캘린더 A4 인쇄 기능 추가("🖨️ 캘린더 인쇄" 버튼) — 학원명+연월 제목, 날짜별 칸에 학생 이름과 수납 상태(☑완납/☐미납, 색상+기호 둘 다 표시해 흑백 인쇄에서도 구분됨) 포함해서 출력'
   ];
   console.log(`%c글답 학습기 ${APP_VERSION}`, 'font-weight:bold; font-size:14px; color:#0d1b4b;');
   console.groupCollapsed('%c버전 기록 (클릭해서 펼치기)', 'color:#888; font-size:11px;');
@@ -3001,6 +3003,65 @@
       </div>`;
     }
     grid.innerHTML = html;
+  }
+
+  // A4 인쇄용 — 그 달 수납 캘린더를 학생 이름·수납 상태(체크박스)까지 텍스트로 보이게 인쇄한다.
+  // 색상뿐 아니라 ☑/☐ 기호도 같이 써서 흑백 인쇄에서도 구분되게 한다.
+  function printPaymentCalendar() {
+    if (!payCurrentMonth) { alert('먼저 월을 선택해주세요.'); return; }
+    const [y, m] = payCurrentMonth.split('-').map(Number);
+    const firstDow = new Date(y, m-1, 1).getDay();
+    const daysInMonth = new Date(y, m, 0).getDate();
+    const byDay = {};
+    payRows.forEach(r => {
+      const d = r.billingDay;
+      if (!byDay[d]) byDay[d] = [];
+      byDay[d].push(r);
+    });
+    const weekdayNames = ['일','월','화','수','목','금','토'];
+    const academyName = (window._academySettings && window._academySettings.name) || '글답국어독서논술';
+
+    let cellsHtml = weekdayNames.map(w => `<th style="border:1px solid #999; padding:4px; background:#f0f0f0; font-size:12px;">${w}</th>`).join('');
+    let bodyRows = '<tr>' + cellsHtml + '</tr><tr>';
+    for (let i=0; i<firstDow; i++) bodyRows += '<td style="border:1px solid #ccc; height:90px; vertical-align:top;"></td>';
+    let col = firstDow;
+    for (let day=1; day<=daysInMonth; day++) {
+      if (col === 7) { bodyRows += '</tr><tr>'; col = 0; }
+      const rows = byDay[day] || [];
+      const names = rows.map(r => {
+        const mark = r.paid ? '☑' : '☐';
+        const color = r.paid ? '#1a7a3a' : '#b3261e';
+        return `<div style="color:${color}; white-space:nowrap;">${mark} ${escapeHtml(r.studentName)}</div>`;
+      }).join('');
+      bodyRows += `<td style="border:1px solid #ccc; height:90px; vertical-align:top; padding:3px;">
+        <div style="font-weight:700; font-size:11px; color:#666;">${day}</div>
+        <div style="font-size:10.5px; line-height:1.5;">${names}</div>
+      </td>`;
+      col++;
+    }
+    while (col < 7) { bodyRows += '<td style="border:1px solid #ccc; height:90px;"></td>'; col++; }
+    bodyRows += '</tr>';
+
+    const w = window.open('', '_blank');
+    w.document.write(`<html><head><title>수납 캘린더 ${y}년 ${m}월</title>
+      <style>
+        body { font-family:'Malgun Gothic',sans-serif; padding:16px; }
+        h2 { color:#0d1b4b; margin-bottom:4px; }
+        .sub { font-size:12px; color:#888; margin-bottom:14px; }
+        table { width:100%; border-collapse:collapse; table-layout:fixed; }
+        .legend { margin-top:14px; font-size:12px; }
+        .legend span { margin-right:16px; }
+      </style></head><body>
+      <h2>${escapeHtml(academyName)} — ${y}년 ${m}월 수납 캘린더</h2>
+      <div class="sub">결제일(청구일) 칸에 학생 이름과 수납 상태가 표시됩니다.</div>
+      <table>${bodyRows}</table>
+      <div class="legend">
+        <span style="color:#1a7a3a;">☑ 수납 완료</span>
+        <span style="color:#b3261e;">☐ 미납</span>
+      </div>
+    </body></html>`);
+    w.document.close();
+    setTimeout(()=>w.print(), 300);
   }
 
   function renderPayments() {
