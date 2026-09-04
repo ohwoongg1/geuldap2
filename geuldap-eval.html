@@ -2073,7 +2073,7 @@
 
 <script>
   // ===== 버전 정보 (콘솔에서 확인: APP_VERSION 또는 페이지 로드시 자동 출력) =====
-  const APP_VERSION = 'v7.37';
+  const APP_VERSION = 'v7.38';
   const APP_VERSION_LOG = [
     'v1.0 — 탭 구조 + UI 껍데기',
     'v1.1 — AI 문제 생성 + 개념 사다리',
@@ -2155,7 +2155,8 @@
     'v7.34 — [신규] 수납 캘린더 A4 인쇄 기능 추가("🖨️ 캘린더 인쇄" 버튼) — 학원명+연월 제목, 날짜별 칸에 학생 이름과 수납 상태(☑완납/☐미납, 색상+기호 둘 다 표시해 흑백 인쇄에서도 구분됨) 포함해서 출력',
     'v7.35 — [버그 수정] 친구할인(1회성)이 등록 이후 매달 계속 청구되던 문제 확인 → 원인은 학생의 tuition 필드에 할인된 금액이 그대로 영구 저장되어, 수납관리가 매달 그 값을 그대로 가져다 쓰던 것(형제할인처럼 매달 적용되는 할인과 구분이 안 되어 있었음). 학생 저장 시 친구할인이면 tuition은 정가로, 할인된 첫달 금액은 friendFirstMonthAmount에 별도 저장하도록 변경. 수납관리는 그 학생 명의로 지금까지 청구된 적이 단 한 번도 없을 때(=생애 첫 청구월)만 friendFirstMonthAmount를 쓰고, 그 다음달부터는 자동으로 정가(tuition)를 청구하도록 computeNewMonthAmount() 함수로 분리. 학생 정보 재수정 시 이미 저장된 첫달 할인가가 실수로 정가로 덮어써지지 않도록 보호 로직도 추가',
     'v7.36 — [구조 개선] 사용자 제안으로 할인 처리 방식을 전면 재설계 — v7.35의 friendFirstMonthAmount 방식(학생 등록 시 할인 지정) 대신, 학생 등록에서는 할인 선택 자체를 없애고 항상 정가만 저장하도록 단순화. 대신 수납관리 각 행에 "할인 없음/형제10%/형제20%/친구20%" 드롭다운을 새로 추가해서, 매달 수납 처리 시점에 그때그때 필요한 할인만 선택해 금액을 자동 재계산(applyRowDiscount, 정가 기준으로 계산해 몇 번을 껐다 켜도 항상 정확함). 다음 달은 별도 조치 없이 자동으로 할인 없는 정가부터 다시 시작 — 형제·친구 할인 구분이나 "1회성" 여부를 신경 쓸 필요 자체가 없어짐. 학생 등록에 "청구 시작월"(선택) 필드도 추가 — 미리 등록해둔 학생이 실제 수강 시작 전월에 청구서에 잘못 뜨는 문제(예: 9월 시작 학생이 8월에 등록해서 8월 수납목록에 뜨던 것) 해결, 지정하면 등록일 대신 이 달 기준으로 청구 시작',
-    'v7.37 — [버그 수정] v7.36의 청구시작월 기능이 이미 그 달에 청구 기록이 한 번이라도 저장된 학생에게는 안 먹히는 문제 확인(예외 규칙 "이미 저장된 달은 계속 보여준다" 때문에 조재이가 청구시작월을 9월로 바꿔도 8월에 계속 뜸) → 각 청구 행에 "✕ 이번달 제외" 버튼 추가, 누르면 그 학생의 그 달 청구 기록을 화면과 저장소(geuldap_payments) 양쪽에서 완전히 삭제해서 목록에서 사라지게 함'
+    'v7.37 — [버그 수정] v7.36의 청구시작월 기능이 이미 그 달에 청구 기록이 한 번이라도 저장된 학생에게는 안 먹히는 문제 확인(예외 규칙 "이미 저장된 달은 계속 보여준다" 때문에 조재이가 청구시작월을 9월로 바꿔도 8월에 계속 뜸) → 각 청구 행에 "✕ 이번달 제외" 버튼 추가, 누르면 그 학생의 그 달 청구 기록을 화면과 저장소(geuldap_payments) 양쪽에서 완전히 삭제해서 목록에서 사라지게 함',
+    'v7.38 — 수납 관리 화면 정리 — 할인·비고·수납방법 등 항목이 늘면서 한 줄에 다 몰아넣은 flex 레이아웃이 지저분해 보인다는 지적 → 표(테이블) 형태로 재구성(이름/결제일/할인/금액/상태/완납일/수납방법/비고/문자/삭제 열로 정렬), 가로 스크롤 지원으로 좁은 화면에서도 깨지지 않게 함'
   ];
   console.log(`%c글답 학습기 ${APP_VERSION}`, 'font-weight:bold; font-size:14px; color:#0d1b4b;');
   console.groupCollapsed('%c버전 기록 (클릭해서 펼치기)', 'color:#888; font-size:11px;');
@@ -3105,39 +3106,79 @@
       list.innerHTML = '<div class="empty" style="padding:20px 0;">' + (payFilter==='unpaid' ? '미납자가 없습니다 🎉' : '재원 중인 학생이 없습니다.') + '</div>';
       return;
     }
-    list.innerHTML = rows.map((r) => {
+    const bodyRows = rows.map((r) => {
       const i = payRows.indexOf(r);
       return `
-        <div style="display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid #f0f0f0; flex-wrap:wrap;">
-          <label style="display:flex; align-items:center; gap:6px; font-weight:400; min-width:120px;">
-            <input type="checkbox" ${r.paid?'checked':''} onchange="togglePaymentPaid(${i}, this.checked)">
-            <span style="font-weight:600;">${r.studentName}</span>
-          </label>
-          <span style="font-size:12px; color:#888;">매월 ${r.billingDay}일</span>
-          <select style="width:auto; font-size:12px;" onchange="applyRowDiscount(${i}, this.value)">
-            <option value="" ${!r.discountApplied?'selected':''}>할인 없음</option>
-            <option value="sibling10" ${r.discountApplied==='sibling10'?'selected':''}>형제할인 10%</option>
-            <option value="sibling20" ${r.discountApplied==='sibling20'?'selected':''}>형제할인 20%</option>
-            <option value="friend20" ${r.discountApplied==='friend20'?'selected':''}>친구할인 20%</option>
-          </select>
-          <input type="number" value="${r.amount}" style="width:110px;" onchange="updatePaymentAmount(${i}, this.value)"> 원
-          ${r.paid
-            ? `<span style="font-size:11px; color:#fff; background:#4a7c59; padding:2px 8px; border-radius:10px;">완납</span><input type="date" value="${r.paidDate||''}" style="width:auto;" onchange="updatePaymentDate(${i}, this.value)">
-               <select style="width:auto; font-size:12px;" onchange="updatePaymentMethod(${i}, this.value)">
+        <tr style="border-bottom:1px solid #f0f0f0;">
+          <td style="padding:8px 6px;">
+            <label style="display:flex; align-items:center; gap:6px; font-weight:600; white-space:nowrap;">
+              <input type="checkbox" ${r.paid?'checked':''} onchange="togglePaymentPaid(${i}, this.checked)">
+              ${r.studentName}
+            </label>
+          </td>
+          <td style="padding:8px 6px; font-size:12px; color:#888; white-space:nowrap;">매월 ${r.billingDay}일</td>
+          <td style="padding:8px 6px;">
+            <select style="width:auto; font-size:12px;" onchange="applyRowDiscount(${i}, this.value)">
+              <option value="" ${!r.discountApplied?'selected':''}>할인 없음</option>
+              <option value="sibling10" ${r.discountApplied==='sibling10'?'selected':''}>형제 10%</option>
+              <option value="sibling20" ${r.discountApplied==='sibling20'?'selected':''}>형제 20%</option>
+              <option value="friend20" ${r.discountApplied==='friend20'?'selected':''}>친구 20%</option>
+            </select>
+          </td>
+          <td style="padding:8px 6px; white-space:nowrap;">
+            <input type="number" value="${r.amount}" style="width:100px;" onchange="updatePaymentAmount(${i}, this.value)"> 원
+          </td>
+          <td style="padding:8px 6px; white-space:nowrap;">
+            ${r.paid
+              ? `<span style="font-size:11px; color:#fff; background:#4a7c59; padding:2px 8px; border-radius:10px;">완납</span>`
+              : `<span style="font-size:11px; color:#fff; background:#c0392b; padding:2px 8px; border-radius:10px;">미납</span>`}
+          </td>
+          <td style="padding:8px 6px; white-space:nowrap;">
+            ${r.paid ? `<input type="date" value="${r.paidDate||''}" style="width:auto;" onchange="updatePaymentDate(${i}, this.value)">` : ''}
+          </td>
+          <td style="padding:8px 6px;">
+            ${r.paid ? `<select style="width:auto; font-size:12px;" onchange="updatePaymentMethod(${i}, this.value)">
                  <option value="">수납방법</option>
                  <option value="카드" ${r.method==='카드'?'selected':''}>카드</option>
                  <option value="현금영수증" ${r.method==='현금영수증'?'selected':''}>현금영수증</option>
                  <option value="결제선생" ${r.method==='결제선생'?'selected':''}>결제선생</option>
                  <option value="계좌이체" ${r.method==='계좌이체'?'selected':''}>계좌이체</option>
                  <option value="현금(증빙없음)" ${r.method==='현금(증빙없음)'?'selected':''}>현금(증빙없음)</option>
-               </select>`
-            : `<span style="font-size:11px; color:#fff; background:#c0392b; padding:2px 8px; border-radius:10px;">미납</span>`}
-          <button class="btn btn-secondary btn-sm" onclick="openPaymentSms(${i})">📱 청구 문자</button>
-          <input type="text" value="${escapeHtml(r.note||'')}" placeholder="비고" style="width:130px; font-size:12px;" onchange="updatePaymentNote(${i}, this.value)">
-          <button class="btn btn-secondary btn-sm" style="color:#b3261e;" onclick="removeFromThisMonth(${i})" title="이 학생을 이번 달 청구 목록에서 뺍니다(잘못 만들어진 기록 삭제용)">✕ 이번달 제외</button>
-        </div>
+               </select>` : ''}
+          </td>
+          <td style="padding:8px 6px;">
+            <input type="text" value="${escapeHtml(r.note||'')}" placeholder="비고" style="width:120px; font-size:12px;" onchange="updatePaymentNote(${i}, this.value)">
+          </td>
+          <td style="padding:8px 6px; white-space:nowrap;">
+            <button class="btn btn-secondary btn-sm" onclick="openPaymentSms(${i})">📱 문자</button>
+          </td>
+          <td style="padding:8px 6px;">
+            <button class="btn btn-secondary btn-sm" style="color:#b3261e;" onclick="removeFromThisMonth(${i})" title="이 학생을 이번 달 청구 목록에서 뺍니다">✕</button>
+          </td>
+        </tr>
       `;
     }).join('');
+    list.innerHTML = `
+      <div style="overflow-x:auto;">
+        <table style="width:100%; border-collapse:collapse; font-size:13px;">
+          <thead>
+            <tr style="border-bottom:2px solid #ddd; text-align:left; color:#888; font-size:12px;">
+              <th style="padding:6px;">이름</th>
+              <th style="padding:6px;">결제일</th>
+              <th style="padding:6px;">할인</th>
+              <th style="padding:6px;">금액</th>
+              <th style="padding:6px;">상태</th>
+              <th style="padding:6px;">완납일</th>
+              <th style="padding:6px;">수납방법</th>
+              <th style="padding:6px;">비고</th>
+              <th style="padding:6px;"></th>
+              <th style="padding:6px;"></th>
+            </tr>
+          </thead>
+          <tbody>${bodyRows}</tbody>
+        </table>
+      </div>
+    `;
   }
 
   function togglePaymentPaid(i, checked) {
