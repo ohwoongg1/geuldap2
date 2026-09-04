@@ -2073,7 +2073,7 @@
 
 <script>
   // ===== 버전 정보 (콘솔에서 확인: APP_VERSION 또는 페이지 로드시 자동 출력) =====
-  const APP_VERSION = 'v7.36';
+  const APP_VERSION = 'v7.37';
   const APP_VERSION_LOG = [
     'v1.0 — 탭 구조 + UI 껍데기',
     'v1.1 — AI 문제 생성 + 개념 사다리',
@@ -2154,7 +2154,8 @@
     'v7.33 — [신규] 수납 관리에 "📅 캘린더 보기" 토글 추가 — 이번 달 달력에 결제일(청구일)마다 학생들을 동그라미로 표시(초록=수납완료/빨강=미납), 동그라미에 마우스 올리면 학생 이름 툴팁. 한눈에 이번 달 수납 현황을 파악할 수 있음',
     'v7.34 — [신규] 수납 캘린더 A4 인쇄 기능 추가("🖨️ 캘린더 인쇄" 버튼) — 학원명+연월 제목, 날짜별 칸에 학생 이름과 수납 상태(☑완납/☐미납, 색상+기호 둘 다 표시해 흑백 인쇄에서도 구분됨) 포함해서 출력',
     'v7.35 — [버그 수정] 친구할인(1회성)이 등록 이후 매달 계속 청구되던 문제 확인 → 원인은 학생의 tuition 필드에 할인된 금액이 그대로 영구 저장되어, 수납관리가 매달 그 값을 그대로 가져다 쓰던 것(형제할인처럼 매달 적용되는 할인과 구분이 안 되어 있었음). 학생 저장 시 친구할인이면 tuition은 정가로, 할인된 첫달 금액은 friendFirstMonthAmount에 별도 저장하도록 변경. 수납관리는 그 학생 명의로 지금까지 청구된 적이 단 한 번도 없을 때(=생애 첫 청구월)만 friendFirstMonthAmount를 쓰고, 그 다음달부터는 자동으로 정가(tuition)를 청구하도록 computeNewMonthAmount() 함수로 분리. 학생 정보 재수정 시 이미 저장된 첫달 할인가가 실수로 정가로 덮어써지지 않도록 보호 로직도 추가',
-    'v7.36 — [구조 개선] 사용자 제안으로 할인 처리 방식을 전면 재설계 — v7.35의 friendFirstMonthAmount 방식(학생 등록 시 할인 지정) 대신, 학생 등록에서는 할인 선택 자체를 없애고 항상 정가만 저장하도록 단순화. 대신 수납관리 각 행에 "할인 없음/형제10%/형제20%/친구20%" 드롭다운을 새로 추가해서, 매달 수납 처리 시점에 그때그때 필요한 할인만 선택해 금액을 자동 재계산(applyRowDiscount, 정가 기준으로 계산해 몇 번을 껐다 켜도 항상 정확함). 다음 달은 별도 조치 없이 자동으로 할인 없는 정가부터 다시 시작 — 형제·친구 할인 구분이나 "1회성" 여부를 신경 쓸 필요 자체가 없어짐. 학생 등록에 "청구 시작월"(선택) 필드도 추가 — 미리 등록해둔 학생이 실제 수강 시작 전월에 청구서에 잘못 뜨는 문제(예: 9월 시작 학생이 8월에 등록해서 8월 수납목록에 뜨던 것) 해결, 지정하면 등록일 대신 이 달 기준으로 청구 시작'
+    'v7.36 — [구조 개선] 사용자 제안으로 할인 처리 방식을 전면 재설계 — v7.35의 friendFirstMonthAmount 방식(학생 등록 시 할인 지정) 대신, 학생 등록에서는 할인 선택 자체를 없애고 항상 정가만 저장하도록 단순화. 대신 수납관리 각 행에 "할인 없음/형제10%/형제20%/친구20%" 드롭다운을 새로 추가해서, 매달 수납 처리 시점에 그때그때 필요한 할인만 선택해 금액을 자동 재계산(applyRowDiscount, 정가 기준으로 계산해 몇 번을 껐다 켜도 항상 정확함). 다음 달은 별도 조치 없이 자동으로 할인 없는 정가부터 다시 시작 — 형제·친구 할인 구분이나 "1회성" 여부를 신경 쓸 필요 자체가 없어짐. 학생 등록에 "청구 시작월"(선택) 필드도 추가 — 미리 등록해둔 학생이 실제 수강 시작 전월에 청구서에 잘못 뜨는 문제(예: 9월 시작 학생이 8월에 등록해서 8월 수납목록에 뜨던 것) 해결, 지정하면 등록일 대신 이 달 기준으로 청구 시작',
+    'v7.37 — [버그 수정] v7.36의 청구시작월 기능이 이미 그 달에 청구 기록이 한 번이라도 저장된 학생에게는 안 먹히는 문제 확인(예외 규칙 "이미 저장된 달은 계속 보여준다" 때문에 조재이가 청구시작월을 9월로 바꿔도 8월에 계속 뜸) → 각 청구 행에 "✕ 이번달 제외" 버튼 추가, 누르면 그 학생의 그 달 청구 기록을 화면과 저장소(geuldap_payments) 양쪽에서 완전히 삭제해서 목록에서 사라지게 함'
   ];
   console.log(`%c글답 학습기 ${APP_VERSION}`, 'font-weight:bold; font-size:14px; color:#0d1b4b;');
   console.groupCollapsed('%c버전 기록 (클릭해서 펼치기)', 'color:#888; font-size:11px;');
@@ -3071,6 +3072,21 @@
     setTimeout(()=>w.print(), 300);
   }
 
+  // 이 학생을 이번 달 청구 목록에서 완전히 뺀다(화면에서도, 저장된 기록에서도).
+  // 등록을 미리 해뒀거나 실수로 만들어진 달의 청구 기록을 지울 때 쓴다.
+  async function removeFromThisMonth(i) {
+    const r = payRows[i];
+    if (!confirm(`${r.studentName} 학생을 ${monthLabel(payCurrentMonth)} 청구 목록에서 빼시겠어요?`)) return;
+    payRows.splice(i, 1);
+    const docId = payCurrentMonth + '_' + r.studentId;
+    window._payments = window._payments.filter(p => p.id !== docId);
+    localStorage.setItem('gp', JSON.stringify(window._payments));
+    if (window._fbReady) {
+      try { await window._deleteByFieldId('geuldap_payments', docId); } catch(e) { console.log('청구 기록 삭제(없었을 수 있음):', e); }
+    }
+    renderPayments();
+  }
+
   function renderPayments() {
     document.getElementById('payFilterAllBtn').classList.toggle('btn-primary', payFilter==='all');
     document.getElementById('payFilterAllBtn').classList.toggle('btn-secondary', payFilter!=='all');
@@ -3118,6 +3134,7 @@
             : `<span style="font-size:11px; color:#fff; background:#c0392b; padding:2px 8px; border-radius:10px;">미납</span>`}
           <button class="btn btn-secondary btn-sm" onclick="openPaymentSms(${i})">📱 청구 문자</button>
           <input type="text" value="${escapeHtml(r.note||'')}" placeholder="비고" style="width:130px; font-size:12px;" onchange="updatePaymentNote(${i}, this.value)">
+          <button class="btn btn-secondary btn-sm" style="color:#b3261e;" onclick="removeFromThisMonth(${i})" title="이 학생을 이번 달 청구 목록에서 뺍니다(잘못 만들어진 기록 삭제용)">✕ 이번달 제외</button>
         </div>
       `;
     }).join('');
