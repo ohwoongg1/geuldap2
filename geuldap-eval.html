@@ -1812,13 +1812,8 @@
         </select>
       </div>
       <div class="form-group">
-        <label>할인</label>
-        <select id="newDiscount" onchange="onCourseOrDiscountChange()">
-          <option value="">없음</option>
-          <option value="sibling">형제 할인 (10%)</option>
-          <option value="sibling20">형제 할인 - 초창기 (20%)</option>
-          <option value="friend">친구 할인 (20%, 1회)</option>
-        </select>
+        <label>청구 시작월 (선택) <span style="font-weight:400; color:#888; font-size:12px;">— 비워두면 등록일 기준</span></label>
+        <input type="month" id="newBillingStartMonth">
       </div>
       <div class="form-group">
         <label>월 수강료 (원) <span id="tuitionCalcNote" style="font-weight:400; color:#888; font-size:12px;"></span></label>
@@ -2078,7 +2073,7 @@
 
 <script>
   // ===== 버전 정보 (콘솔에서 확인: APP_VERSION 또는 페이지 로드시 자동 출력) =====
-  const APP_VERSION = 'v7.35';
+  const APP_VERSION = 'v7.36';
   const APP_VERSION_LOG = [
     'v1.0 — 탭 구조 + UI 껍데기',
     'v1.1 — AI 문제 생성 + 개념 사다리',
@@ -2158,7 +2153,8 @@
     'v7.32 — 수납 관리 청구문자 버튼 옆에 "비고" 입력칸 추가 — 학생별 특이사항을 자유롭게 적어둘 수 있음, geuldap_payments에 note 필드로 저장(기존처럼 하단 저장버튼 눌러야 반영)',
     'v7.33 — [신규] 수납 관리에 "📅 캘린더 보기" 토글 추가 — 이번 달 달력에 결제일(청구일)마다 학생들을 동그라미로 표시(초록=수납완료/빨강=미납), 동그라미에 마우스 올리면 학생 이름 툴팁. 한눈에 이번 달 수납 현황을 파악할 수 있음',
     'v7.34 — [신규] 수납 캘린더 A4 인쇄 기능 추가("🖨️ 캘린더 인쇄" 버튼) — 학원명+연월 제목, 날짜별 칸에 학생 이름과 수납 상태(☑완납/☐미납, 색상+기호 둘 다 표시해 흑백 인쇄에서도 구분됨) 포함해서 출력',
-    'v7.35 — [버그 수정] 친구할인(1회성)이 등록 이후 매달 계속 청구되던 문제 확인 → 원인은 학생의 tuition 필드에 할인된 금액이 그대로 영구 저장되어, 수납관리가 매달 그 값을 그대로 가져다 쓰던 것(형제할인처럼 매달 적용되는 할인과 구분이 안 되어 있었음). 학생 저장 시 친구할인이면 tuition은 정가로, 할인된 첫달 금액은 friendFirstMonthAmount에 별도 저장하도록 변경. 수납관리는 그 학생 명의로 지금까지 청구된 적이 단 한 번도 없을 때(=생애 첫 청구월)만 friendFirstMonthAmount를 쓰고, 그 다음달부터는 자동으로 정가(tuition)를 청구하도록 computeNewMonthAmount() 함수로 분리. 학생 정보 재수정 시 이미 저장된 첫달 할인가가 실수로 정가로 덮어써지지 않도록 보호 로직도 추가'
+    'v7.35 — [버그 수정] 친구할인(1회성)이 등록 이후 매달 계속 청구되던 문제 확인 → 원인은 학생의 tuition 필드에 할인된 금액이 그대로 영구 저장되어, 수납관리가 매달 그 값을 그대로 가져다 쓰던 것(형제할인처럼 매달 적용되는 할인과 구분이 안 되어 있었음). 학생 저장 시 친구할인이면 tuition은 정가로, 할인된 첫달 금액은 friendFirstMonthAmount에 별도 저장하도록 변경. 수납관리는 그 학생 명의로 지금까지 청구된 적이 단 한 번도 없을 때(=생애 첫 청구월)만 friendFirstMonthAmount를 쓰고, 그 다음달부터는 자동으로 정가(tuition)를 청구하도록 computeNewMonthAmount() 함수로 분리. 학생 정보 재수정 시 이미 저장된 첫달 할인가가 실수로 정가로 덮어써지지 않도록 보호 로직도 추가',
+    'v7.36 — [구조 개선] 사용자 제안으로 할인 처리 방식을 전면 재설계 — v7.35의 friendFirstMonthAmount 방식(학생 등록 시 할인 지정) 대신, 학생 등록에서는 할인 선택 자체를 없애고 항상 정가만 저장하도록 단순화. 대신 수납관리 각 행에 "할인 없음/형제10%/형제20%/친구20%" 드롭다운을 새로 추가해서, 매달 수납 처리 시점에 그때그때 필요한 할인만 선택해 금액을 자동 재계산(applyRowDiscount, 정가 기준으로 계산해 몇 번을 껐다 켜도 항상 정확함). 다음 달은 별도 조치 없이 자동으로 할인 없는 정가부터 다시 시작 — 형제·친구 할인 구분이나 "1회성" 여부를 신경 쓸 필요 자체가 없어짐. 학생 등록에 "청구 시작월"(선택) 필드도 추가 — 미리 등록해둔 학생이 실제 수강 시작 전월에 청구서에 잘못 뜨는 문제(예: 9월 시작 학생이 8월에 등록해서 8월 수납목록에 뜨던 것) 해결, 지정하면 등록일 대신 이 달 기준으로 청구 시작'
   ];
   console.log(`%c글답 학습기 ${APP_VERSION}`, 'font-weight:bold; font-size:14px; color:#0d1b4b;');
   console.groupCollapsed('%c버전 기록 (클릭해서 펼치기)', 'color:#888; font-size:11px;');
@@ -2935,7 +2931,9 @@
 
     const active = _students.filter(s => {
       if (s.active === false) return false;
-      const enrollMonth = s.date ? s.date.slice(0,7) : null;
+      // 등록일(실무상 서류 작성일)과 실제 청구 시작월이 다를 수 있어(예: 등록은 미리 했지만 수업은 다음달부터),
+      // billingStartMonth가 따로 지정돼 있으면 그걸 기준으로, 없으면 등록일 기준으로 판단한다.
+      const enrollMonth = s.billingStartMonth || (s.date ? s.date.slice(0,7) : null);
       if (enrollMonth && enrollMonth > monthStr && !existingMap[s.id]) return false;
       return true;
     });
@@ -2947,7 +2945,9 @@
         studentName: s.name,
         phone: s.phone || '',
         billingDay: s.billingDay || (s.date ? Number(s.date.split('-')[2]) : 1),
+        baseTuition: s.tuition || 0,
         amount: ex ? ex.amount : computeNewMonthAmount(s),
+        discountApplied: ex ? (ex.discountApplied || '') : '',
         paid: ex ? ex.paid : false,
         paidDate: ex ? (ex.paidDate || null) : null,
         method: ex ? (ex.method || '') : '',
@@ -2960,14 +2960,9 @@
     if (!document.getElementById('receiptMonth').value) document.getElementById('receiptMonth').value = monthStr;
   }
 
-  // 아직 그 달 청구 기록이 없는 학생의 청구액을 정한다.
-  // 친구 할인(1회성)이 있는 학생은, 이 학생 명의로 지금까지 단 한 번도 청구된 적이 없을 때만
-  // (=이번이 생애 첫 청구월일 때만) 할인된 첫 달 금액을 쓰고, 그 다음부터는 정가(s.tuition)를 쓴다.
+  // 아직 그 달 청구 기록이 없는 학생의 기본 청구액. 할인은 여기서 처리하지 않고,
+  // 수납관리 화면에서 매달 그때그때 할인을 선택해 적용한다(applyRowDiscount 참고).
   function computeNewMonthAmount(s) {
-    if (s.discount === 'friend' && s.friendFirstMonthAmount) {
-      const hasAnyPriorBilling = window._payments.some(p => p.studentId === s.id);
-      if (!hasAnyPriorBilling) return s.friendFirstMonthAmount;
-    }
     return s.tuition || 0;
   }
 
@@ -3103,6 +3098,12 @@
             <span style="font-weight:600;">${r.studentName}</span>
           </label>
           <span style="font-size:12px; color:#888;">매월 ${r.billingDay}일</span>
+          <select style="width:auto; font-size:12px;" onchange="applyRowDiscount(${i}, this.value)">
+            <option value="" ${!r.discountApplied?'selected':''}>할인 없음</option>
+            <option value="sibling10" ${r.discountApplied==='sibling10'?'selected':''}>형제할인 10%</option>
+            <option value="sibling20" ${r.discountApplied==='sibling20'?'selected':''}>형제할인 20%</option>
+            <option value="friend20" ${r.discountApplied==='friend20'?'selected':''}>친구할인 20%</option>
+          </select>
           <input type="number" value="${r.amount}" style="width:110px;" onchange="updatePaymentAmount(${i}, this.value)"> 원
           ${r.paid
             ? `<span style="font-size:11px; color:#fff; background:#4a7c59; padding:2px 8px; border-radius:10px;">완납</span><input type="date" value="${r.paidDate||''}" style="width:auto;" onchange="updatePaymentDate(${i}, this.value)">
@@ -3137,6 +3138,21 @@
     payRows[i].amount = Number(value) || 0;
   }
 
+  // 그 달만 형제·친구 할인 등을 적용/해제한다. 정가(baseTuition) 기준으로 계산하므로,
+  // 할인을 껐다 켜도 항상 정확한 금액으로 돌아온다. 다음 달은 이 선택과 무관하게 다시 "할인 없음"부터 시작한다.
+  function applyRowDiscount(i, discountKey) {
+    const r = payRows[i];
+    r.discountApplied = discountKey;
+    const base = r.baseTuition || r.amount || 0;
+    let rate = 0;
+    if (discountKey === 'sibling10') rate = 0.1;
+    else if (discountKey === 'sibling20') rate = 0.2;
+    else if (discountKey === 'friend20') rate = 0.2;
+    const discounted = rate > 0 ? Math.round(base * (1-rate) / 1000) * 1000 : base;
+    r.amount = discounted;
+    renderPayments();
+  }
+
   function updatePaymentMethod(i, value) {
     payRows[i].method = value;
   }
@@ -3167,7 +3183,8 @@
       paid: r.paid,
       paidDate: r.paidDate,
       method: r.method || '',
-      note: r.note || ''
+      note: r.note || '',
+      discountApplied: r.discountApplied || ''
     }));
     window._payments.push(...newRecords);
     localStorage.setItem('gp', JSON.stringify(window._payments));
@@ -3234,7 +3251,6 @@
     const sel = document.getElementById('newCourse');
     const opt = sel.selectedOptions[0];
     const baseFee = opt && opt.dataset.fee ? Number(opt.dataset.fee) : 0;
-    const discountType = document.getElementById('newDiscount').value;
     const tuitionField = document.getElementById('newTuition');
     const noteEl = document.getElementById('tuitionCalcNote');
 
@@ -3242,21 +3258,9 @@
       noteEl.textContent = '';
       return; // 직접 입력 모드 — 수동으로 금액 넣도록
     }
-
-    let rate = 0;
-    if (discountType === 'sibling') rate = 0.1;
-    else if (discountType === 'sibling20') rate = 0.2;
-    else if (discountType === 'friend') rate = 0.2;
-
-    const discountAmt = Math.round(baseFee * rate / 1000) * 1000; // 천원 단위 절사
-    const final = baseFee - discountAmt;
-    tuitionField.value = final;
-
-    if (rate > 0) {
-      noteEl.textContent = `← ${baseFee.toLocaleString()} − ${(rate*100)}% = ${final.toLocaleString()}`;
-    } else {
-      noteEl.textContent = '';
-    }
+    // 할인은 여기서 적용하지 않는다 — 매달 수납 처리 시점에 그때그때 적용한다(형제·친구 할인 등).
+    tuitionField.value = baseFee;
+    noteEl.textContent = '';
   }
 
   function openAcademySettings() {
@@ -4717,7 +4721,7 @@ ${a.name}`;
         <div class="student-avatar">${s.name[0]}</div>
         <div class="student-name">${s.name}</div>
         <div class="student-info">${s.grade} · ${s.date}</div>
-        ${s.courseName ? `<div style="font-size:12px; color:#c5a149; margin-top:2px;">${s.courseName}${s.discount==='sibling'?' · 형제할인':s.discount==='sibling20'?' · 형제할인(20%)':s.discount==='friend'?' · 친구할인':''}</div>` : ''}
+        ${s.courseName ? `<div style="font-size:12px; color:#c5a149; margin-top:2px;">${s.courseName}</div>` : ''}
         ${s.accessCode ? `<div style="font-size:11px; color:#aaa; margin-top:2px;">🔑 학습코드 ${s.accessCode}</div>` : ''}
         <div class="student-count">📝 ${cnt}편</div>
         <div style="margin-top:10px; display:flex; gap:6px; justify-content:center; flex-wrap:wrap;">
@@ -4961,7 +4965,7 @@ ${a.name}`;
     document.getElementById('newAddress').value = '';
     populateCourseSelect();
     document.getElementById('newCourse').value = '';
-    document.getElementById('newDiscount').value = '';
+    document.getElementById('newBillingStartMonth').value = '';
     document.getElementById('newTuition').value = '';
     document.getElementById('tuitionCalcNote').textContent = '';
     document.getElementById('newBirthdate').value = '';
@@ -4987,7 +4991,7 @@ ${a.name}`;
     document.getElementById('newAddress').value = s.address || '';
     populateCourseSelect();
     document.getElementById('newCourse').value = s.courseName || '';
-    document.getElementById('newDiscount').value = s.discount || '';
+    document.getElementById('newBillingStartMonth').value = s.billingStartMonth || '';
     document.getElementById('newTuition').value = s.tuition || '';
     document.getElementById('tuitionCalcNote').textContent = '';
     document.getElementById('newBirthdate').value = s.birthdate || '';
@@ -5009,34 +5013,17 @@ ${a.name}`;
     const phone = document.getElementById('newPhone').value.trim();
     const address = document.getElementById('newAddress').value.trim();
     const courseName = document.getElementById('newCourse').value;
-    const discount = document.getElementById('newDiscount').value;
-    const tuitionInput = Number(document.getElementById('newTuition').value) || 0;
+    const tuition = Number(document.getElementById('newTuition').value) || 0;
     const birthdate = document.getElementById('newBirthdate').value;
     const billingDay = Number(document.getElementById('newBillingDay').value) || (date ? Number(date.split('-')[2]) : 1);
+    const billingStartMonth = document.getElementById('newBillingStartMonth').value || '';
     const accessCode = document.getElementById('newAccessCode').value.trim();
     const schedule = collectScheduleRows();
     if (!name) { alert('이름을 입력해주세요'); return; }
 
-    // 친구 할인(1회성)은 매달 청구가 아니라 첫 달에만 적용돼야 한다.
-    // 그래서 학생의 기본 학원비(tuition, 매달 청구 기준액)는 정가로 저장하고,
-    // 할인된 첫 달 금액은 friendFirstMonthAmount에 따로 저장해서, 수납관리에서 그 학생의
-    // "가장 처음 만들어지는 청구월"에만 한 번 적용되도록 한다(loadPayments에서 처리).
-    const courseSel = document.getElementById('newCourse');
-    const courseOpt = courseSel.selectedOptions[0];
-    const baseFee = courseOpt && courseOpt.dataset.fee ? Number(courseOpt.dataset.fee) : 0;
-    let tuition = tuitionInput;
-    let friendFirstMonthAmount = null;
-    if (discount === 'friend' && baseFee > 0) {
-      tuition = baseFee; // 2번째 달부터 청구될 정가
-      // 이미 이 학생이 친구할인으로 등록되어 있었다면, 재수정 시 화면에 정가가 보이고 있을 수 있어
-      // 그 값을 그대로 첫 달 할인가로 덮어쓰면 할인이 사라진다. 기존 값이 있으면 그대로 보존한다.
-      const prevStudent = editingStudentId ? _students.find(x=>x.id===editingStudentId) : null;
-      friendFirstMonthAmount = (prevStudent && prevStudent.discount === 'friend' && prevStudent.friendFirstMonthAmount)
-        ? prevStudent.friendFirstMonthAmount
-        : tuitionInput;
-    }
-
-    const fields = { name, grade, date, schedule, phone, address, courseName, discount, tuition, friendFirstMonthAmount, birthdate, billingDay, accessCode };
+    // 할인(형제·친구 등)은 여기서 정하지 않는다 — 매달 수납 처리 화면에서 그때그때 적용한다.
+    // tuition은 항상 할인 없는 정가로 저장하고, 실제 청구액은 수납관리에서 결정된다.
+    const fields = { name, grade, date, schedule, phone, address, courseName, tuition, birthdate, billingDay, billingStartMonth, accessCode };
 
     if (editingStudentId) {
       const idx = _students.findIndex(s=>s.id===editingStudentId);
