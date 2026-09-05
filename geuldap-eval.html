@@ -2131,7 +2131,7 @@
 
 <script>
   // ===== 버전 정보 (콘솔에서 확인: APP_VERSION 또는 페이지 로드시 자동 출력) =====
-  const APP_VERSION = 'v7.42';
+  const APP_VERSION = 'v7.43';
   const APP_VERSION_LOG = [
     'v1.0 — 탭 구조 + UI 껍데기',
     'v1.1 — AI 문제 생성 + 개념 사다리',
@@ -2218,7 +2218,8 @@
     'v7.39 — [신규] "🔤 어휘력" 탭 신설 — 초4~중3 어휘력을 절대 급수(1~12급, 학년과 느슨하게 매핑)로 관리. 주당 수업시간 3시간 이상 학생만 자동으로 대상 표시(기존 schedule 데이터로 판별, 별도 입력 불필요). ①AI가 급수 기준(고정된 급수별 어휘 유형 설명)에 맞춰 어휘 학습지를 생성해 인쇄 ②같은 급수 기준으로 월 시험지+정답지를 생성해 인쇄(원장이 종이로 채점) ③채점 결과(총문항/정답수)를 입력하면 80%↑ 승급·50%미만 강등·그 사이는 유지로 급수 자동 판정, geuldap_vocab_records에 이력 누적 ④직전 평가와 비교 + 실제 학년 대비 급수 위치를 담은 학부모 보고서를 AI가 자동 작성. 급수 기준표는 코드에 고정해두어 매달 AI가 만드는 어휘 난이도가 흔들리지 않도록 함',
     'v7.40 — [구조 개선] 사용자 요청으로 어휘력 탭 용도를 "재원생 주3시간 필터링" 방식에서 "상담(신규/미등록 방문자) 즉석 레벨테스트" 중심으로 재설계 — ①주당 수업시간 필터 제거, 모든 재원생 대상으로 변경 ②"＋ 상담자 즉석 테스트" 카드 추가 — 정식 학생 등록 없이 이름+학년만 입력하면 바로 진단 가능(geuldap_students에 저장되지 않는 임시 guest 객체로 처리) ③단일 급수 시험 대신, 기준 급수(재원생은 마지막 진단 급수, 신규는 학년 표준) 위아래 2급수씩 섞은 "진단 시험지"로 변경(문제마다 level 태그 포함, 총 5개 급수×3문제=15문제). 결과 입력도 총점 하나가 아니라 급수별 정답 수를 각각 입력받아, 낮은 급수부터 정답률 70% 미만이 처음 나오는 지점 직전까지를 실제 급수로 진단(diagnoseVocabLevel) — 초4와 중3처럼 학년별로 전혀 다른 범위에서 정확한 실제 수준을 찾아내도록 함. 학습지 생성(평소 학습용)은 기존처럼 기준 급수 단일 출제 유지',
     'v7.41 — 어휘 진단 시험지 급수당 문제 수를 3개→4개로 조정(VOCAB_QUESTIONS_PER_LEVEL 상수화) — 3문제일 때는 2/3(67%)가 70% 통과 기준에 못 미쳐 사실상 만점이어야만 통과로 인정되는 문제가 있었음(실수 1개도 허용 안 됨) → 4문제로 늘려 3/4(75%)이 자연스럽게 통과 기준을 만족하도록 함. 기준 급수가 범위 중간이면 총 20문제(5급수×4), 범위 끝(1급/12급) 근처면 그보다 적어짐',
-    'v7.42 — [구조 개선] 어휘 진단 시험지를 주관식(뜻 쓰기/빈칸 쓰기)에서 4지선다 객관식으로 전환 — 상담 중 원장이 빠르고 일관되게 채점할 수 있도록(주관식은 채점 기준이 애매해지고 손채점 시간이 오래 걸리는 문제가 있었음). AI 프롬프트에 options(4개 보기)·answerIndex(정답 인덱스) 필드를 요구하도록 변경, 시험지에 ①②③④ 보기 표시, 정답지에도 정답 보기 텍스트 표시'
+    'v7.42 — [구조 개선] 어휘 진단 시험지를 주관식(뜻 쓰기/빈칸 쓰기)에서 4지선다 객관식으로 전환 — 상담 중 원장이 빠르고 일관되게 채점할 수 있도록(주관식은 채점 기준이 애매해지고 손채점 시간이 오래 걸리는 문제가 있었음). AI 프롬프트에 options(4개 보기)·answerIndex(정답 인덱스) 필드를 요구하도록 변경, 시험지에 ①②③④ 보기 표시, 정답지에도 정답 보기 텍스트 표시',
+    'v7.43 — [신규] 진단 시험지에 "💻 화면에서 채점하기" 버튼 추가 — 인쇄+손채점 방식은 그대로 유지하되, 화면에서 바로 보는 상황(주로 상담 시)을 위해 문제마다 보기를 클릭해서 답을 고르면 정답과 자동 비교해서 급수별 정답 수를 "시험 결과 입력" 폼에 자동으로 채워주는 기능 추가(gradeVocabInteractive) — 급수별로 손으로 세어 입력하던 단계가 사라짐, 확인 후 기존과 같은 저장 버튼으로 저장'
   ];
   console.log(`%c글답 학습기 ${APP_VERSION}`, 'font-weight:bold; font-size:14px; color:#0d1b4b;');
   console.groupCollapsed('%c버전 기록 (클릭해서 펼치기)', 'color:#888; font-size:11px;');
@@ -5633,6 +5634,7 @@ ${levelDescText}
       const clean = text.replace(/```json|```/g,'').trim();
       const qs = JSON.parse(clean);
       selectedVocabStudent._vocabTestCache = qs;
+      vocabInteractiveAnswers = {};
       const optionLabels = ['①','②','③','④'];
       const rows = qs.map((q,i)=>`<tr>
         <td style="border:1px solid #ccc; padding:8px; width:30px; text-align:center;">${i+1}</td>
@@ -5643,6 +5645,13 @@ ${levelDescText}
         <td style="border:1px solid #ccc; padding:8px; width:60px; text-align:center;">&nbsp;</td>
       </tr>`).join('');
       const answerRows = qs.map((q,i)=>`<tr><td style="border:1px solid #ccc; padding:6px; text-align:center;">${i+1}</td><td style="border:1px solid #ccc; padding:6px; text-align:center;">${q.level}급</td><td style="border:1px solid #ccc; padding:6px; text-align:center;">${optionLabels[q.answerIndex]} ${(q.options||[])[q.answerIndex]||''}</td></tr>`).join('');
+      const interactiveItems = qs.map((q,i)=>`
+        <div style="margin-bottom:14px; padding-bottom:10px; border-bottom:1px solid #eee;">
+          <div style="font-size:13px; margin-bottom:6px;">${i+1}. [${q.level}급] ${q.question}</div>
+          <div style="display:flex; gap:6px; flex-wrap:wrap;">
+            ${(q.options||[]).map((op,oi)=>`<button type="button" class="vocab-opt-btn" data-q="${i}" data-opt="${oi}" onclick="selectVocabAnswer(${i},${oi})" style="border:1px solid #ccc; border-radius:6px; padding:6px 10px; font-size:12px; background:#fff; cursor:pointer;">${optionLabels[oi]} ${op}</button>`).join('')}
+          </div>
+        </div>`).join('');
       box.innerHTML = `
         <div id="vocabTestPrintArea" style="max-width:800px;">
           <div style="text-align:center; font-weight:700; font-size:17px; margin-bottom:4px;">어휘 진단 시험지 (객관식)</div>
@@ -5656,9 +5665,10 @@ ${levelDescText}
             ${rows}
           </table>
         </div>
-        <div style="margin-top:10px; display:flex; gap:8px;">
+        <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
           <button class="btn btn-secondary btn-sm" onclick="printVocabHTML('vocabTestPrintArea')">🖨️ 시험지 인쇄</button>
           <button class="btn btn-secondary btn-sm" onclick="toggleVocabAnswerKey()">🔑 정답지 보기/숨기기</button>
+          <button class="btn btn-primary btn-sm" onclick="toggleVocabInteractive()">💻 화면에서 채점하기</button>
         </div>
         <div id="vocabAnswerKeyArea" style="display:none; margin-top:14px; max-width:800px;">
           <div style="font-weight:700; margin-bottom:6px;">정답지 (원장님용 — 채점 후 아래 "시험 결과 입력" 버튼으로 급수별 정답 수를 입력해주세요)</div>
@@ -5667,6 +5677,11 @@ ${levelDescText}
             ${answerRows}
           </table>
         </div>
+        <div id="vocabInteractiveArea" style="display:none; margin-top:14px; max-width:800px; border:1px solid #eee; border-radius:10px; padding:16px; background:#faf8f3;">
+          <div style="font-weight:700; margin-bottom:10px;">학생이 답한 보기를 클릭해 고른 뒤 "채점하기"를 눌러주세요.</div>
+          ${interactiveItems}
+          <button class="btn btn-primary btn-sm" onclick="gradeVocabInteractive()">✅ 채점하기</button>
+        </div>
       `;
       renderVocabResultInputs(qs, levelsInRange);
     } catch(e) {
@@ -5674,9 +5689,43 @@ ${levelDescText}
     }
   }
 
+  let vocabInteractiveAnswers = {};
+
   function toggleVocabAnswerKey() {
     const el = document.getElementById('vocabAnswerKeyArea');
     if (el) el.style.display = el.style.display==='none' ? '' : 'none';
+  }
+
+  function toggleVocabInteractive() {
+    const el = document.getElementById('vocabInteractiveArea');
+    if (el) el.style.display = el.style.display==='none' ? '' : 'none';
+  }
+
+  function selectVocabAnswer(qIndex, optIndex) {
+    vocabInteractiveAnswers[qIndex] = optIndex;
+    document.querySelectorAll(`.vocab-opt-btn[data-q="${qIndex}"]`).forEach(btn=>{
+      const isSelected = parseInt(btn.dataset.opt) === optIndex;
+      btn.style.background = isSelected ? '#0d6b6b' : '#fff';
+      btn.style.color = isSelected ? '#fff' : '#333';
+      btn.style.borderColor = isSelected ? '#0d6b6b' : '#ccc';
+    });
+  }
+
+  // 화면에서 고른 답을 정답과 바로 비교해서 급수별 정답 수를 자동 계산 — 손으로 세어 입력하는 단계를 없앤다.
+  // 계산 결과는 기존 "시험 결과 입력" 폼에 그대로 채워 넣어, 원장님이 확인 후 같은 저장 버튼으로 저장한다.
+  function gradeVocabInteractive() {
+    const qs = selectedVocabStudent._vocabTestCache;
+    if (!qs) return;
+    const unanswered = qs.filter((q,i)=>vocabInteractiveAnswers[i]===undefined).length;
+    if (unanswered>0 && !confirm(`아직 ${unanswered}문제에 답을 고르지 않았습니다. 그래도 채점할까요? (안 고른 문제는 오답으로 처리됩니다)`)) return;
+    openVocabResultForm();
+    document.querySelectorAll('.vocab-level-input').forEach(inp=>{
+      const level = parseInt(inp.dataset.level);
+      let correct = 0;
+      qs.forEach((q,i)=>{ if (q.level===level && vocabInteractiveAnswers[i]===q.answerIndex) correct++; });
+      inp.value = correct;
+    });
+    alert('채점 완료! 급수별 정답 수가 자동으로 입력되었어요. 확인 후 "저장 및 급수 진단" 버튼을 눌러주세요.');
   }
 
   function printVocabHTML(areaId) {
