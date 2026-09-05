@@ -2131,7 +2131,7 @@
 
 <script>
   // ===== 버전 정보 (콘솔에서 확인: APP_VERSION 또는 페이지 로드시 자동 출력) =====
-  const APP_VERSION = 'v7.44';
+  const APP_VERSION = 'v7.45';
   const APP_VERSION_LOG = [
     'v1.0 — 탭 구조 + UI 껍데기',
     'v1.1 — AI 문제 생성 + 개념 사다리',
@@ -2220,7 +2220,8 @@
     'v7.41 — 어휘 진단 시험지 급수당 문제 수를 3개→4개로 조정(VOCAB_QUESTIONS_PER_LEVEL 상수화) — 3문제일 때는 2/3(67%)가 70% 통과 기준에 못 미쳐 사실상 만점이어야만 통과로 인정되는 문제가 있었음(실수 1개도 허용 안 됨) → 4문제로 늘려 3/4(75%)이 자연스럽게 통과 기준을 만족하도록 함. 기준 급수가 범위 중간이면 총 20문제(5급수×4), 범위 끝(1급/12급) 근처면 그보다 적어짐',
     'v7.42 — [구조 개선] 어휘 진단 시험지를 주관식(뜻 쓰기/빈칸 쓰기)에서 4지선다 객관식으로 전환 — 상담 중 원장이 빠르고 일관되게 채점할 수 있도록(주관식은 채점 기준이 애매해지고 손채점 시간이 오래 걸리는 문제가 있었음). AI 프롬프트에 options(4개 보기)·answerIndex(정답 인덱스) 필드를 요구하도록 변경, 시험지에 ①②③④ 보기 표시, 정답지에도 정답 보기 텍스트 표시',
     'v7.43 — [신규] 진단 시험지에 "💻 화면에서 채점하기" 버튼 추가 — 인쇄+손채점 방식은 그대로 유지하되, 화면에서 바로 보는 상황(주로 상담 시)을 위해 문제마다 보기를 클릭해서 답을 고르면 정답과 자동 비교해서 급수별 정답 수를 "시험 결과 입력" 폼에 자동으로 채워주는 기능 추가(gradeVocabInteractive) — 급수별로 손으로 세어 입력하던 단계가 사라짐, 확인 후 기존과 같은 저장 버튼으로 저장',
-    'v7.44 — [UI 개선] v7.43에서 문제 목록을 표 위쪽과 아래쪽(클릭용) 두 번 중복 표시하던 것을 사용자 지적으로 통합 — 표의 "답" 칸 안에 바로 ①②③④ 클릭 버튼을 넣어서 한 번만 표시되도록 변경, 아래쪽 중복 목록(vocabInteractiveArea)과 토글 버튼 제거. 인쇄 시에는 클릭 여부와 무관하게 그대로 빈 칸처럼 인쇄됨'
+    'v7.44 — [UI 개선] v7.43에서 문제 목록을 표 위쪽과 아래쪽(클릭용) 두 번 중복 표시하던 것을 사용자 지적으로 통합 — 표의 "답" 칸 안에 바로 ①②③④ 클릭 버튼을 넣어서 한 번만 표시되도록 변경, 아래쪽 중복 목록(vocabInteractiveArea)과 토글 버튼 제거. 인쇄 시에는 클릭 여부와 무관하게 그대로 빈 칸처럼 인쇄됨',
+    'v7.45 — [버그 수정] 시험지·학습지를 생성한 뒤 다른 학생을 봤다가 돌아오거나 다른 탭(출석부 등)에 갔다가 어휘력 탭으로 복귀하면 방금 만든 시험지 화면이 사라져서, 아이가 그새 다 풀어도 처음부터 다시 생성해야 하는 문제 확인(재생성하면 AI가 새 문제를 만들어버려 아이가 실제로 푼 시험지와 달라짐) → 학습지·시험지 렌더링을 재사용 가능한 함수(renderVocabWorksheetBox/renderVocabTestBox)로 분리하고, 학생 선택 시 그 학생에게 캐시된 학습지/시험지가 있으면 새로 만들지 않고 그대로 복원하도록 수정. 탭 전환 시에도 이미 선택된 학생이 있으면 상세 화면을 닫지 않도록 renderVocabTab() 수정'
   ];
   console.log(`%c글답 학습기 ${APP_VERSION}`, 'font-weight:bold; font-size:14px; color:#0d1b4b;');
   console.groupCollapsed('%c버전 기록 (클릭해서 펼치기)', 'color:#888; font-size:11px;');
@@ -5498,7 +5499,15 @@ ${a.name}`;
       }).join('');
     }
     document.getElementById('vocabGuestForm').style.display = 'none';
-    document.getElementById('vocabDetailSection').style.display = 'none';
+    // 이미 학생을 보고 있던 중이라면(다른 탭에 갔다 돌아온 경우 등) 상세 화면과 마지막 시험지를
+    // 그대로 유지한다 — 아이가 시험을 푸는 동안 다른 작업을 하고 돌아와도 화면이 사라지면 안 되므로.
+    if (selectedVocabStudent) {
+      document.getElementById('vocabDetailSection').style.display = '';
+      renderVocabStatus();
+      renderVocabHistory();
+    } else {
+      document.getElementById('vocabDetailSection').style.display = 'none';
+    }
   }
 
   // 미등록 상담자용 즉석 입력 — 정식 학생 등록 없이 이름+학년만으로 바로 테스트를 진행한다.
@@ -5527,9 +5536,17 @@ ${a.name}`;
     if (!selectedVocabStudent) return;
     document.getElementById('vocabGuestForm').style.display = 'none';
     document.getElementById('vocabDetailSection').style.display = '';
-    document.getElementById('vocabWorksheetResult').innerHTML = '';
     document.getElementById('vocabParentReportResult').innerHTML = '';
     document.getElementById('vocabResultForm').style.display = 'none';
+    // 이 학생에 대해 방금 만든 학습지·시험지가 남아있으면(다른 학생을 봤다가 돌아온 경우 등)
+    // 캐시에서 그대로 복원한다 — 아이가 아직 시험을 푸는 중일 수 있으므로 새로 만들지 않는다.
+    if (selectedVocabStudent._vocabTestCache) {
+      renderVocabTestBox(selectedVocabStudent._vocabTestCache);
+    } else if (selectedVocabStudent._vocabWordsCache) {
+      renderVocabWorksheetBox(selectedVocabStudent._vocabWordsCache);
+    } else {
+      document.getElementById('vocabWorksheetResult').innerHTML = '';
+    }
     renderVocabStatus();
     renderVocabHistory();
   }
@@ -5570,34 +5587,43 @@ ${a.name}`;
       const text = await callGemini(prompt);
       const clean = text.replace(/```json|```/g,'').trim();
       const words = JSON.parse(clean);
-      selectedVocabStudent._vocabWordsCache = words;
-      const rows = words.map((w,i)=>`<tr>
-        <td style="border:1px solid #ccc; padding:8px; width:30px; text-align:center;">${i+1}</td>
-        <td style="border:1px solid #ccc; padding:8px; font-weight:600;">${w.word}</td>
-        <td style="border:1px solid #ccc; padding:8px;">${w.meaning}</td>
-        <td style="border:1px solid #ccc; padding:8px; color:#666;">${w.example}</td>
-      </tr>`).join('');
-      box.innerHTML = `
-        <div id="vocabWorksheetPrintArea" style="max-width:800px;">
-          <div style="text-align:center; font-weight:700; font-size:17px; margin-bottom:4px;">어휘 학습지 — ${lvl}급 (${def.band} ${def.sub})</div>
-          <div style="text-align:center; font-size:13px; color:#888; margin-bottom:14px;">${s.name} 학생 · ${todayLocalDateStr()}</div>
-          <table style="border-collapse:collapse; width:100%; font-size:13px;">
-            <tr style="background:#faf8f3;">
-              <th style="border:1px solid #ccc; padding:8px;">번호</th>
-              <th style="border:1px solid #ccc; padding:8px;">낱말</th>
-              <th style="border:1px solid #ccc; padding:8px;">뜻</th>
-              <th style="border:1px solid #ccc; padding:8px;">예문</th>
-            </tr>
-            ${rows}
-          </table>
-        </div>
-        <div style="margin-top:10px;">
-          <button class="btn btn-secondary btn-sm" onclick="printVocabHTML('vocabWorksheetPrintArea')">🖨️ 인쇄</button>
-        </div>
-      `;
+      selectedVocabStudent._vocabWordsCache = { lvl, words };
+      renderVocabWorksheetBox({ lvl, words });
     } catch(e) {
       box.innerHTML = `<div style="color:#c00; font-size:13px;">학습지 생성 실패: ${e.message}</div>`;
     }
+  }
+
+  // 학습지 화면을 그린다 — 새로 만든 직후에도, 다른 학생을 봤다가 돌아왔을 때 캐시에서 복원할 때도 이 함수를 쓴다.
+  function renderVocabWorksheetBox(cache) {
+    const s = selectedVocabStudent;
+    const { lvl, words } = cache;
+    const def = vocabLevelDef(lvl);
+    const box = document.getElementById('vocabWorksheetResult');
+    const rows = words.map((w,i)=>`<tr>
+      <td style="border:1px solid #ccc; padding:8px; width:30px; text-align:center;">${i+1}</td>
+      <td style="border:1px solid #ccc; padding:8px; font-weight:600;">${w.word}</td>
+      <td style="border:1px solid #ccc; padding:8px;">${w.meaning}</td>
+      <td style="border:1px solid #ccc; padding:8px; color:#666;">${w.example}</td>
+    </tr>`).join('');
+    box.innerHTML = `
+      <div id="vocabWorksheetPrintArea" style="max-width:800px;">
+        <div style="text-align:center; font-weight:700; font-size:17px; margin-bottom:4px;">어휘 학습지 — ${lvl}급 (${def.band} ${def.sub})</div>
+        <div style="text-align:center; font-size:13px; color:#888; margin-bottom:14px;">${s.name} 학생 · ${todayLocalDateStr()}</div>
+        <table style="border-collapse:collapse; width:100%; font-size:13px;">
+          <tr style="background:#faf8f3;">
+            <th style="border:1px solid #ccc; padding:8px;">번호</th>
+            <th style="border:1px solid #ccc; padding:8px;">낱말</th>
+            <th style="border:1px solid #ccc; padding:8px;">뜻</th>
+            <th style="border:1px solid #ccc; padding:8px;">예문</th>
+          </tr>
+          ${rows}
+        </table>
+      </div>
+      <div style="margin-top:10px;">
+        <button class="btn btn-secondary btn-sm" onclick="printVocabHTML('vocabWorksheetPrintArea')">🖨️ 인쇄</button>
+      </div>
+    `;
   }
 
   // 진단 테스트(상담·월평가 공용) — 기준 급수 하나가 아니라, 기준 급수 위아래 VOCAB_TEST_SPAN 급수까지
@@ -5636,33 +5662,45 @@ ${levelDescText}
       const qs = JSON.parse(clean);
       selectedVocabStudent._vocabTestCache = qs;
       vocabInteractiveAnswers = {};
-      const optionLabels = ['①','②','③','④'];
-      const rows = qs.map((q,i)=>`<tr>
-        <td style="border:1px solid #ccc; padding:8px; width:30px; text-align:center;">${i+1}</td>
-        <td style="border:1px solid #ccc; padding:8px;">
-          <div>${q.question}</div>
-          <div style="margin-top:6px; color:#333;">${(q.options||[]).map((op,oi)=>`${optionLabels[oi]} ${op}`).join('&nbsp;&nbsp;&nbsp;')}</div>
-        </td>
-        <td style="border:1px solid #ccc; padding:6px; width:150px; text-align:center;">
-          <div style="display:flex; gap:3px; justify-content:center;">
-            ${(q.options||[]).map((op,oi)=>`<button type="button" class="vocab-opt-btn" data-q="${i}" data-opt="${oi}" onclick="selectVocabAnswer(${i},${oi})" style="border:1px solid #ccc; border-radius:5px; width:26px; height:26px; font-size:12px; background:#fff; cursor:pointer;">${optionLabels[oi]}</button>`).join('')}
-          </div>
-        </td>
-      </tr>`).join('');
-      const answerRows = qs.map((q,i)=>`<tr><td style="border:1px solid #ccc; padding:6px; text-align:center;">${i+1}</td><td style="border:1px solid #ccc; padding:6px; text-align:center;">${q.level}급</td><td style="border:1px solid #ccc; padding:6px; text-align:center;">${optionLabels[q.answerIndex]} ${(q.options||[])[q.answerIndex]||''}</td></tr>`).join('');
-      box.innerHTML = `
-        <div id="vocabTestPrintArea" style="max-width:800px;">
-          <div style="text-align:center; font-weight:700; font-size:17px; margin-bottom:4px;">어휘 진단 시험지 (객관식)</div>
-          <div style="text-align:center; font-size:13px; color:#888; margin-bottom:14px;">${s.name} · ${s.grade||''} · ${todayLocalDateStr()} · 이름: ________</div>
-          <div style="font-size:12px; color:#0d6b6b; margin-bottom:8px;">※ 화면에서 바로 채점하려면 "답" 칸의 번호를 클릭하세요. 종이로 인쇄해서 쓰게 하려면 그냥 인쇄 버튼을 누르면 돼요(클릭 여부와 무관하게 빈 칸으로 인쇄돼요).</div>
-          <table style="border-collapse:collapse; width:100%; font-size:13px;">
-            <tr style="background:#faf8f3;">
-              <th style="border:1px solid #ccc; padding:8px;">번호</th>
-              <th style="border:1px solid #ccc; padding:8px;">문제 / 보기</th>
-              <th style="border:1px solid #ccc; padding:8px;">답</th>
-            </tr>
-            ${rows}
-          </table>
+      renderVocabTestBox(qs);
+    } catch(e) {
+      box.innerHTML = `<div style="color:#c00; font-size:13px;">시험지 생성 실패: ${e.message}</div>`;
+    }
+  }
+
+  // 시험지 화면을 그린다 — 새로 AI가 만든 직후에도, 다른 학생을 봤다가 돌아왔을 때 캐시에서 복원할 때도 이 함수를 쓴다.
+  // 학생이 시험을 다 풀 때까지 시간이 걸리므로, 그사이 다른 탭에 갔다 와도 마지막 시험지가 그대로 남아있어야 한다.
+  function renderVocabTestBox(qs) {
+    const s = selectedVocabStudent;
+    const levelsInRange = [...new Set(qs.map(q=>q.level))].sort((a,b)=>a-b);
+    const box = document.getElementById('vocabWorksheetResult');
+    const optionLabels = ['①','②','③','④'];
+    const rows = qs.map((q,i)=>`<tr>
+      <td style="border:1px solid #ccc; padding:8px; width:30px; text-align:center;">${i+1}</td>
+      <td style="border:1px solid #ccc; padding:8px;">
+        <div>${q.question}</div>
+        <div style="margin-top:6px; color:#333;">${(q.options||[]).map((op,oi)=>`${optionLabels[oi]} ${op}`).join('&nbsp;&nbsp;&nbsp;')}</div>
+      </td>
+      <td style="border:1px solid #ccc; padding:6px; width:150px; text-align:center;">
+        <div style="display:flex; gap:3px; justify-content:center;">
+          ${(q.options||[]).map((op,oi)=>`<button type="button" class="vocab-opt-btn" data-q="${i}" data-opt="${oi}" onclick="selectVocabAnswer(${i},${oi})" style="border:1px solid #ccc; border-radius:5px; width:26px; height:26px; font-size:12px; background:#fff; cursor:pointer;">${optionLabels[oi]}</button>`).join('')}
+        </div>
+      </td>
+    </tr>`).join('');
+    const answerRows = qs.map((q,i)=>`<tr><td style="border:1px solid #ccc; padding:6px; text-align:center;">${i+1}</td><td style="border:1px solid #ccc; padding:6px; text-align:center;">${q.level}급</td><td style="border:1px solid #ccc; padding:6px; text-align:center;">${optionLabels[q.answerIndex]} ${(q.options||[])[q.answerIndex]||''}</td></tr>`).join('');
+    box.innerHTML = `
+      <div id="vocabTestPrintArea" style="max-width:800px;">
+        <div style="text-align:center; font-weight:700; font-size:17px; margin-bottom:4px;">어휘 진단 시험지 (객관식)</div>
+        <div style="text-align:center; font-size:13px; color:#888; margin-bottom:14px;">${s.name} · ${s.grade||''} · ${todayLocalDateStr()} · 이름: ________</div>
+        <div style="font-size:12px; color:#0d6b6b; margin-bottom:8px;">※ 화면에서 바로 채점하려면 "답" 칸의 번호를 클릭하세요. 종이로 인쇄해서 쓰게 하려면 그냥 인쇄 버튼을 누르면 돼요(클릭 여부와 무관하게 빈 칸으로 인쇄돼요).</div>
+        <table style="border-collapse:collapse; width:100%; font-size:13px;">
+          <tr style="background:#faf8f3;">
+            <th style="border:1px solid #ccc; padding:8px;">번호</th>
+            <th style="border:1px solid #ccc; padding:8px;">문제 / 보기</th>
+            <th style="border:1px solid #ccc; padding:8px;">답</th>
+          </tr>
+          ${rows}
+        </table>
         </div>
         <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
           <button class="btn btn-secondary btn-sm" onclick="printVocabHTML('vocabTestPrintArea')">🖨️ 시험지 인쇄</button>
@@ -5677,10 +5715,7 @@ ${levelDescText}
           </table>
         </div>
       `;
-      renderVocabResultInputs(qs, levelsInRange);
-    } catch(e) {
-      box.innerHTML = `<div style="color:#c00; font-size:13px;">시험지 생성 실패: ${e.message}</div>`;
-    }
+    renderVocabResultInputs(qs, levelsInRange);
   }
 
   let vocabInteractiveAnswers = {};
