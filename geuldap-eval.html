@@ -541,6 +541,7 @@
   <div class="tab" onclick="switchTab('timetable')">시간표</div>
   <div class="tab" onclick="switchTab('payments')">수납 관리</div>
   <div class="tab" onclick="switchTab('learner')" style="color:#2f855a;">📚 학습기</div>
+  <div class="tab" onclick="switchTab('vocab')" style="color:#0d6b6b;">🔤 어휘력</div>
   <div class="tab" onclick="switchTab('blog')" style="color:#a8710a;">📝 블로그 생성</div>
   <div class="tab" onclick="switchTab('legal')" style="color:#7a4fb5;">📁 법정 서류함</div>
 </div>
@@ -1097,6 +1098,62 @@
         <div id="lrCodeListBody"></div>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- 어휘력 -->
+<div class="page" id="page-vocab">
+  <div class="card">
+    <div class="card-title">어휘력 진단·관리</div>
+    <div style="font-size:12px; color:#888; margin-bottom:14px;">재원생을 선택하거나, 상담 방문자는 "＋ 상담자 즉석 테스트"로 이름·학년만 입력해 바로 진단 테스트를 진행할 수 있습니다.</div>
+    <div class="student-grid" id="vocabStudentGrid"></div>
+  </div>
+
+  <div class="card" id="vocabGuestForm" style="display:none;">
+    <div class="card-title">상담자 즉석 테스트</div>
+    <div class="form-group">
+      <label>이름</label>
+      <input type="text" id="vocabGuestName" placeholder="방문자 이름">
+    </div>
+    <div class="form-group">
+      <label>학년</label>
+      <select id="vocabGuestGrade">
+        <option>초등 4학년</option><option>초등 5학년</option><option>초등 6학년</option>
+        <option>중학교 1학년</option><option>중학교 2학년</option><option>중학교 3학년</option>
+      </select>
+    </div>
+    <div style="display:flex; gap:8px;">
+      <button class="btn btn-primary btn-sm" onclick="startVocabGuestTest()">시작</button>
+      <button class="btn btn-secondary btn-sm" onclick="document.getElementById('vocabGuestForm').style.display='none'">취소</button>
+    </div>
+  </div>
+
+  <div class="card" id="vocabDetailSection" style="display:none;">
+    <div class="card-title" id="vocabDetailTitle">어휘력 현황</div>
+    <div id="vocabStatusBody" style="margin-bottom:16px;"></div>
+
+    <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:20px;">
+      <button class="btn btn-secondary btn-sm" onclick="generateVocabWorksheet()">📄 학습지 생성</button>
+      <button class="btn btn-secondary btn-sm" onclick="generateVocabTest()">📝 진단 시험지 생성</button>
+      <button class="btn btn-primary btn-sm" onclick="openVocabResultForm()">✅ 시험 결과 입력</button>
+      <button class="btn btn-secondary btn-sm" onclick="generateVocabParentReport()">👨‍👩‍👧 진단 보고서 생성</button>
+    </div>
+
+    <div id="vocabWorksheetResult" style="margin-bottom:20px;"></div>
+
+    <div id="vocabResultForm" style="display:none; border:1px solid #eee; border-radius:10px; padding:16px; margin-bottom:20px; background:#faf8f3;">
+      <div style="font-weight:600; margin-bottom:10px;">급수별 정답 수 입력 (진단 시험지의 정답지를 보고 채점 후 입력)</div>
+      <div id="vocabResultInputs" style="margin-bottom:12px;"></div>
+      <div style="display:flex; gap:8px;">
+        <button class="btn btn-primary btn-sm" onclick="saveVocabResult()">💾 저장 및 급수 진단</button>
+        <button class="btn btn-secondary btn-sm" onclick="document.getElementById('vocabResultForm').style.display='none'">취소</button>
+      </div>
+    </div>
+
+    <div id="vocabParentReportResult" style="margin-bottom:20px;"></div>
+
+    <div class="card-title" style="margin-top:10px;">평가 이력</div>
+    <div id="vocabHistoryList"></div>
   </div>
 </div>
 
@@ -2021,14 +2078,14 @@
     // Promise.all은 그중 하나라도 실패하면 나머지 성공한 것까지 전부 버려버려서, 신호 약한
     // 모바일에서 요청 하나만 실패해도 자료·시험 등 모든 데이터가 통째로 안 불러와지는 상태가 됐다.
     // allSettled로 바꿔서 "하나 실패해도 나머지는 살리기" + 재시도까지 추가한다.
-    const names = ['geuldap_students','geuldap_records','geuldap_quizzes','geuldap_attendance','geuldap_leads','geuldap_payments','geuldap_readings','geuldap_lr_materials','geuldap_lr_exams','geuldap_lr_wrong','geuldap_staff','geuldap_expenses'];
+    const names = ['geuldap_students','geuldap_records','geuldap_quizzes','geuldap_attendance','geuldap_leads','geuldap_payments','geuldap_readings','geuldap_lr_materials','geuldap_lr_exams','geuldap_lr_wrong','geuldap_staff','geuldap_expenses','geuldap_vocab_records'];
     const results = await Promise.allSettled(names.map(n => getDocsWithRetry(n)));
-    const [ss, rs, qs, as_, ls_, ps_, rd_, lrm_, lre_, lrw_, stf_, exp_] = results;
+    const [ss, rs, qs, as_, ls_, ps_, rd_, lrm_, lre_, lrw_, stf_, exp_, vr_] = results;
     const targets = [
       [ss, window._students], [rs, window._records], [qs, window._quizzes],
       [as_, window._attendance], [ls_, window._leads], [ps_, window._payments],
       [rd_, window._readings], [lrm_, window._lrMaterials], [lre_, window._lrExams], [lrw_, window._lrWrong],
-      [stf_, window._staff], [exp_, window._expenses]
+      [stf_, window._staff], [exp_, window._expenses], [vr_, window._vocabRecords]
     ];
     targets.forEach(([result, arr], i) => {
       if (result.status === 'fulfilled') {
@@ -2054,6 +2111,7 @@
     localStorage.setItem('glrw', JSON.stringify(window._lrWrong));
     localStorage.setItem('gstf', JSON.stringify(window._staff));
     localStorage.setItem('gex', JSON.stringify(window._expenses));
+    localStorage.setItem('gvr', JSON.stringify(window._vocabRecords));
     if (window._academySettings) localStorage.setItem('gas', JSON.stringify(window._academySettings));
   } catch(e) { console.log('Firebase 로드:', e); }
   renderStudents();
@@ -2073,7 +2131,7 @@
 
 <script>
   // ===== 버전 정보 (콘솔에서 확인: APP_VERSION 또는 페이지 로드시 자동 출력) =====
-  const APP_VERSION = 'v7.38';
+  const APP_VERSION = 'v7.42';
   const APP_VERSION_LOG = [
     'v1.0 — 탭 구조 + UI 껍데기',
     'v1.1 — AI 문제 생성 + 개념 사다리',
@@ -2156,7 +2214,11 @@
     'v7.35 — [버그 수정] 친구할인(1회성)이 등록 이후 매달 계속 청구되던 문제 확인 → 원인은 학생의 tuition 필드에 할인된 금액이 그대로 영구 저장되어, 수납관리가 매달 그 값을 그대로 가져다 쓰던 것(형제할인처럼 매달 적용되는 할인과 구분이 안 되어 있었음). 학생 저장 시 친구할인이면 tuition은 정가로, 할인된 첫달 금액은 friendFirstMonthAmount에 별도 저장하도록 변경. 수납관리는 그 학생 명의로 지금까지 청구된 적이 단 한 번도 없을 때(=생애 첫 청구월)만 friendFirstMonthAmount를 쓰고, 그 다음달부터는 자동으로 정가(tuition)를 청구하도록 computeNewMonthAmount() 함수로 분리. 학생 정보 재수정 시 이미 저장된 첫달 할인가가 실수로 정가로 덮어써지지 않도록 보호 로직도 추가',
     'v7.36 — [구조 개선] 사용자 제안으로 할인 처리 방식을 전면 재설계 — v7.35의 friendFirstMonthAmount 방식(학생 등록 시 할인 지정) 대신, 학생 등록에서는 할인 선택 자체를 없애고 항상 정가만 저장하도록 단순화. 대신 수납관리 각 행에 "할인 없음/형제10%/형제20%/친구20%" 드롭다운을 새로 추가해서, 매달 수납 처리 시점에 그때그때 필요한 할인만 선택해 금액을 자동 재계산(applyRowDiscount, 정가 기준으로 계산해 몇 번을 껐다 켜도 항상 정확함). 다음 달은 별도 조치 없이 자동으로 할인 없는 정가부터 다시 시작 — 형제·친구 할인 구분이나 "1회성" 여부를 신경 쓸 필요 자체가 없어짐. 학생 등록에 "청구 시작월"(선택) 필드도 추가 — 미리 등록해둔 학생이 실제 수강 시작 전월에 청구서에 잘못 뜨는 문제(예: 9월 시작 학생이 8월에 등록해서 8월 수납목록에 뜨던 것) 해결, 지정하면 등록일 대신 이 달 기준으로 청구 시작',
     'v7.37 — [버그 수정] v7.36의 청구시작월 기능이 이미 그 달에 청구 기록이 한 번이라도 저장된 학생에게는 안 먹히는 문제 확인(예외 규칙 "이미 저장된 달은 계속 보여준다" 때문에 조재이가 청구시작월을 9월로 바꿔도 8월에 계속 뜸) → 각 청구 행에 "✕ 이번달 제외" 버튼 추가, 누르면 그 학생의 그 달 청구 기록을 화면과 저장소(geuldap_payments) 양쪽에서 완전히 삭제해서 목록에서 사라지게 함',
-    'v7.38 — 수납 관리 화면 정리 — 할인·비고·수납방법 등 항목이 늘면서 한 줄에 다 몰아넣은 flex 레이아웃이 지저분해 보인다는 지적 → 표(테이블) 형태로 재구성(이름/결제일/할인/금액/상태/완납일/수납방법/비고/문자/삭제 열로 정렬), 가로 스크롤 지원으로 좁은 화면에서도 깨지지 않게 함'
+    'v7.38 — 수납 관리 화면 정리 — 할인·비고·수납방법 등 항목이 늘면서 한 줄에 다 몰아넣은 flex 레이아웃이 지저분해 보인다는 지적 → 표(테이블) 형태로 재구성(이름/결제일/할인/금액/상태/완납일/수납방법/비고/문자/삭제 열로 정렬), 가로 스크롤 지원으로 좁은 화면에서도 깨지지 않게 함',
+    'v7.39 — [신규] "🔤 어휘력" 탭 신설 — 초4~중3 어휘력을 절대 급수(1~12급, 학년과 느슨하게 매핑)로 관리. 주당 수업시간 3시간 이상 학생만 자동으로 대상 표시(기존 schedule 데이터로 판별, 별도 입력 불필요). ①AI가 급수 기준(고정된 급수별 어휘 유형 설명)에 맞춰 어휘 학습지를 생성해 인쇄 ②같은 급수 기준으로 월 시험지+정답지를 생성해 인쇄(원장이 종이로 채점) ③채점 결과(총문항/정답수)를 입력하면 80%↑ 승급·50%미만 강등·그 사이는 유지로 급수 자동 판정, geuldap_vocab_records에 이력 누적 ④직전 평가와 비교 + 실제 학년 대비 급수 위치를 담은 학부모 보고서를 AI가 자동 작성. 급수 기준표는 코드에 고정해두어 매달 AI가 만드는 어휘 난이도가 흔들리지 않도록 함',
+    'v7.40 — [구조 개선] 사용자 요청으로 어휘력 탭 용도를 "재원생 주3시간 필터링" 방식에서 "상담(신규/미등록 방문자) 즉석 레벨테스트" 중심으로 재설계 — ①주당 수업시간 필터 제거, 모든 재원생 대상으로 변경 ②"＋ 상담자 즉석 테스트" 카드 추가 — 정식 학생 등록 없이 이름+학년만 입력하면 바로 진단 가능(geuldap_students에 저장되지 않는 임시 guest 객체로 처리) ③단일 급수 시험 대신, 기준 급수(재원생은 마지막 진단 급수, 신규는 학년 표준) 위아래 2급수씩 섞은 "진단 시험지"로 변경(문제마다 level 태그 포함, 총 5개 급수×3문제=15문제). 결과 입력도 총점 하나가 아니라 급수별 정답 수를 각각 입력받아, 낮은 급수부터 정답률 70% 미만이 처음 나오는 지점 직전까지를 실제 급수로 진단(diagnoseVocabLevel) — 초4와 중3처럼 학년별로 전혀 다른 범위에서 정확한 실제 수준을 찾아내도록 함. 학습지 생성(평소 학습용)은 기존처럼 기준 급수 단일 출제 유지',
+    'v7.41 — 어휘 진단 시험지 급수당 문제 수를 3개→4개로 조정(VOCAB_QUESTIONS_PER_LEVEL 상수화) — 3문제일 때는 2/3(67%)가 70% 통과 기준에 못 미쳐 사실상 만점이어야만 통과로 인정되는 문제가 있었음(실수 1개도 허용 안 됨) → 4문제로 늘려 3/4(75%)이 자연스럽게 통과 기준을 만족하도록 함. 기준 급수가 범위 중간이면 총 20문제(5급수×4), 범위 끝(1급/12급) 근처면 그보다 적어짐',
+    'v7.42 — [구조 개선] 어휘 진단 시험지를 주관식(뜻 쓰기/빈칸 쓰기)에서 4지선다 객관식으로 전환 — 상담 중 원장이 빠르고 일관되게 채점할 수 있도록(주관식은 채점 기준이 애매해지고 손채점 시간이 오래 걸리는 문제가 있었음). AI 프롬프트에 options(4개 보기)·answerIndex(정답 인덱스) 필드를 요구하도록 변경, 시험지에 ①②③④ 보기 표시, 정답지에도 정답 보기 텍스트 표시'
   ];
   console.log(`%c글답 학습기 ${APP_VERSION}`, 'font-weight:bold; font-size:14px; color:#0d1b4b;');
   console.groupCollapsed('%c버전 기록 (클릭해서 펼치기)', 'color:#888; font-size:11px;');
@@ -2202,6 +2264,7 @@
   window._lrWrong = JSON.parse(localStorage.getItem('glrw') || '[]');
   window._staff = JSON.parse(localStorage.getItem('gstf') || '[]');
   window._expenses = JSON.parse(localStorage.getItem('gex') || '[]');
+  window._vocabRecords = JSON.parse(localStorage.getItem('gvr') || '[]');
   window._academySettings = JSON.parse(localStorage.getItem('gas') || 'null');
 
   // 기본 과정 목록: 아직 과정이 하나도 없으면 자동으로 채운다
@@ -4744,7 +4807,7 @@ ${a.name}`;
 
   // ===== 탭 =====
   function switchTab(tab) {
-    document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', ['students','upload','records','reading','attendance','quiz','leads','timetable','payments','learner','blog','legal'][i]===tab));
+    document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', ['students','upload','records','reading','attendance','quiz','leads','timetable','payments','learner','vocab','blog','legal'][i]===tab));
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.getElementById('page-'+tab).classList.add('active');
     if (tab==='upload') renderUploadStudents();
@@ -4756,6 +4819,7 @@ ${a.name}`;
     if (tab==='timetable') renderTimetable();
     if (tab==='payments') { const m = document.getElementById('payMonth'); if (!m.value) m.value = todayLocalDateStr().slice(0,7); loadPayments(m.value); }
     if (tab==='learner') renderLearnerTab();
+    if (tab==='vocab') renderVocabTab();
     if (tab==='blog') renderBlogGenerate();
     if (tab==='legal') renderLegalDocs();
   }
@@ -5364,6 +5428,408 @@ ${a.name}`;
     if (before === after) { alert('①②처럼 번호로 표시된 부분을 찾지 못했어요. 그대로 두었습니다.'); return; }
     box.value = after;
     alert('번호로 표시된 부분을 정리했습니다. 결과를 한 번 확인해주세요.');
+  }
+
+  // ===== 어휘력 관리 =====
+  // 급수 기준(1~12급)을 코드에 고정해두어, AI가 학습지·시험지를 만들 때 난이도 기준이
+  // 흔들리지 않도록 한다(사용자 요청사항). 학년과는 느슨하게만 연동 — 절대 급수로 어휘력을 측정하고,
+  // 실제 학년과 비교해서 "몇 단계 앞섬/뒤처짐"을 보여주는 용도로만 학년 매핑을 쓴다.
+  const VOCAB_LEVEL_DEFS = [
+    {level:1,  band:'초4', sub:'기초', desc:'교과서에 자주 나오는 기본 어휘, 일상생활에서 흔히 쓰는 낱말 위주'},
+    {level:2,  band:'초4', sub:'심화', desc:'초4 교과서 어휘 중 다소 어려운 낱말, 뜻이 여러 개인 낱말 포함'},
+    {level:3,  band:'초5', sub:'기초', desc:'속담·관용구 도입, 두 글자 한자어 어휘 시작'},
+    {level:4,  band:'초5', sub:'심화', desc:'관용구 확장, 한자어 어휘 비중 증가'},
+    {level:5,  band:'초6', sub:'기초', desc:'사회·과학 교과서에 나오는 개념어 도입'},
+    {level:6,  band:'초6', sub:'심화', desc:'교과 개념어 확장, 다의어·동음이의어 구분 포함'},
+    {level:7,  band:'중1', sub:'기초', desc:'추상적 한자어 도입, 사자성어·관용구 초급'},
+    {level:8,  band:'중1', sub:'심화', desc:'추상적 한자어 확장, 사자성어 초중급'},
+    {level:9,  band:'중2', sub:'기초', desc:'시사·논설문에 자주 나오는 어휘, 사자성어 중급'},
+    {level:10, band:'중2', sub:'심화', desc:'논설문·설명문 핵심 어휘, 사자성어 중고급'},
+    {level:11, band:'중3', sub:'기초', desc:'비문학 독해 핵심어, 고난도 한자어'},
+    {level:12, band:'중3', sub:'심화', desc:'고난도 한자어·사자성어, 고교 국어 대비 기초 어휘'}
+  ];
+  const VOCAB_GRADE_START_LEVEL = {'초등 4학년':1,'초등 5학년':3,'초등 6학년':5,'중학교 1학년':7,'중학교 2학년':9,'중학교 3학년':11};
+  const VOCAB_TEST_SPAN = 2; // 기준 급수 위아래로 몇 급수까지 섞어 출제할지
+  const VOCAB_QUESTIONS_PER_LEVEL = 4; // 급수당 문제 수 (3문제였을 때는 70% 기준과 안 맞아떨어져 4문제로 조정 — 3/4=75%로 실수 1개 허용)
+
+  function vocabLevelDef(level) {
+    level = Math.max(1, Math.min(12, level));
+    return VOCAB_LEVEL_DEFS.find(d=>d.level===level) || VOCAB_LEVEL_DEFS[0];
+  }
+
+  function vocabRecordsFor(studentId) {
+    return _vocabRecords.filter(r=>r.studentId===studentId).sort((a,b)=>a.month.localeCompare(b.month));
+  }
+
+  // 가장 최근 평가의 판정 급수를 현재(기준) 급수로 본다. 평가 이력이 아예 없으면
+  // 학년 기준 시작 급수(VOCAB_GRADE_START_LEVEL)를 기본값으로 쓴다 — 초4와 중3이
+  // 전혀 다른 수준에서 시작하도록 하기 위함.
+  function currentVocabLevel(s) {
+    const recs = vocabRecordsFor(s.id);
+    if (recs.length===0) return VOCAB_GRADE_START_LEVEL[s.grade] || 1;
+    return recs[recs.length-1].newLevel;
+  }
+
+  let selectedVocabStudent = null;
+
+  function renderVocabTab() {
+    const g = document.getElementById('vocabStudentGrid');
+    if (!g) return;
+    const activeAll = _students.filter(s=>s.active!==false).sort((a,b)=>a.name.localeCompare(b.name,'ko'));
+    const guestCard = `<div class="student-card" onclick="openVocabGuestForm()" style="cursor:pointer; border:1px dashed #0d6b6b;">
+        <div class="student-avatar" style="background:#e6f4f4; color:#0d6b6b;">＋</div>
+        <div class="student-name" style="color:#0d6b6b;">상담자 즉석 테스트</div>
+        <div class="student-info">미등록 방문자 · 이름+학년만 입력</div>
+      </div>`;
+    if (activeAll.length===0) {
+      g.innerHTML = guestCard;
+    } else {
+      g.innerHTML = guestCard + activeAll.map(s=>{
+        const lvl = currentVocabLevel(s);
+        const def = vocabLevelDef(lvl);
+        return `<div class="student-card" onclick="selectVocabStudent('${s.id}')" style="cursor:pointer;">
+          <div class="student-avatar">${s.name[0]}</div>
+          <div class="student-name">${s.name}</div>
+          <div class="student-info">${s.grade||''}</div>
+          <div style="font-size:12px; color:#0d6b6b; margin-top:4px; font-weight:600;">현재 ${lvl}급 (${def.band}·${def.sub})</div>
+        </div>`;
+      }).join('');
+    }
+    document.getElementById('vocabGuestForm').style.display = 'none';
+    document.getElementById('vocabDetailSection').style.display = 'none';
+  }
+
+  // 미등록 상담자용 즉석 입력 — 정식 학생 등록 없이 이름+학년만으로 바로 테스트를 진행한다.
+  function openVocabGuestForm() {
+    document.getElementById('vocabDetailSection').style.display = 'none';
+    document.getElementById('vocabGuestForm').style.display = '';
+  }
+
+  function startVocabGuestTest() {
+    const name = document.getElementById('vocabGuestName').value.trim();
+    const grade = document.getElementById('vocabGuestGrade').value;
+    if (!name) { alert('이름을 입력해주세요.'); return; }
+    const guest = { id: 'guest_' + Date.now(), name, grade, isGuest: true };
+    selectedVocabStudent = guest;
+    document.getElementById('vocabGuestForm').style.display = 'none';
+    document.getElementById('vocabDetailSection').style.display = '';
+    document.getElementById('vocabWorksheetResult').innerHTML = '';
+    document.getElementById('vocabParentReportResult').innerHTML = '';
+    document.getElementById('vocabResultForm').style.display = 'none';
+    renderVocabStatus();
+    renderVocabHistory();
+  }
+
+  function selectVocabStudent(id) {
+    selectedVocabStudent = _students.find(s=>s.id===id);
+    if (!selectedVocabStudent) return;
+    document.getElementById('vocabGuestForm').style.display = 'none';
+    document.getElementById('vocabDetailSection').style.display = '';
+    document.getElementById('vocabWorksheetResult').innerHTML = '';
+    document.getElementById('vocabParentReportResult').innerHTML = '';
+    document.getElementById('vocabResultForm').style.display = 'none';
+    renderVocabStatus();
+    renderVocabHistory();
+  }
+
+  function renderVocabStatus() {
+    const s = selectedVocabStudent;
+    const lvl = currentVocabLevel(s);
+    const def = vocabLevelDef(lvl);
+    const recs = s.isGuest ? [] : vocabRecordsFor(s.id);
+    const last = recs[recs.length-1];
+    document.getElementById('vocabDetailTitle').textContent = `${s.name} 학생 · ${s.grade||''}${s.isGuest?' · 미등록 상담자':''}`;
+    document.getElementById('vocabStatusBody').innerHTML = `
+      <div style="font-size:15px; font-weight:700; color:#0d6b6b;">기준 ${lvl}급 (${def.band} ${def.sub} 수준, 학년 표준)</div>
+      <div style="font-size:13px; color:#888; margin-top:4px;">${def.desc}</div>
+      ${last ? `<div style="font-size:12px; color:#aaa; margin-top:6px;">최근 평가: ${last.month} · 진단 급수 ${last.newLevel}급</div>` : `<div style="font-size:12px; color:#aaa; margin-top:6px;">아직 평가 기록이 없습니다. 학년 표준 급수를 기준으로 진단 테스트를 시작합니다.</div>`}
+    `;
+  }
+
+  // 평상시 학습용 어휘 학습지 — 현재(기준) 급수 하나로만 어휘를 뽑는다(재원생 평소 학습용).
+  async function generateVocabWorksheet() {
+    const s = selectedVocabStudent;
+    const lvl = currentVocabLevel(s);
+    const def = vocabLevelDef(lvl);
+    const box = document.getElementById('vocabWorksheetResult');
+    box.innerHTML = '<div style="color:#888; font-size:13px;">AI가 어휘 학습지를 만들고 있어요...</div>';
+    const prompt = `당신은 한국 국어 어휘 교육 전문가입니다. 아래 급수 기준에 맞는 어휘 학습지를 만들어주세요.
+
+급수: ${lvl}급 (${def.band} 학생 대상, ${def.sub} 단계)
+이 급수의 어휘 범위(반드시 이 범위 안에서만 어휘를 골라주세요): ${def.desc}
+
+요구사항:
+- 이 급수 범위를 벗어나지 않는 어휘 15개를 선정
+- 각 어휘마다: 낱말, 뜻(쉬운 설명), 예문(학생이 이해하기 쉬운 짧은 문장)을 제공
+- 사자성어·한자어는 한글 발음과 함께 표기
+- 설명이나 코드블록 없이, 반드시 아래 형식의 JSON 배열로만 응답:
+[{"word":"낱말","meaning":"뜻","example":"예문"}]`;
+    try {
+      const text = await callGemini(prompt);
+      const clean = text.replace(/```json|```/g,'').trim();
+      const words = JSON.parse(clean);
+      selectedVocabStudent._vocabWordsCache = words;
+      const rows = words.map((w,i)=>`<tr>
+        <td style="border:1px solid #ccc; padding:8px; width:30px; text-align:center;">${i+1}</td>
+        <td style="border:1px solid #ccc; padding:8px; font-weight:600;">${w.word}</td>
+        <td style="border:1px solid #ccc; padding:8px;">${w.meaning}</td>
+        <td style="border:1px solid #ccc; padding:8px; color:#666;">${w.example}</td>
+      </tr>`).join('');
+      box.innerHTML = `
+        <div id="vocabWorksheetPrintArea" style="max-width:800px;">
+          <div style="text-align:center; font-weight:700; font-size:17px; margin-bottom:4px;">어휘 학습지 — ${lvl}급 (${def.band} ${def.sub})</div>
+          <div style="text-align:center; font-size:13px; color:#888; margin-bottom:14px;">${s.name} 학생 · ${todayLocalDateStr()}</div>
+          <table style="border-collapse:collapse; width:100%; font-size:13px;">
+            <tr style="background:#faf8f3;">
+              <th style="border:1px solid #ccc; padding:8px;">번호</th>
+              <th style="border:1px solid #ccc; padding:8px;">낱말</th>
+              <th style="border:1px solid #ccc; padding:8px;">뜻</th>
+              <th style="border:1px solid #ccc; padding:8px;">예문</th>
+            </tr>
+            ${rows}
+          </table>
+        </div>
+        <div style="margin-top:10px;">
+          <button class="btn btn-secondary btn-sm" onclick="printVocabHTML('vocabWorksheetPrintArea')">🖨️ 인쇄</button>
+        </div>
+      `;
+    } catch(e) {
+      box.innerHTML = `<div style="color:#c00; font-size:13px;">학습지 생성 실패: ${e.message}</div>`;
+    }
+  }
+
+  // 진단 테스트(상담·월평가 공용) — 기준 급수 하나가 아니라, 기준 급수 위아래 VOCAB_TEST_SPAN 급수까지
+  // 섞어서 출제한다. 학생의 실제 수준이 학년 표준보다 높거나 낮을 수 있으므로, 여러 급수에 걸친
+  // 문제로 "어디까지 통과하는지" 진단해서 정확한 실제 급수를 찾아낸다.
+  async function generateVocabTest() {
+    const s = selectedVocabStudent;
+    const baseLevel = currentVocabLevel(s);
+    const minLevel = Math.max(1, baseLevel - VOCAB_TEST_SPAN);
+    const maxLevel = Math.min(12, baseLevel + VOCAB_TEST_SPAN);
+    const levelsInRange = [];
+    for (let l = minLevel; l <= maxLevel; l++) levelsInRange.push(l);
+    const box = document.getElementById('vocabWorksheetResult');
+    box.innerHTML = '<div style="color:#888; font-size:13px;">AI가 진단 시험지를 만들고 있어요...</div>';
+    const levelDescText = levelsInRange.map(l=>{
+      const d = vocabLevelDef(l);
+      return `${l}급(${d.band} ${d.sub}): ${d.desc}`;
+    }).join('\n');
+    const prompt = `당신은 한국 국어 어휘 교육 전문가입니다. 학생의 실제 어휘력 수준을 정확히 진단하기 위한 4지선다 객관식 시험지를 만들어주세요.
+
+기준 급수: ${baseLevel}급 (학년 표준)
+출제 범위: ${minLevel}급 ~ ${maxLevel}급 (아래 각 급수 기준에서 각각 ${VOCAB_QUESTIONS_PER_LEVEL}문제씩, 총 ${levelsInRange.length*VOCAB_QUESTIONS_PER_LEVEL}문제)
+${levelDescText}
+
+요구사항:
+- 각 급수마다 정확히 ${VOCAB_QUESTIONS_PER_LEVEL}문제씩, 그 급수 범위를 벗어나지 않는 어휘로 출제
+- 문제 유형은 "낱말 제시 후 알맞은 뜻 고르기"와 "빈칸에 알맞은 낱말 고르기"를 섞어서 구성
+- 모든 문제는 보기 4개 중 하나를 고르는 4지선다 객관식으로 만들 것 (주관식 서술형 금지)
+- 오답 보기는 정답과 헷갈릴 만한 그럴듯한 것으로 구성(너무 쉽게 구별되지 않도록)
+- 낮은 급수 문제부터 높은 급수 문제 순서로 배열
+- 설명이나 코드블록 없이, 반드시 아래 형식의 JSON 배열로만 응답 (level 필드에 급수 숫자, options는 4개, answerIndex는 정답의 0~3 인덱스):
+[{"level":1,"type":"뜻고르기","question":"문제(낱말 또는 빈칸 문장)","options":["보기1","보기2","보기3","보기4"],"answerIndex":0}]`;
+    try {
+      const text = await callGemini(prompt);
+      const clean = text.replace(/```json|```/g,'').trim();
+      const qs = JSON.parse(clean);
+      selectedVocabStudent._vocabTestCache = qs;
+      const optionLabels = ['①','②','③','④'];
+      const rows = qs.map((q,i)=>`<tr>
+        <td style="border:1px solid #ccc; padding:8px; width:30px; text-align:center;">${i+1}</td>
+        <td style="border:1px solid #ccc; padding:8px;">
+          <div>${q.question}</div>
+          <div style="margin-top:6px; color:#333;">${(q.options||[]).map((op,oi)=>`${optionLabels[oi]} ${op}`).join('&nbsp;&nbsp;&nbsp;')}</div>
+        </td>
+        <td style="border:1px solid #ccc; padding:8px; width:60px; text-align:center;">&nbsp;</td>
+      </tr>`).join('');
+      const answerRows = qs.map((q,i)=>`<tr><td style="border:1px solid #ccc; padding:6px; text-align:center;">${i+1}</td><td style="border:1px solid #ccc; padding:6px; text-align:center;">${q.level}급</td><td style="border:1px solid #ccc; padding:6px; text-align:center;">${optionLabels[q.answerIndex]} ${(q.options||[])[q.answerIndex]||''}</td></tr>`).join('');
+      box.innerHTML = `
+        <div id="vocabTestPrintArea" style="max-width:800px;">
+          <div style="text-align:center; font-weight:700; font-size:17px; margin-bottom:4px;">어휘 진단 시험지 (객관식)</div>
+          <div style="text-align:center; font-size:13px; color:#888; margin-bottom:14px;">${s.name} · ${s.grade||''} · ${todayLocalDateStr()} · 이름: ________</div>
+          <table style="border-collapse:collapse; width:100%; font-size:13px;">
+            <tr style="background:#faf8f3;">
+              <th style="border:1px solid #ccc; padding:8px;">번호</th>
+              <th style="border:1px solid #ccc; padding:8px;">문제 / 보기</th>
+              <th style="border:1px solid #ccc; padding:8px;">답</th>
+            </tr>
+            ${rows}
+          </table>
+        </div>
+        <div style="margin-top:10px; display:flex; gap:8px;">
+          <button class="btn btn-secondary btn-sm" onclick="printVocabHTML('vocabTestPrintArea')">🖨️ 시험지 인쇄</button>
+          <button class="btn btn-secondary btn-sm" onclick="toggleVocabAnswerKey()">🔑 정답지 보기/숨기기</button>
+        </div>
+        <div id="vocabAnswerKeyArea" style="display:none; margin-top:14px; max-width:800px;">
+          <div style="font-weight:700; margin-bottom:6px;">정답지 (원장님용 — 채점 후 아래 "시험 결과 입력" 버튼으로 급수별 정답 수를 입력해주세요)</div>
+          <table style="border-collapse:collapse; width:100%; font-size:13px;">
+            <tr style="background:#faf8f3;"><th style="border:1px solid #ccc; padding:6px;">번호</th><th style="border:1px solid #ccc; padding:6px;">급수</th><th style="border:1px solid #ccc; padding:6px;">정답</th></tr>
+            ${answerRows}
+          </table>
+        </div>
+      `;
+      renderVocabResultInputs(qs, levelsInRange);
+    } catch(e) {
+      box.innerHTML = `<div style="color:#c00; font-size:13px;">시험지 생성 실패: ${e.message}</div>`;
+    }
+  }
+
+  function toggleVocabAnswerKey() {
+    const el = document.getElementById('vocabAnswerKeyArea');
+    if (el) el.style.display = el.style.display==='none' ? '' : 'none';
+  }
+
+  function printVocabHTML(areaId) {
+    const container = document.getElementById(areaId);
+    const w = window.open('', '_blank');
+    w.document.write(`<html><body>${container.outerHTML}</body></html>`);
+    w.document.close();
+    w.print();
+  }
+
+  // 급수별 정답 수 입력칸을 시험 구성(qs)에 맞춰 동적으로 만든다.
+  function renderVocabResultInputs(qs, levelsInRange) {
+    const wrap = document.getElementById('vocabResultInputs');
+    wrap.innerHTML = levelsInRange.map(l => {
+      const countInLevel = qs.filter(q=>q.level===l).length;
+      const def = vocabLevelDef(l);
+      return `<div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+        <span style="font-size:13px; width:110px;">${l}급 (${def.band}·${def.sub})</span>
+        <input type="number" class="vocab-level-input" data-level="${l}" data-total="${countInLevel}" style="width:50px;" min="0" max="${countInLevel}" value="0">
+        <span style="font-size:12px; color:#888;">/ ${countInLevel}문항</span>
+      </div>`;
+    }).join('');
+  }
+
+  function openVocabResultForm() {
+    if (!selectedVocabStudent._vocabTestCache) { alert('먼저 "월 시험지 생성"으로 진단 시험지를 만들어주세요.'); return; }
+    document.getElementById('vocabResultForm').style.display = '';
+  }
+
+  // 급수별 정답 수 → 급수별 정답률 계산 → "몇 급까지 통과했는지" 방식으로 실제 급수를 진단한다.
+  // 정답률 70% 이상인 급수까지는 통과로 보고, 처음 70% 미만이 나오는 급수에서 진단을 멈춘다
+  // (난이도가 순차적으로 올라간다는 가정 — 실제로 위 급수를 다시 통과하는 경우는 드묾).
+  function diagnoseVocabLevel(breakdown) {
+    const sorted = breakdown.slice().sort((a,b)=>a.level-b.level);
+    let diagnosed = sorted.length ? sorted[0].level - 1 : 1;
+    let toppedOut = false;
+    for (const b of sorted) {
+      if (b.total>0 && (b.correct/b.total) >= 0.7) {
+        diagnosed = b.level;
+        if (b.level === sorted[sorted.length-1].level) toppedOut = true;
+      } else {
+        break;
+      }
+    }
+    if (diagnosed < 1) diagnosed = 1;
+    return { diagnosed, toppedOut };
+  }
+
+  async function saveVocabResult() {
+    const s = selectedVocabStudent;
+    const inputs = document.querySelectorAll('.vocab-level-input');
+    if (!inputs.length) { alert('먼저 진단 시험지를 생성해주세요.'); return; }
+    const breakdown = [];
+    let total = 0, correct = 0;
+    inputs.forEach(inp => {
+      const level = parseInt(inp.dataset.level);
+      const levelTotal = parseInt(inp.dataset.total) || 0;
+      let levelCorrect = parseInt(inp.value);
+      if (isNaN(levelCorrect)) levelCorrect = 0;
+      if (levelCorrect > levelTotal) levelCorrect = levelTotal;
+      breakdown.push({ level, total: levelTotal, correct: levelCorrect });
+      total += levelTotal; correct += levelCorrect;
+    });
+    const { diagnosed, toppedOut } = diagnoseVocabLevel(breakdown);
+    const oldLevel = currentVocabLevel(s);
+    const score = total>0 ? Math.round(correct/total*100) : 0;
+    const month = todayLocalDateStr().slice(0,7);
+    const resultLabel = diagnosed>oldLevel ? '상승' : diagnosed<oldLevel ? '하락' : '유지';
+    const rec = {
+      id: Date.now().toString(), studentId: s.id, studentName: s.name, grade: s.grade, isGuest: !!s.isGuest,
+      month, date: todayLocalDateStr(), total, correct, score,
+      oldLevel, newLevel: diagnosed, resultLabel, breakdown, toppedOut
+    };
+    _vocabRecords.push(rec);
+    localStorage.setItem('gvr', JSON.stringify(_vocabRecords));
+    if (window._fbReady) await window._add(window._col(window._db,'geuldap_vocab_records'), rec).catch(console.error);
+    document.getElementById('vocabResultForm').style.display = 'none';
+    renderVocabStatus();
+    renderVocabHistory();
+    renderVocabTab();
+    const topNote = toppedOut ? ' (범위 내 최고 급수까지 통과 — 다음엔 더 높은 범위로 재진단 권장)' : '';
+    alert(`저장 완료! 진단 급수: ${diagnosed}급 (기준 ${oldLevel}급 대비 ${resultLabel})${topNote}`);
+  }
+
+  function renderVocabHistory() {
+    const s = selectedVocabStudent;
+    const recs = s.isGuest ? [] : vocabRecordsFor(s.id).slice().reverse();
+    const el = document.getElementById('vocabHistoryList');
+    if (recs.length===0) { el.innerHTML = '<div style="font-size:12px; color:#aaa;">아직 평가 이력이 없습니다.</div>'; return; }
+    el.innerHTML = `<div style="overflow-x:auto;"><table style="border-collapse:collapse; width:100%; font-size:13px;">
+      <tr style="background:#faf8f3;"><th style="border:1px solid #ccc; padding:6px;">월</th><th style="border:1px solid #ccc; padding:6px;">점수</th><th style="border:1px solid #ccc; padding:6px;">급수 변화</th><th style="border:1px solid #ccc; padding:6px;">결과</th></tr>
+      ${recs.map(r=>`<tr>
+        <td style="border:1px solid #ccc; padding:6px;">${r.month}</td>
+        <td style="border:1px solid #ccc; padding:6px;">${r.correct}/${r.total} (${r.score}점)</td>
+        <td style="border:1px solid #ccc; padding:6px;">${r.oldLevel}급 → ${r.newLevel}급</td>
+        <td style="border:1px solid #ccc; padding:6px;">${r.resultLabel}</td>
+      </tr>`).join('')}
+    </table></div>`;
+  }
+
+  // 직전 평가와 비교 + 실제 학년 대비 급수 위치를 담은 보고서를 AI로 작성 (상담 자료 또는 학부모 보고서로 활용)
+  async function generateVocabParentReport() {
+    const s = selectedVocabStudent;
+    const recs = s.isGuest ? [] : vocabRecordsFor(s.id);
+    const guestRec = s.isGuest ? _vocabRecords.filter(r=>r.studentId===s.id).sort((a,b)=>a.month.localeCompare(b.month)) : null;
+    const allRecs = s.isGuest ? guestRec : recs;
+    if (!allRecs || allRecs.length===0) { alert('아직 저장된 평가 기록이 없습니다. 먼저 시험 결과를 입력해주세요.'); return; }
+    const box = document.getElementById('vocabParentReportResult');
+    box.innerHTML = '<div style="color:#888; font-size:13px;">보고서를 작성하고 있어요...</div>';
+    const last = allRecs[allRecs.length-1];
+    const prev = allRecs.length>1 ? allRecs[allRecs.length-2] : null;
+    const lvlDef = vocabLevelDef(last.newLevel);
+    const gradeStartLevel = VOCAB_GRADE_START_LEVEL[s.grade] || 1;
+    const diffFromGrade = last.newLevel - gradeStartLevel;
+    const compareLine = diffFromGrade > 0 ? `실제 학년(${s.grade}) 표준보다 약 ${diffFromGrade}단계 앞서 있습니다.`
+      : diffFromGrade < 0 ? `실제 학년(${s.grade}) 표준보다 약 ${Math.abs(diffFromGrade)}단계 뒤처져 있어 보충이 필요합니다.`
+      : `실제 학년(${s.grade}) 표준과 같은 수준입니다.`;
+    const breakdownText = (last.breakdown||[]).map(b=>`${b.level}급: ${b.correct}/${b.total}`).join(', ');
+    const prompt = `당신은 "글답국어독서논술"의 AI 어휘력 분석 시스템입니다. 아래 데이터를 바탕으로 어휘력 진단 보고서를 작성해주세요(상담 방문자 안내 또는 학부모 보고 용도로 쓰입니다).
+
+학생: ${s.name} (${s.grade}${s.isGuest ? ', 상담 방문자' : ''})
+이번 진단(${last.month}): 총 ${last.correct}/${last.total}문항 정답(${last.score}점), 급수별 정답 현황: ${breakdownText}
+진단 결과: ${last.oldLevel}급 기준 → ${last.newLevel}급으로 판정(${last.resultLabel})
+현재 급수 수준: ${lvlDef.band} ${lvlDef.sub} (${lvlDef.desc})
+${prev ? `직전 평가(${prev.month}): 급수 ${prev.newLevel}급` : '직전 평가 기록 없음(이번이 첫 진단)'}
+학년 대비 위치: ${compareLine}
+
+작성 지침:
+- "제가 느끼기에" 같은 1인칭 화법 대신, "분석 결과" 같은 객관적·관찰자적 어조로 작성
+- 과장된 감탄 표현 없이 담백하고 근거 중심으로
+- 이번 진단 결과 → 급수별 정답 현황이 보여주는 의미 → 학년 대비 현재 위치 → 학습 제안 순서로 자연스러운 문단 구성
+- 마크다운 기호 없이 일반 문장으로만 작성
+- 첫 문장은 "글답국어독서논술 어휘력 분석 시스템이 ${s.name} 학생의 ${last.month} 어휘력 진단 결과를 안내드립니다." 로 시작`;
+    try {
+      const text = await callGemini(prompt);
+      box.innerHTML = `
+        <div style="border:1px solid #eee; border-radius:10px; padding:16px; background:#faf8f3;">
+          <div style="font-weight:700; margin-bottom:8px;">어휘력 진단 보고서</div>
+          <textarea id="vocabParentReportText" rows="10" style="width:100%; font-size:14px; line-height:1.7; padding:10px; border:1px solid #ddd; border-radius:8px; font-family:inherit;">${text}</textarea>
+          <div style="margin-top:10px; display:flex; gap:8px;">
+            <button class="btn btn-secondary btn-sm" onclick="copyVocabParentReport()">📋 복사</button>
+          </div>
+        </div>
+      `;
+    } catch(e) {
+      box.innerHTML = `<div style="color:#c00; font-size:13px;">보고서 생성 실패: ${e.message}</div>`;
+    }
+  }
+
+  function copyVocabParentReport() {
+    const ta = document.getElementById('vocabParentReportText');
+    ta.select();
+    navigator.clipboard.writeText(ta.value).then(()=>alert('복사되었습니다.')).catch(()=>document.execCommand('copy'));
   }
 
   // ===== AI 평가 (Firebase Function 경유, 키는 서버에만 저장) =====
