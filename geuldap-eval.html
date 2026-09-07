@@ -6,6 +6,7 @@
   <title>글답 글쓰기 성장 관리 시스템</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&family=Noto+Serif+KR:wght@400;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'Noto Sans KR', sans-serif; background: #f0f2f5; color: #1a1a2e; }
@@ -542,6 +543,7 @@
   <div class="tab" onclick="switchTab('payments')">수납 관리</div>
   <div class="tab" onclick="switchTab('learner')" style="color:#2f855a;">📚 학습기</div>
   <div class="tab" onclick="switchTab('vocab')" style="color:#0d6b6b;">🔤 어휘력</div>
+  <div class="tab" onclick="switchTab('materials')" style="color:#8b5a2b;">📚 자료실</div>
   <div class="tab" onclick="switchTab('blog')" style="color:#a8710a;">📝 블로그 생성</div>
   <div class="tab" onclick="switchTab('legal')" style="color:#7a4fb5;">📁 법정 서류함</div>
 </div>
@@ -1109,6 +1111,11 @@
     <div class="student-grid" id="vocabStudentGrid"></div>
   </div>
 
+  <div class="card">
+    <div class="card-title">상담 기록 (미등록 방문자)</div>
+    <div id="vocabGuestHistoryList"></div>
+  </div>
+
   <div class="card" id="vocabGuestForm" style="display:none;">
     <div class="card-title">상담자 즉석 테스트</div>
     <div class="form-group">
@@ -1155,6 +1162,43 @@
 
     <div class="card-title" style="margin-top:10px;">평가 이력</div>
     <div id="vocabHistoryList"></div>
+  </div>
+</div>
+
+<!-- 자료실 -->
+<div class="page" id="page-materials">
+  <div class="card">
+    <div class="card-title">자료실</div>
+    <div style="font-size:12px; color:#888; margin-bottom:14px;">사자성어 학습지, 문제은행 등 반복해서 쓰는 학습 자료를 저장해두고, 필요할 때마다 학원 브랜딩 양식으로 다시 인쇄할 수 있어요.</div>
+    <div style="margin-bottom:14px;">
+      <button class="btn btn-primary btn-sm" onclick="openMaterialForm()">＋ 새 자료 등록</button>
+    </div>
+    <div id="materialsList"></div>
+  </div>
+
+  <div class="card" id="materialFormCard" style="display:none;">
+    <div class="card-title" id="materialFormTitle">새 자료 등록</div>
+    <div class="form-group">
+      <label>제목</label>
+      <input type="text" id="materialTitleInput" placeholder="예: 사자성어 학습지 (50개)">
+    </div>
+    <div class="form-group">
+      <label>카테고리</label>
+      <input type="text" id="materialCategoryInput" placeholder="예: 사자성어, 속담, 관용구, 문제은행 등" list="materialCategoryList">
+      <datalist id="materialCategoryList"></datalist>
+    </div>
+    <div class="form-group">
+      <label>내용 (그대로 인쇄됩니다)</label>
+      <textarea id="materialContentInput" rows="14" style="width:100%; font-family:inherit; font-size:13px; padding:10px; border:1px solid #ddd; border-radius:8px;"></textarea>
+    </div>
+    <div style="display:flex; gap:8px;">
+      <button class="btn btn-primary btn-sm" onclick="saveMaterial()">💾 저장</button>
+      <button class="btn btn-secondary btn-sm" onclick="closeMaterialForm()">취소</button>
+    </div>
+  </div>
+
+  <div class="card" id="materialViewCard" style="display:none;">
+    <div id="materialViewBody"></div>
   </div>
 </div>
 
@@ -2079,14 +2123,14 @@
     // Promise.all은 그중 하나라도 실패하면 나머지 성공한 것까지 전부 버려버려서, 신호 약한
     // 모바일에서 요청 하나만 실패해도 자료·시험 등 모든 데이터가 통째로 안 불러와지는 상태가 됐다.
     // allSettled로 바꿔서 "하나 실패해도 나머지는 살리기" + 재시도까지 추가한다.
-    const names = ['geuldap_students','geuldap_records','geuldap_quizzes','geuldap_attendance','geuldap_leads','geuldap_payments','geuldap_readings','geuldap_lr_materials','geuldap_lr_exams','geuldap_lr_wrong','geuldap_staff','geuldap_expenses','geuldap_vocab_records'];
+    const names = ['geuldap_students','geuldap_records','geuldap_quizzes','geuldap_attendance','geuldap_leads','geuldap_payments','geuldap_readings','geuldap_lr_materials','geuldap_lr_exams','geuldap_lr_wrong','geuldap_staff','geuldap_expenses','geuldap_vocab_records','geuldap_materials'];
     const results = await Promise.allSettled(names.map(n => getDocsWithRetry(n)));
-    const [ss, rs, qs, as_, ls_, ps_, rd_, lrm_, lre_, lrw_, stf_, exp_, vr_] = results;
+    const [ss, rs, qs, as_, ls_, ps_, rd_, lrm_, lre_, lrw_, stf_, exp_, vr_, ml_] = results;
     const targets = [
       [ss, window._students], [rs, window._records], [qs, window._quizzes],
       [as_, window._attendance], [ls_, window._leads], [ps_, window._payments],
       [rd_, window._readings], [lrm_, window._lrMaterials], [lre_, window._lrExams], [lrw_, window._lrWrong],
-      [stf_, window._staff], [exp_, window._expenses], [vr_, window._vocabRecords]
+      [stf_, window._staff], [exp_, window._expenses], [vr_, window._vocabRecords], [ml_, window._materials]
     ];
     targets.forEach(([result, arr], i) => {
       if (result.status === 'fulfilled') {
@@ -2113,8 +2157,19 @@
     localStorage.setItem('gstf', JSON.stringify(window._staff));
     localStorage.setItem('gex', JSON.stringify(window._expenses));
     localStorage.setItem('gvr', JSON.stringify(window._vocabRecords));
+    localStorage.setItem('gml', JSON.stringify(window._materials));
     if (window._academySettings) localStorage.setItem('gas', JSON.stringify(window._academySettings));
   } catch(e) { console.log('Firebase 로드:', e); }
+  // 자료실이 비어있으면(처음 쓰는 경우) 방금 만든 사자성어 학습지를 기본 자료로 한 번만 등록해둔다.
+  if (window._materials.length === 0) {
+    const seed = {
+      id: 'seed_sajaseongeo_' + Date.now(), title: '사자성어 학습지 (50개)', category: '사자성어',
+      content: DEFAULT_SAJASEONGEO_MATERIAL_TEXT, createdAt: todayLocalDateStr()
+    };
+    window._materials.push(seed);
+    localStorage.setItem('gml', JSON.stringify(window._materials));
+    if (window._add && window._col && window._db) { try { await window._add(window._col(window._db,'geuldap_materials'), seed); } catch(e3) { console.log('자료실 기본값 저장:', e3); } }
+  }
   renderStudents();
   window._fbReady = true;
   // 학원에서 여러 학생이 같은 컴퓨터를 같이 쓸 수 있어서, 새로고침해도 로그인이 유지되면
@@ -2132,7 +2187,7 @@
 
 <script>
   // ===== 버전 정보 (콘솔에서 확인: APP_VERSION 또는 페이지 로드시 자동 출력) =====
-  const APP_VERSION = 'v7.48';
+  const APP_VERSION = 'v7.57';
   const APP_VERSION_LOG = [
     'v1.0 — 탭 구조 + UI 껍데기',
     'v1.1 — AI 문제 생성 + 개념 사다리',
@@ -2225,7 +2280,16 @@
     'v7.45 — [버그 수정] 시험지·학습지를 생성한 뒤 다른 학생을 봤다가 돌아오거나 다른 탭(출석부 등)에 갔다가 어휘력 탭으로 복귀하면 방금 만든 시험지 화면이 사라져서, 아이가 그새 다 풀어도 처음부터 다시 생성해야 하는 문제 확인(재생성하면 AI가 새 문제를 만들어버려 아이가 실제로 푼 시험지와 달라짐) → 학습지·시험지 렌더링을 재사용 가능한 함수(renderVocabWorksheetBox/renderVocabTestBox)로 분리하고, 학생 선택 시 그 학생에게 캐시된 학습지/시험지가 있으면 새로 만들지 않고 그대로 복원하도록 수정. 탭 전환 시에도 이미 선택된 학생이 있으면 상세 화면을 닫지 않도록 renderVocabTab() 수정',
     'v7.46 — [신규] 어휘력 인쇄물에 학원 브랜딩 양식 적용 — 학습지·시험지·진단 평가서 모두 이중 테두리 안에 학원명("글답국어독서논술", 학원 설정에 이름이 등록돼 있으면 그 값 사용)을 헤더로 두르는 공통 양식(vocabPrintFrameOpen/VOCAB_PRINT_FRAME_CLOSE)으로 통일. 진단 보고서 쪽에는 "🖨️ 평가서 인쇄" 버튼을 추가해 이름·학년·진단일·종합 급수 표, 급수별 정답 현황 표, AI가 쓴 분석 글(원장이 수정한 내용 그대로 반영)을 한 장짜리 정식 평가서 양식으로 인쇄 가능하도록 함',
     'v7.47 — [확장] EBS 문해력 교재 시리즈(참 쉬운 급수 한자, 문해력 등급 평가 등)를 참고해 어휘 급수 체계를 초4~중3(12급)에서 초1~중3 전 학년(18급)으로 확장 — 학년당 2단계씩 9개 학년, VOCAB_MAX_LEVEL 상수로 캡 관리. 초1~초3 구간은 저학년 수준에 맞는 새 설명 작성(받침 없는 낱말, 의성어·의태어, 쉬운 속담 등). 상담자 즉석 테스트 학년 선택지에 초1~초3 추가(정식 재원생 학년 옵션은 기존 3학년부터 그대로 유지, 별도 요청 없어 변경 안 함)',
-    'v7.48 — EBS 어휘 교재(문제 유형 다양화, 한자 병기, 정답과 해설)를 참고해 진단 시험지 문제 유형을 뜻고르기·빈칸고르기 2종에서 비슷한말고르기·반대말고르기·한자어조합(한자+훈음 병기, 초5급 이상에서만 사용)까지 다양화. 각 문제에 정답 해설(explanation) 필드를 추가해 정답지가 "정답과 해설" 형태로 보이도록 변경, 문제 위에 유형 태그([뜻고르기] 등)도 표시'
+    'v7.48 — EBS 어휘 교재(문제 유형 다양화, 한자 병기, 정답과 해설)를 참고해 진단 시험지 문제 유형을 뜻고르기·빈칸고르기 2종에서 비슷한말고르기·반대말고르기·한자어조합(한자+훈음 병기, 초5급 이상에서만 사용)까지 다양화. 각 문제에 정답 해설(explanation) 필드를 추가해 정답지가 "정답과 해설" 형태로 보이도록 변경, 문제 위에 유형 태그([뜻고르기] 등)도 표시',
+    'v7.49 — [UI 개선] 화면 채점 결과에 시각적 정오 표시 추가 — "채점하기"를 누르면 고른 답이 맞으면 초록 배경+○, 틀리면 빨간 배경+✕로 표시하고, 틀린 문제는 실제 정답 위치에도 테두리 강조+○를 표시해 정답이 어디였는지 바로 보이게 함. 채점 후에는 보기 버튼이 비활성화되어 다시 클릭할 수 없음',
+    'v7.50 — [신규] 상담(미등록 방문자) 기록 저장·조회·삭제 기능 추가 — 상담자는 _students에 없어 그동안 기록이 있어도 다시 찾아볼 방법이 없었음 → 어휘력 탭에 "상담 기록(미등록 방문자)" 카드를 새로 추가해 지금까지의 상담 기록을 이름·학년·날짜·급수로 목록 표시, "보기"로 다시 불러와 이력·보고서 확인 가능(reopenVocabGuest). 평가 이력 목록(재원생·상담자 공통)에 "삭제" 버튼도 추가해 잘못 저장한 기록을 지울 수 있게 함(deleteVocabRecord, geuldap_vocab_records에서도 함께 삭제)',
+    'v7.51 — [신규] 시험 결과를 저장할 때 점수·급수뿐 아니라 실제 문제(questions)와 화면 채점 시 고른 답(answers)까지 함께 저장하도록 변경 — 그동안은 요약 수치만 남고 시험지 자체는 사라졌음. 평가 이력에 "📄 시험지 보기" 버튼 추가(viewVocabRecordTest)로 예전에 본 시험지를 문제·보기·정답·해설과 함께 읽기 전용으로 다시 열람 가능. 화면 채점 기록은 학생이 고른 답에 정오 표시(○/✕)까지 그대로 재현되고, 종이 채점만 한 기록은 문제·정답만 보여줌(고른 답 데이터가 없다는 안내 문구 표시)',
+    'v7.52 — [버그 수정] 사용자가 실제 출력된 시험지에서 발견 — "한자어조합" 문제가 지문에 정답 낱말을 이루는 한자·훈음을 그대로 적어버려서("\'공평할 공(公)\'과 \'평평할 평(平)\'이 합쳐져...") 지문만 보고 문자 매칭만으로 답이 드러나는 문제가 있었음 → 프롬프트에 지문에서 한자·훈음 노출 금지, 뜻풀이로만 지문을 구성하고 한자+훈음은 4개 보기에만 동일한 형식으로 표기하도록 명시해 뜻을 알아야 맞힐 수 있게 수정',
+    'v7.53 — [신규] 진단 보고서 화면에 "📤 학부모 공유(문제+결과+보고서)" 버튼 추가(shareVocabToParent) — 기존 학원이 써온 "복사 후 카카오톡/문자에 붙여넣기" 방식 그대로, 문제 전부(정답·해설 포함)+급수별 정답 현황+종합 결과+AI 진단 보고서를 하나의 텍스트로 묶어 클립보드에 복사. 화면 채점 기록은 학생이 고른 답과 정오(O/X)도 함께 표시됨',
+    'v7.54 — [개선] 사용자 제안으로 공유 방식을 세분화 — 통짜 복사 하나만 있으면 매번 다 지우고 필요한 부분만 남기기 번거롭다는 점에서, "결과만 복사"·"문제만 복사"·"보고서만 복사"를 각각 따로 만들고 "전체 한번에 복사"는 그대로 남겨둠. 내부적으로 결과/문제 텍스트 생성 로직을 buildVocabResultText/buildVocabQuestionsText 함수로 분리해 공유 로직 재사용',
+    'v7.55 — [신규] "📚 자료실" 탭 신설 — 사자성어 학습지처럼 반복해서 쓰는 학습 자료를 저장해두고 필요할 때마다 학원 브랜딩 양식으로 다시 인쇄할 수 있게 함. 파일(docx 등)을 그대로 올리는 대신 내용을 텍스트로 저장하는 방식으로 결정(Firestore 문서 용량 제한 없음, 문구 수정·재활용 쉬움 — 어휘력 탭과 같은 방식). 제목/카테고리/내용으로 등록·수정·삭제, geuldap_materials 컬렉션에 저장. 사용자가 요청한 "토요 글쓰기 사자성어 경연대회" 대비 50개 사자성어 학습지를 기본 자료로 미리 등록해둠',
+    'v7.56 — [신규] 자료실 보기 화면에 "🖼️ 이미지로 저장(카톡 공유용)" 버튼 추가 — 텍스트 복사만으로는 카톡에 줄글로만 보여 예쁘지 않다는 지적에 따라, html2canvas(CDN)로 학원 브랜딩 테두리 화면을 그대로 PNG 사진으로 캡처해 다운로드하도록 함. 사진으로 저장해서 카톡에 첨부하면 테두리·글씨체·정렬이 그대로 유지됨',
+    'v7.57 — [개선] 사용자 요청으로 인쇄 시 학원 브랜딩 헤더("글답국어독서논술")가 첫 페이지에만 나오던 것을 매 페이지 상단에 반복해서 찍히도록 변경 — vocabPrintFrameOpen()의 헤더 블록에 .vocab-print-header 클래스를 붙이고, 인쇄용 팝업 창에 @media print 전용 CSS(VOCAB_PRINT_REPEAT_HEADER_CSS)를 주입해 그 블록만 인쇄 시 position:fixed로 띄우고 @page 위쪽 여백을 확보해 페이지마다 반복되게 함(화면에서 볼 땐 기존처럼 한 번만 보임). 학습지·시험지·평가서·자료실 인쇄 모두에 공통 적용'
   ];
   console.log(`%c글답 학습기 ${APP_VERSION}`, 'font-weight:bold; font-size:14px; color:#0d1b4b;');
   console.groupCollapsed('%c버전 기록 (클릭해서 펼치기)', 'color:#888; font-size:11px;');
@@ -2272,6 +2336,7 @@
   window._staff = JSON.parse(localStorage.getItem('gstf') || '[]');
   window._expenses = JSON.parse(localStorage.getItem('gex') || '[]');
   window._vocabRecords = JSON.parse(localStorage.getItem('gvr') || '[]');
+  window._materials = JSON.parse(localStorage.getItem('gml') || '[]');
   window._academySettings = JSON.parse(localStorage.getItem('gas') || 'null');
 
   // 기본 과정 목록: 아직 과정이 하나도 없으면 자동으로 채운다
@@ -4814,7 +4879,7 @@ ${a.name}`;
 
   // ===== 탭 =====
   function switchTab(tab) {
-    document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', ['students','upload','records','reading','attendance','quiz','leads','timetable','payments','learner','vocab','blog','legal'][i]===tab));
+    document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', ['students','upload','records','reading','attendance','quiz','leads','timetable','payments','learner','vocab','materials','blog','legal'][i]===tab));
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.getElementById('page-'+tab).classList.add('active');
     if (tab==='upload') renderUploadStudents();
@@ -4827,6 +4892,7 @@ ${a.name}`;
     if (tab==='payments') { const m = document.getElementById('payMonth'); if (!m.value) m.value = todayLocalDateStr().slice(0,7); loadPayments(m.value); }
     if (tab==='learner') renderLearnerTab();
     if (tab==='vocab') renderVocabTab();
+    if (tab==='materials') renderMaterialsTab();
     if (tab==='blog') renderBlogGenerate();
     if (tab==='legal') renderLegalDocs();
   }
@@ -5473,7 +5539,7 @@ ${a.name}`;
   }
   function vocabPrintFrameOpen(subtitle) {
     return `<div style="border:3px double #0d6b6b; border-radius:4px; padding:22px 26px;">
-      <div style="text-align:center; border-bottom:2px solid #0d6b6b; padding-bottom:12px; margin-bottom:18px;">
+      <div class="vocab-print-header" style="text-align:center; border-bottom:2px solid #0d6b6b; padding-bottom:12px; margin-bottom:18px; background:#fff;">
         <div style="font-size:21px; font-weight:800; color:#0d6b6b; letter-spacing:1px;">${escapeHtml(vocabAcademyName())}</div>
         <div style="font-size:11px; color:#999; letter-spacing:2px; margin-top:3px;">GEULDAP KOREAN READING &amp; ESSAY ACADEMY</div>
         ${subtitle ? `<div style="font-size:15px; font-weight:700; margin-top:12px;">${subtitle}</div>` : ''}
@@ -5534,6 +5600,59 @@ ${a.name}`;
     } else {
       document.getElementById('vocabDetailSection').style.display = 'none';
     }
+    renderVocabGuestHistoryList();
+  }
+
+  // 상담(미등록 방문자) 기록 목록 — 재원생과 달리 _students에 없으므로 게시판처럼 별도로 보여준다.
+  // "보기"로 다시 불러와 이력·보고서를 확인하거나, "삭제"로 기록을 지울 수 있다.
+  function renderVocabGuestHistoryList() {
+    const el = document.getElementById('vocabGuestHistoryList');
+    if (!el) return;
+    const guestRecs = _vocabRecords.filter(r=>r.isGuest).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+    if (guestRecs.length===0) { el.innerHTML = '<div style="font-size:12px; color:#aaa;">상담 기록이 없습니다.</div>'; return; }
+    el.innerHTML = `<div style="overflow-x:auto;"><table style="border-collapse:collapse; width:100%; font-size:13px;">
+      <tr style="background:#faf8f3;">
+        <th style="border:1px solid #ccc; padding:6px;">이름</th>
+        <th style="border:1px solid #ccc; padding:6px;">학년</th>
+        <th style="border:1px solid #ccc; padding:6px;">날짜</th>
+        <th style="border:1px solid #ccc; padding:6px;">진단 급수</th>
+        <th style="border:1px solid #ccc; padding:6px;"></th>
+      </tr>
+      ${guestRecs.map(r=>`<tr>
+        <td style="border:1px solid #ccc; padding:6px;">${escapeHtml(r.studentName)}</td>
+        <td style="border:1px solid #ccc; padding:6px;">${escapeHtml(r.grade||'')}</td>
+        <td style="border:1px solid #ccc; padding:6px;">${r.date||r.month}</td>
+        <td style="border:1px solid #ccc; padding:6px;">${r.newLevel}급</td>
+        <td style="border:1px solid #ccc; padding:6px; white-space:nowrap;">
+          <button class="btn btn-secondary btn-sm" onclick="reopenVocabGuest('${r.studentId}')">보기</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteVocabRecord('${r.id}')">삭제</button>
+        </td>
+      </tr>`).join('')}
+    </table></div>`;
+  }
+
+  // 상담 기록 목록에서 "보기"를 눌렀을 때 그 방문자를 다시 불러온다.
+  function reopenVocabGuest(studentId) {
+    const rec = _vocabRecords.filter(r=>r.studentId===studentId).sort((a,b)=>a.month.localeCompare(b.month)).pop();
+    if (!rec) return;
+    selectedVocabStudent = { id: studentId, name: rec.studentName, grade: rec.grade, isGuest: true };
+    document.getElementById('vocabGuestForm').style.display = 'none';
+    document.getElementById('vocabDetailSection').style.display = '';
+    document.getElementById('vocabWorksheetResult').innerHTML = '';
+    document.getElementById('vocabParentReportResult').innerHTML = '';
+    document.getElementById('vocabResultForm').style.display = 'none';
+    renderVocabStatus();
+    renderVocabHistory();
+  }
+
+  // 어휘력 평가 기록 하나를 삭제한다 — 재원생·상담자 기록 모두에 쓸 수 있다.
+  async function deleteVocabRecord(recordId) {
+    if (!confirm('이 평가 기록을 삭제할까요? 삭제하면 되돌릴 수 없습니다.')) return;
+    window._vocabRecords = _vocabRecords.filter(r=>r.id!==recordId);
+    localStorage.setItem('gvr', JSON.stringify(_vocabRecords));
+    if (window._fbReady) { try { await window._deleteByFieldId('geuldap_vocab_records', recordId); } catch(e) { console.error('어휘 기록 삭제 오류', e); } }
+    if (selectedVocabStudent) { renderVocabStatus(); renderVocabHistory(); }
+    renderVocabTab();
   }
 
   // 미등록 상담자용 즉석 입력 — 정식 학생 등록 없이 이름+학년만으로 바로 테스트를 진행한다.
@@ -5678,7 +5797,8 @@ ${levelDescText}
 
 요구사항:
 - 각 급수마다 정확히 ${VOCAB_QUESTIONS_PER_LEVEL}문제씩, 그 급수 범위를 벗어나지 않는 어휘로 출제
-- 문제 유형을 다양하게 섞어서 구성: "뜻고르기"(낱말 제시 후 알맞은 뜻 고르기), "빈칸고르기"(빈칸에 알맞은 낱말 고르기), "비슷한말고르기"(제시된 낱말과 뜻이 비슷한 낱말 고르기), "반대말고르기"(제시된 낱말과 뜻이 반대되는 낱말 고르기), "한자어조합"(한자 어휘의 뜻에 맞는 한자를 고르거나 한자어의 올바른 뜻을 고르기 — 한자어를 다루는 문제일 경우, question이나 options 안에 한자와 훈음을 함께 표기할 것. 예: "室(집 실)")
+- 문제 유형을 다양하게 섞어서 구성: "뜻고르기"(낱말 제시 후 알맞은 뜻 고르기), "빈칸고르기"(빈칸에 알맞은 낱말 고르기), "비슷한말고르기"(제시된 낱말과 뜻이 비슷한 낱말 고르기), "반대말고르기"(제시된 낱말과 뜻이 반대되는 낱말 고르기), "한자어조합"(뜻풀이를 보고 그 뜻에 맞는 한자어를 고르기)
+- "한자어조합" 문제는 question(지문)에 정답 낱말을 이루는 한자나 훈음을 절대로 미리 알려주면 안 됨(예: 지문에 "'공평할 공(公)'과 '평평할 평(平)'이 합쳐져..."처럼 쓰면 지문만 보고도 답이 그대로 드러나므로 금지). 지문은 순수하게 뜻풀이·상황 설명만으로 구성하고("한쪽으로 치우치지 않고 고름을 뜻하는 낱말은 무엇인가요?" 같은 식), 한자와 훈음 표기는 4개의 보기(options) 안에만 각각 표기할 것 — 정답 보기든 오답 보기든 모두 같은 형식으로 한자+훈음을 달아서, 글자만 보고 맞히는 게 아니라 뜻을 알아야 맞힐 수 있게 할 것
 - 낮은 급수(초1~초3)에서는 뜻고르기·비슷한말·반대말 위주로, 한자어조합은 한자를 배우기 시작하는 초5급 이상에서만 사용할 것
 - 모든 문제는 보기 4개 중 하나를 고르는 4지선다 객관식으로 만들 것 (주관식 서술형 금지)
 - 오답 보기는 정답과 헷갈릴 만한 그럴듯한 것으로 구성(너무 쉽게 구별되지 않도록)
@@ -5786,13 +5906,52 @@ ${levelDescText}
       qs.forEach((q,i)=>{ if (q.level===level && vocabInteractiveAnswers[i]===q.answerIndex) correct++; });
       inp.value = correct;
     });
+    // 채점 표시: 고른 답이 맞으면 초록 배경 + ○, 틀렸으면 빨간 배경 + ✕ 표시.
+    // 틀린 문제는 정답 위치에도 ○를 표시해 어떤 게 정답이었는지 바로 보이게 한다.
+    const optionLabels = ['①','②','③','④'];
+    qs.forEach((q,i)=>{
+      const selected = vocabInteractiveAnswers[i];
+      const isCorrect = selected === q.answerIndex;
+      document.querySelectorAll(`.vocab-opt-btn[data-q="${i}"]`).forEach(btn=>{
+        const opt = parseInt(btn.dataset.opt);
+        btn.disabled = true;
+        btn.style.cursor = 'default';
+        if (opt === selected) {
+          btn.style.background = isCorrect ? '#0d6b6b' : '#c0392b';
+          btn.style.color = '#fff';
+          btn.style.borderColor = isCorrect ? '#0d6b6b' : '#c0392b';
+          btn.innerHTML = `${optionLabels[opt]}<span style="margin-left:2px;">${isCorrect ? '○' : '✕'}</span>`;
+        } else if (opt === q.answerIndex && !isCorrect) {
+          btn.style.borderColor = '#0d6b6b';
+          btn.style.borderWidth = '2px';
+          btn.style.color = '#0d6b6b';
+          btn.innerHTML = `${optionLabels[opt]}<span style="margin-left:2px;">○</span>`;
+        }
+      });
+    });
     alert('채점 완료! 급수별 정답 수가 자동으로 입력되었어요. 확인 후 "저장 및 급수 진단" 버튼을 눌러주세요.');
   }
+
+  // 인쇄할 때 학원 헤더(글답국어독서논술)가 첫 장에만 나오지 않고 매 페이지 상단에 반복해서
+  // 찍히도록 한다. vocabPrintFrameOpen()이 만드는 .vocab-print-header 블록을 인쇄 시에만
+  // position:fixed로 띄우고, @page 위쪽 여백을 그 높이만큼 비워둬서 본문이 매 페이지 그 아래부터
+  // 시작하게 한다(화면에서 미리 볼 때는 원래대로 한 번만 보임 — @media print 안에서만 적용).
+  const VOCAB_PRINT_REPEAT_HEADER_CSS = `
+    @media print {
+      @page { margin: 34mm 14mm 14mm 14mm; }
+      body { margin: 0; }
+      .vocab-print-header {
+        position: fixed;
+        top: -26mm;
+        left: 0; right: 0;
+      }
+    }
+  `;
 
   function printVocabHTML(areaId) {
     const container = document.getElementById(areaId);
     const w = window.open('', '_blank');
-    w.document.write(`<html><body>${container.outerHTML}</body></html>`);
+    w.document.write(`<html><head><style>${VOCAB_PRINT_REPEAT_HEADER_CSS}</style></head><body>${container.outerHTML}</body></html>`);
     w.document.close();
     w.print();
   }
@@ -5855,10 +6014,14 @@ ${levelDescText}
     const score = total>0 ? Math.round(correct/total*100) : 0;
     const month = todayLocalDateStr().slice(0,7);
     const resultLabel = diagnosed>oldLevel ? '상승' : diagnosed<oldLevel ? '하락' : '유지';
+    // 시험지를 나중에 "다시보기"할 수 있도록 실제 문제(questions)와, 화면에서 채점했다면
+    // 학생이 고른 답(answers)까지 함께 저장해둔다. 종이 채점만 한 경우는 answers가 비어 있을 수 있다.
     const rec = {
       id: Date.now().toString(), studentId: s.id, studentName: s.name, grade: s.grade, isGuest: !!s.isGuest,
       month, date: todayLocalDateStr(), total, correct, score,
-      oldLevel, newLevel: diagnosed, resultLabel, breakdown, toppedOut
+      oldLevel, newLevel: diagnosed, resultLabel, breakdown, toppedOut,
+      questions: selectedVocabStudent._vocabTestCache || null,
+      answers: Object.keys(vocabInteractiveAnswers||{}).length ? { ...vocabInteractiveAnswers } : null
     };
     _vocabRecords.push(rec);
     localStorage.setItem('gvr', JSON.stringify(_vocabRecords));
@@ -5873,19 +6036,66 @@ ${levelDescText}
 
   function renderVocabHistory() {
     const s = selectedVocabStudent;
-    const recs = s.isGuest ? [] : vocabRecordsFor(s.id).slice().reverse();
+    const recs = (s.isGuest ? _vocabRecords.filter(r=>r.studentId===s.id) : vocabRecordsFor(s.id)).slice().reverse();
     const el = document.getElementById('vocabHistoryList');
     if (recs.length===0) { el.innerHTML = '<div style="font-size:12px; color:#aaa;">아직 평가 이력이 없습니다.</div>'; return; }
     el.innerHTML = `<div style="overflow-x:auto;"><table style="border-collapse:collapse; width:100%; font-size:13px;">
-      <tr style="background:#faf8f3;"><th style="border:1px solid #ccc; padding:6px;">월</th><th style="border:1px solid #ccc; padding:6px;">점수</th><th style="border:1px solid #ccc; padding:6px;">급수 변화</th><th style="border:1px solid #ccc; padding:6px;">결과</th></tr>
+      <tr style="background:#faf8f3;"><th style="border:1px solid #ccc; padding:6px;">월</th><th style="border:1px solid #ccc; padding:6px;">점수</th><th style="border:1px solid #ccc; padding:6px;">급수 변화</th><th style="border:1px solid #ccc; padding:6px;">결과</th><th style="border:1px solid #ccc; padding:6px;"></th></tr>
       ${recs.map(r=>`<tr>
         <td style="border:1px solid #ccc; padding:6px;">${r.month}</td>
         <td style="border:1px solid #ccc; padding:6px;">${r.correct}/${r.total} (${r.score}점)</td>
         <td style="border:1px solid #ccc; padding:6px;">${r.oldLevel}급 → ${r.newLevel}급</td>
         <td style="border:1px solid #ccc; padding:6px;">${r.resultLabel}</td>
+        <td style="border:1px solid #ccc; padding:6px; white-space:nowrap;">
+          ${r.questions ? `<button class="btn btn-secondary btn-sm" onclick="viewVocabRecordTest('${r.id}')">📄 시험지 보기</button>` : ''}
+          <button class="btn btn-danger btn-sm" onclick="deleteVocabRecord('${r.id}')">삭제</button>
+        </td>
       </tr>`).join('')}
     </table></div>`;
   }
+
+  // 저장된 기록에 남아있는 문제(questions)와 화면에서 고른 답(answers, 있는 경우)을 그대로
+  // 다시 보여준다 — 읽기 전용이라 클릭해도 채점 결과가 바뀌지 않는다.
+  function viewVocabRecordTest(recordId) {
+    const rec = _vocabRecords.find(r=>r.id===recordId);
+    if (!rec || !rec.questions) { alert('이 기록에는 저장된 시험지가 없습니다.'); return; }
+    const optionLabels = ['①','②','③','④'];
+    const rows = rec.questions.map((q,i)=>{
+      const selected = rec.answers ? rec.answers[i] : undefined;
+      const hasSelection = selected !== undefined && selected !== null;
+      const isCorrect = hasSelection && selected === q.answerIndex;
+      const optsHtml = (q.options||[]).map((op,oi)=>{
+        let style = 'border:1px solid #ccc; border-radius:5px; padding:3px 8px; font-size:12px; display:inline-block; margin:2px;';
+        let mark = '';
+        if (hasSelection && oi===selected) {
+          style += isCorrect ? 'background:#0d6b6b;color:#fff;' : 'background:#c0392b;color:#fff;';
+          mark = isCorrect ? ' ○' : ' ✕';
+        } else if (oi===q.answerIndex && (!hasSelection || !isCorrect)) {
+          style += 'border-color:#0d6b6b; border-width:2px; color:#0d6b6b;';
+          mark = ' ○';
+        }
+        return `<span style="${style}">${optionLabels[oi]} ${op}${mark}</span>`;
+      }).join('');
+      return `<tr>
+        <td style="border:1px solid #ccc; padding:6px; width:30px; text-align:center;">${i+1}</td>
+        <td style="border:1px solid #ccc; padding:8px;">
+          <div style="font-size:11px; color:#0d6b6b;">[${q.type||''}] ${q.level}급</div>
+          <div>${q.question}</div>
+          <div style="margin-top:4px;">${optsHtml}</div>
+          ${q.explanation ? `<div style="font-size:12px; color:#888; margin-top:4px;">해설: ${q.explanation}</div>` : ''}
+        </td>
+      </tr>`;
+    }).join('');
+    const box = document.getElementById('vocabWorksheetResult');
+    box.innerHTML = `
+      <div style="font-size:12px; color:#0d6b6b; margin-bottom:8px; font-weight:700;">📄 ${rec.month} 시험지 다시보기 (읽기 전용${rec.answers ? '' : ' — 이 기록은 급수별 정답 수만 저장되어 있어 문제·정답만 보여주고 학생이 고른 답은 표시되지 않습니다'})</div>
+      <table style="border-collapse:collapse; width:100%; font-size:13px;">
+        <tr style="background:#faf8f3;"><th style="border:1px solid #ccc; padding:6px;">번호</th><th style="border:1px solid #ccc; padding:6px;">문제 / 보기</th></tr>
+        ${rows}
+      </table>
+    `;
+  }
+
 
   // 직전 평가와 비교 + 실제 학년 대비 급수 위치를 담은 보고서를 AI로 작성 (상담 자료 또는 학부모 보고서로 활용)
   async function generateVocabParentReport() {
@@ -5927,8 +6137,11 @@ ${prev ? `직전 평가(${prev.month}): 급수 ${prev.newLevel}급` : '직전 �
           <div style="font-weight:700; margin-bottom:8px;">어휘력 진단 보고서</div>
           <textarea id="vocabParentReportText" rows="10" style="width:100%; font-size:14px; line-height:1.7; padding:10px; border:1px solid #ddd; border-radius:8px; font-family:inherit;">${text}</textarea>
           <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
-            <button class="btn btn-secondary btn-sm" onclick="copyVocabParentReport()">📋 복사</button>
+            <button class="btn btn-secondary btn-sm" onclick="copyVocabResultOnly()">📋 결과만 복사</button>
+            <button class="btn btn-secondary btn-sm" onclick="copyVocabQuestionsOnly()">📋 문제만 복사</button>
+            <button class="btn btn-secondary btn-sm" onclick="copyVocabReportOnly()">📋 보고서만 복사</button>
             <button class="btn btn-primary btn-sm" onclick="printVocabReportCertificate()">🖨️ 평가서 인쇄</button>
+            <button class="btn btn-primary btn-sm" onclick="shareVocabToParent()">📤 전체 한번에 복사</button>
           </div>
         </div>
       `;
@@ -5974,15 +6187,508 @@ ${prev ? `직전 평가(${prev.month}): 급수 ${prev.newLevel}급` : '직전 �
         ${VOCAB_PRINT_FRAME_CLOSE}
       </div>`;
     const w = window.open('', '_blank');
-    w.document.write(`<html><body>${bodyHtml}</body></html>`);
+    w.document.write(`<html><head><style>${VOCAB_PRINT_REPEAT_HEADER_CSS}</style></head><body>${bodyHtml}</body></html>`);
     w.document.close();
     w.print();
   }
 
-  function copyVocabParentReport() {
+  // 결과 요약(학년/급수/점수/급수별 현황)만 텍스트로 만든다.
+  function buildVocabResultText(s, last) {
+    const lvlDef = vocabLevelDef(last.newLevel);
+    let msg = `[${vocabAcademyName()}] ${s.name} 학생 어휘력 진단 결과 안내\n\n`;
+    msg += `▪ 진단일: ${last.date||last.month}\n`;
+    msg += `▪ 학년: ${s.grade||''}\n`;
+    msg += `▪ 종합 결과: ${last.correct}/${last.total}문항 정답 (${last.score}점)\n`;
+    msg += `▪ 진단 급수: ${last.newLevel}급 (${lvlDef.band} ${lvlDef.sub})\n`;
+    if (last.breakdown && last.breakdown.length) {
+      msg += `\n[급수별 정답 현황]\n`;
+      last.breakdown.forEach(b=>{ msg += `- ${b.level}급: ${b.correct}/${b.total}\n`; });
+    }
+    return msg;
+  }
+
+  // 문제+정답·해설(+학생이 골랐다면 그 답과 O/X)만 텍스트로 만든다.
+  function buildVocabQuestionsText(last) {
+    const optionLabels = ['①','②','③','④'];
+    if (!last.questions || !last.questions.length) return '(이 기록은 저장된 문제 데이터가 없습니다.)';
+    let msg = `[문제와 정답·해설 (총 ${last.questions.length}문항)]\n`;
+    last.questions.forEach((q,i)=>{
+      const correctText = `${optionLabels[q.answerIndex]} ${(q.options||[])[q.answerIndex]||''}`;
+      let line = `${i+1}. (${q.level}급) ${q.question}\n   정답: ${correctText}`;
+      if (last.answers && last.answers[i]!==undefined) {
+        const sel = last.answers[i];
+        const selText = `${optionLabels[sel]} ${(q.options||[])[sel]||''}`;
+        line += ` | 학생 답: ${selText} (${sel===q.answerIndex ? 'O' : 'X'})`;
+      }
+      if (q.explanation) line += `\n   해설: ${q.explanation}`;
+      msg += line + '\n';
+    });
+    return msg;
+  }
+
+  function copyToClipboardWithAlert(text) {
+    navigator.clipboard.writeText(text)
+      .then(()=> alert('복사되었습니다! 카카오톡이나 문자에 붙여넣으세요.'))
+      .catch(()=> alert('복사에 실패했어요. 화면의 내용을 직접 선택해서 복사해주세요.'));
+  }
+
+  function getSelectedVocabLastRecord() {
+    const s = selectedVocabStudent;
+    const recs = s.isGuest ? _vocabRecords.filter(r=>r.studentId===s.id).sort((a,b)=>a.month.localeCompare(b.month)) : vocabRecordsFor(s.id);
+    return { s, last: recs[recs.length-1] };
+  }
+
+  // 결과 요약만 복사 (학년·급수·점수·급수별 현황)
+  function copyVocabResultOnly() {
+    const { s, last } = getSelectedVocabLastRecord();
+    if (!last) { alert('평가 기록을 찾을 수 없습니다.'); return; }
+    copyToClipboardWithAlert(buildVocabResultText(s, last));
+  }
+
+  // 문제·정답·해설만 복사
+  function copyVocabQuestionsOnly() {
+    const { last } = getSelectedVocabLastRecord();
+    if (!last) { alert('평가 기록을 찾을 수 없습니다.'); return; }
+    copyToClipboardWithAlert(buildVocabQuestionsText(last));
+  }
+
+  // 진단 보고서 글만 복사 (기존 "📋 복사"와 동일 — 이름만 명확히)
+  function copyVocabReportOnly() {
     const ta = document.getElementById('vocabParentReportText');
-    ta.select();
-    navigator.clipboard.writeText(ta.value).then(()=>alert('복사되었습니다.')).catch(()=>document.execCommand('copy'));
+    if (!ta || !ta.value.trim()) { alert('먼저 "진단 보고서 생성"을 눌러 보고서를 작성해주세요.'); return; }
+    copyToClipboardWithAlert(ta.value);
+  }
+
+  // 결과 요약 + 문제 전부 + 진단 보고서를 한 번에 복사 (기존 통짜 공유 버튼)
+  function shareVocabToParent() {
+    const { s, last } = getSelectedVocabLastRecord();
+    if (!last) { alert('평가 기록을 찾을 수 없습니다.'); return; }
+    const ta = document.getElementById('vocabParentReportText');
+    const reportText = ta ? ta.value.trim() : '';
+    if (!reportText) { alert('먼저 "진단 보고서 생성"을 눌러 보고서를 작성해주세요.'); return; }
+    const msg = buildVocabResultText(s, last) + '\n' + buildVocabQuestionsText(last) + `\n[진단 보고서]\n${reportText}\n`;
+    copyToClipboardWithAlert(msg);
+  }
+
+
+  // ===== 자료실 =====
+  // 사자성어 학습지처럼 반복해서 쓰는 학습 자료를 저장해두고, 필요할 때마다 학원 브랜딩 양식으로
+  // 다시 인쇄할 수 있게 한다. 파일(docx 등)을 그대로 올리는 게 아니라 내용을 텍스트로 저장하는
+  // 방식 — Firestore 문서 용량 제한도 없고, 나중에 문구만 고치거나 다른 학년용으로 재활용하기도 쉽다.
+  const DEFAULT_SAJASEONGEO_MATERIAL_TEXT = `1. 오비이락 (烏 飛 梨 落)
+   까마귀 오 · 날 비 · 배 이 · 떨어질 락
+   [까마귀 날자 배 떨어진다.]
+   뜻: 아무런 관계없이 한 일이 공교롭게 다른 일과 때가 일치하여 의심을 받게 됨.
+   예문: 내가 문을 연 순간 화분이 떨어져서, 오비이락처럼 나를 의심하는 눈초리를 받았다.
+
+2. 과유불급 (過 猶 不 及)
+   지나칠 과 · 같을 유 · 아닐 불 · 미칠 급
+   [지나친 것은 미치지 아니함과 같다.]
+   뜻: 모든 일이 정도를 넘어서게 지나친 것은 좋지 않다라는 뜻으로 중간정도의 미덕을 나타냄.
+   예문: 아무리 좋은 음식도 과유불급이라고, 너무 많이 먹으면 오히려 탈이 난다.
+
+3. 군계일학 (群 鷄 一 鶴)
+   무리 군 · 닭 계 · 한 일 · 학 학
+   [닭의 무리 속에 한 마리 학]
+   뜻: 평범한 사람들 가운데 뛰어난 한 사람
+   예문: 합창 대회에서 그 친구의 목소리는 군계일학처럼 단연 돋보였다.
+
+4. 전화위복 (轉 禍 爲 福)
+   구를 전 · 재앙 화 · 될 위 · 복 복
+   [재앙이 굴러서 복이 되다.]
+   뜻: 아무리 힘든 상황이라도 의지와 노력이 있으면 불행을 행복으로 바꿀 수 있다.
+   예문: 다리를 다쳐 쉬는 동안 책을 많이 읽게 되어, 전화위복이 된 셈이다.
+
+5. 우이독경 (牛 耳 讀 經)
+   소 우 · 귀 이 · 읽을 독 · 글 경
+   [소 귀에 글 읽기]
+   뜻: 멍청한 사람은 아무리 알려주어도 이해하지 못하는 것을 비유함.
+   예문: 몇 번을 설명해도 못 알아듣는 걸 보니 우이독경이 따로 없다.
+
+6. 동고동락 (同 苦 同 樂)
+   함께 동 · 괴로울 고 · 함께 동 · 즐거울 락
+   [괴로움과 즐거움을 함께하다.]
+   뜻: 같이 고생하고 같이 즐김.
+   예문: 우리 반은 체육대회 준비를 하며 몇 달간 동고동락했다.
+
+7. 용두사미 (龍 頭 蛇 尾)
+   용 용 · 머리 두 · 뱀 사 · 꼬리 미
+   [용의 머리에 뱀 꼬리의 모양]
+   뜻: 시작은 왕성하나 끝이 부진할 때 빗대어 쓰는 말.
+   예문: 야심 차게 시작한 방학 계획이 용두사미로 끝나 버렸다.
+
+8. 견물생심 (見 物 生 心)
+   볼 견 · 물건 물 · 날 생 · 마음 심
+   [좋은 물건을 보면 갖고 싶은 마음이 생긴다.]
+   뜻: 물건을 보면 욕심이 생긴다.
+   예문: 예쁜 지우개를 보자 견물생심이 생겨 나도 모르게 손이 갔다.
+
+9. 감언이설 (甘 言 利 說)
+   달 감 · 말씀 언 · 이로울 이 · 말씀 설
+   [달콤한 말과 이롭게 들리는 이야기]
+   뜻: 다른 사람의 기분에 맞는 듣기 좋은 말을 하여 다른 사람을 꾀는 말
+   예문: 그 광고는 감언이설로 사람들을 현혹시켰다.
+
+10. 개과천선 (改 過 遷 善)
+   고칠 개 · 잘못 과 · 달라질 천 · 착할 선
+   [잘못을 고치고 착하게 달라지다.]
+   뜻: 지난날의 잘못을 고치어 착하게 됨.
+   예문: 지각을 일삼던 친구가 개과천선하여 이제는 반장이 되었다.
+
+11. 호가호위 (狐 假 虎 威)
+   여우 호 · 빌릴 가 · 호랑이 호 · 위엄 위
+   [여우가 호랑이의 위엄을 빌리다.]
+   뜻: 남의 힘을 빌려 위세를 부린다.
+   예문: 형의 이름을 빌려 호가호위하는 아이를 보면 안쓰럽다.
+
+12. 주경야독 (晝 耕 夜 讀)
+   낮 주 · 밭갈 경 · 밤 야 · 읽을 독
+   [낮에는 밭을 갈고 밤에는 책을 읽는다.]
+   뜻: 바쁜 틈을 타서 어렵게 공부함.
+   예문: 그는 낮에는 일하고 밤에는 공부하는 주경야독의 생활을 몇 년째 이어갔다.
+
+13. 조삼모사 (朝 三 暮 四)
+   아침 조 · 석 삼 · 저물 모 · 넉 사
+   [아침에는 세 개 날이 저물면 네 개]
+   뜻: ①
+   예문: 이름만 바뀌었을 뿐 내용은 같은 조삼모사 같은 정책이었다.
+
+14. 설상가상 (雪 上 加 霜)
+   눈 설 · 위 상 · 더할 가 · 서리 상
+   [눈 위에 서리가 더한다.]
+   뜻: 어려운 일이 겹쳐서 일어남.
+   예문: 비가 오는데 우산까지 잃어버려 설상가상이었다.
+
+15. 대기만성 (大 器 晩 成)
+   큰 대 · 그릇 기 · 늦을 만 · 이룰 성
+   [큰 그릇은 늦게 가득 찬다.]
+   뜻: ①
+   예문: 그는 늦게 재능이 꽃핀 대기만성형 인재였다.
+
+16. 어부지리 (漁 父 之 利)
+   고기 잡을 어 · 아비 부 · 어조사 지 · 이로울 리
+   [고기 잡은 사람(어부)의 이익]
+   뜻: 둘이 다투는 사이에 다른 사람이 이익을 가져감.
+   예문: 두 팀이 다투는 사이 우리 팀이 어부지리로 우승을 차지했다.
+
+17. 형설지공 (螢 雪 之 功)
+   반딧불이 형 · 눈 설 · 어조사 지 · 공로 공
+   [반딧불이와 눈의 공로]
+   뜻: 고생 속에서 공부하여 이룬 공을 말함.
+   예문: 형설지공의 마음가짐으로 밤늦게까지 공부에 매진했다.
+
+18. 외유내강 (外 柔 內 剛)
+   바깥 외 · 부드러울 유 · 안 내 · 궁셀 강
+   [바깥(겉)은 부드러우나 안(속)은 강하다.]
+   뜻: 겉으로 보기엔 부드럽지만 안은 강하고 굳셈.
+   예문: 그녀는 겉으로는 부드럽지만 속은 강한 외유내강형 리더다.
+
+19. 거두절미 (去 頭 截 尾)
+   버릴 거 · 머리 두 · 끊을 절 · 꼬리 미
+   [머리를 버리고 꼬리를 끊음]
+   뜻: 앞뒤의 내용을 끊고 요점(본론)만 말함.
+   예문: 거두절미하고 결론부터 말하자면, 우리 팀이 이겼다.
+
+20. 타산지석 (他 山 之 石)
+   다를 타 · 산 산 · 어조사 지 · 돌 석
+   [다른 산의 돌]
+   뜻: 다른 사람의 하찮은 말과 행동도 나에게 도움이 되는 것일 수 있다.
+   예문: 친구의 실수를 타산지석으로 삼아 나는 더 신중하게 준비했다.
+
+21. 결자해지 (結 者 解 之)
+   묶을 결 · 놈 자 · 풀 해 · 어조사 지
+   [묶은 사람이 해결한다.]
+   뜻: 아무런 관계없이 한 일이 공교롭게 다른 일과 때가 일치하여 의심을 받게 됨.
+   예문: 일을 벌인 사람이 결자해지의 자세로 문제를 해결해야 한다.
+
+22. 일거양득 (一 擧 兩 得)
+   한 일 · 들 거 · 두 양 · 얻을 득
+   [한 번 들어서 둘을 얻는다.]
+   뜻: 한 가지 일로 두 가지 이익을 본다.
+   예문: 운동도 하고 친구도 사귀니 일거양득이 따로 없다.
+
+23. 화룡점정 (畵 龍 點 睛)
+   그림 화 · 용 룡 · 점찍을 점 · 눈동자 정
+   [용을 그리고 눈동자를 점찍듯 그린다.]
+   뜻: 가장 중요한 부분을 마쳐서 완성시키다.
+   예문: 마지막 장식이 발표의 화룡점정이 되었다.
+
+24. 결초보은 (結 草 報 恩)
+   맺을 결 · 풀 초 · 갚을 보 · 은혜 은
+   [풀로 맺어서 은혜를 갚는다.]
+   뜻: 무슨 일을 하여서든 은혜를 갚는다.
+   예문: 도움을 준 은사님께 결초보은의 마음으로 은혜를 갚고 싶다.
+
+25. 토사구팽 (兎 死 狗 烹)
+   토끼 토 · 죽을 사 · 개 구 · 삶을 팽
+   [토끼 사냥이 끝나면 개를 삶아 먹는다.]
+   뜻: 필요할 때는 요긴하게 사용하고 필요가 없어지면 버린다.
+   예문: 필요할 때만 이용당하고 버려지는 토사구팽 신세가 되고 싶지 않다.
+
+26. 함흥차사 (咸 興 差 使)
+   모두 함 · 일으킬 흥 · 보낼 차 · 벼슬이름 사
+   [한번 간 사람이 돌아오지 않거나 소식이 없음.]
+   뜻: 심부름을 간 사람이 소식이 없거나 답이 느릴 때 비유하는 말
+   예문: 심부름을 보낸 동생이 함흥차사처럼 감감무소식이다.
+
+27. 삼고초려 (三 顧 草 廬)
+   석 삼 · 돌아볼 고 · 풀 초 · 오두막집 려
+   [초가집을 세 번 돌아보다.]
+   뜻: 인재를 구하기 위해서 참을성 있게 힘을 쓰다.
+   예문: 선생님은 삼고초려 끝에 그 학생을 설득해 대회에 나가게 했다.
+
+28. 유구무언 (有 口 無 言)
+   있을 유 · 입 구 · 없을 무 · 말씀 언
+   [변명할 말이 없다.]
+   뜻: 청 출 어 람
+   예문: 명백한 증거 앞에서 그는 유구무언이었다.
+
+29. 인과응보 (因 果 應 報)
+   인할 인 · 결과 과 · 응할 응 · 알릴 보
+   [좋은 일에는 좋은 결과가 나쁜 일에는 나쁜 결과가 따른다.]
+   뜻: 과거의 행동에 따라 좋고 나쁜 결과를 얻게 된다.
+   예문: 성실히 노력한 만큼 좋은 결과를 얻은 것은 인과응보다.
+
+30. 동병상련 (同 病 相 憐)
+   같을 동 · 병 병 · 서로 상 · 불쌍히 여길 련
+   [같은 병을 앓으면 서로를 불쌍히 여기게 된다.]
+   뜻: 아무런 관계없이 한 일이 공교롭게 다른 일과 때가 일치하여 의심을 받게 됨.
+   예문: 같은 고민을 가진 우리는 동병상련의 마음으로 서로를 위로했다.
+
+31. 점입가경 (漸 入 佳 境)
+   점차 점 · 들 입 · 아름다울 가 · 경치 경
+   [점차 아름다운 경치로 들어가다.]
+   뜻: 일이 점점 재미있게 진행되는 것을 비유하는 말
+   예문: 이야기가 점입가경으로 흘러 모두가 다음 내용을 궁금해했다.
+
+32. 죽마고우 (竹 馬 故 友)
+   대 죽 · 말 마 · 옛 고 · 벗 우
+   [대나무 말을 타고 놀던 옛 친구]
+   뜻: 어릴 때부터 가까이 지내며 자란 친구
+   예문: 그와 나는 초등학교 때부터 함께한 죽마고우다.
+
+33. 침소봉대 (針 小 棒 大)
+   바늘 침 · 작을 소 · 몽둥이 봉 · 큰 대
+   [작은 바늘은 큰 몽둥이처럼 부풀리다.]
+   뜻: 작은 일을 크게 과장하여 말함.
+   예문: 작은 실수를 침소봉대해서 크게 소문내지 않았으면 한다.
+
+34. 사면초가 (四 面 楚 歌)
+   넉 사 · 쪽 면 · 초나라 초 · 노래 가
+   [사방(쪽)에서 들리는 초나라 노래]
+   뜻: 적에게 둘러싸인 상태나 누구의 도움도 받을 수 없는 고립된 상태
+   예문: 사방에서 반대에 부딪혀 그는 사면초가에 몰렸다.
+
+35. 학수고대 (鶴 首 苦 待)
+   학 학 · 머리 수 · 애쓸 고 · 기다릴 대
+   [학처럼 머리를 길게 빼고 애써(오래) 기다린다.]
+   뜻: 몹시 기다린다.
+   예문: 여름방학을 학수고대하며 하루하루를 세고 있다.
+
+36. 고진감래 (苦 盡 甘 來)
+   쓸 고 · 다할 진 · 달 감 · 올 래
+   [쓴 것이 다하면 단 것이 온다.]
+   뜻: 고생 끝에 낙이 온다.
+   예문: 힘든 연습 끝에 우승했으니 고진감래라는 말이 딱 맞다.
+
+37. 괄목상대 (刮 目 相 對)
+   눈 비빌 괄 · 눈 목 · 서로 상 · 대할 대
+   [눈을 비비고 서로를 대한다.]
+   뜻: 다른 사람의 모습이나 내면이 크게 발전한 것을 말함.
+   예문: 몇 달 사이 실력이 부쩍 늘어 친구들이 괄목상대할 정도였다.
+
+38. 사필귀정 (事 必 歸 正)
+   일 사 · 반드시 필 · 돌아갈 귀 · 바를 정
+   [모든 일은 반드시 바르게 돌아감.]
+   뜻: 처음에는 문제가 생기고 잘못되더라도 결국에는 바르게 정리되어 돌아감.
+   예문: 억울했던 일도 결국 사필귀정으로 밝혀졌다.
+
+39. 심사숙고 (深 思 熟 考)
+   깊을 심 · 생각 사 · 곰곰이 숙 · 살필 고
+   [깊이 생각하고 곰곰이 살피다.]
+   뜻: 신중하게 곰곰이 생각하다.
+   예문: 중요한 결정을 내리기 전에는 심사숙고가 필요하다.
+
+40. 유비무환 (有 備 無 患)
+   있을 유 · 준비할 비 · 없을 무 · 근심 환
+   [준비가 있으면 근심이 없다.]
+   뜻: 미리 준비가 되어 있으면 걱정할 일이 없다는 말
+   예문: 유비무환이라는 말처럼 미리 준비해 둔 덕분에 무사히 넘겼다.
+
+41. 주객전도 (主 客 顚 倒)
+   주인 주 · 손님 객 · 뒤집힐 전 · 거꾸로 도
+   [주인과 손님의 역할이 뒤바뀐다.]
+   뜻: 입장이 뒤바뀌는 것을 뜻함.
+   예문: 손님이 주인 행세를 하니 주객전도가 따로 없다.
+
+42. 살신성인 (殺 身 成 仁)
+   죽을 살 · 몸 신 · 이룰 성 · 어질 인
+   [몸을 죽여 인을 이룸.]
+   뜻: 자신의 몸을 희생하여 옳은 일을 이룸.
+   예문: 소방관은 위험을 무릅쓰고 살신성인의 정신으로 사람들을 구했다.
+
+43. 언중유골 (言 中 有 骨)
+   말씀 언 · 가운데 중 · 있을 유 · 뼈 골
+   [말 속에 뼈가 있다.]
+   뜻: 평범한 대화 속에 깊은 뜻이 담겨 있음.
+   예문: 그의 농담 속에는 언중유골의 뼈 있는 말이 숨어 있었다.
+
+44. 명불허전 (名 不 虛 傳)
+   이름 명 · 아니 불 · 헛될 허 · 전할 전
+   [이름이 널리 알려진 데는 그만한 까닭이 있다.]
+   뜻: 이름은 헛되이 알려지는 것이 아니므로, 이름이 유명한 데는 이유가 있다.
+   예문: 그 맛집은 정말 명불허전이었다.
+
+45. 안하무인 (眼 下 無 人)
+   눈 안 · 아래 하 · 없을 무 · 사람 인
+   [눈 아래 사람이 없다.]
+   뜻: 사람이 교만하여 다른 사람을 업신여기는 태도를 말함.
+   예문: 성공했다고 안하무인으로 굴면 결국 사람들이 떠난다.
+
+46. 적반하장 (賊 反 荷 杖)
+   도둑 적 · 반대로 반 · 꾸짖을 하 · 몽둥이 장
+   [도둑이 도리어 몽둥이를 든다.]
+   뜻: 잘못한 사람이 도리어 잘한 사람을 나무라는 것
+   예문: 잘못한 사람이 오히려 화를 내니 적반하장도 유분수다.
+
+47. 순망치한 (脣 亡 齒 寒)
+   입술 순 · 없어질 망 · 이 치 · 찰 한
+   [입술이 없으면 이가 차다(시리다).]
+   뜻: ① 가까운 사이 중 한 쪽이 어려우면 다른 쪽도 힘겨워 짐을 뜻함. ② 서로 돕는 밀접한 관계를 비유함.
+   예문: 이웃 나라의 위기는 순망치한처럼 우리에게도 영향을 미친다.
+
+48. 고장난명 (孤 掌 難 鳴)
+   외로울 고 · 손바닥 장 · 어려울 난 · 소리낼 명
+   [외로운 손바닥은 소리를 내기 어렵다.]
+   뜻: ① 혼자서는 어떤 일을 이룰 수 없다. ② 상대가 없으면 싸움이 일어나지 않는다.
+   예문: 혼자서는 다툼이 일어나지 않는다는 고장난명의 이치를 되새겼다.
+
+49. 새옹지마 (塞 翁 之 馬)
+   변방 새 · 늙은이 옹 · 갈 지 · 말 마
+   [변방에 사는 늙은이의 말]
+   뜻: 인생의 길흉화복은 변화가 많아 예측하기 어렵다는 뜻.
+   예문: 떨어졌던 성적이 오히려 분발의 계기가 되었으니 새옹지마라 할 만하다.
+
+50. 역지사지 (易 地 思 之)
+   바꿀 역 · 처지 지 · 생각할 사 · 갈 지
+   [처지를 바꾸어서 생각하다.]
+   뜻: 상대방의 처지에서 먼저 생각해 봄.
+   예문: 친구와 다툴 때는 역지사지의 마음으로 상대 입장을 생각해보자.
+`;
+
+  function renderMaterialsTab() {
+    document.getElementById('materialFormCard').style.display = 'none';
+    document.getElementById('materialViewCard').style.display = 'none';
+    renderMaterialsList();
+  }
+
+  function renderMaterialsList() {
+    const el = document.getElementById('materialsList');
+    if (!el) return;
+    const list = _materials.slice().sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||''));
+    if (list.length===0) { el.innerHTML = '<div class="empty"><div class="empty-icon">📚</div><div>등록된 자료가 없습니다</div></div>'; return; }
+    // 카테고리 자동완성 목록 갱신
+    const cats = [...new Set(_materials.map(m=>m.category).filter(Boolean))];
+    const dl = document.getElementById('materialCategoryList');
+    if (dl) dl.innerHTML = cats.map(c=>`<option value="${escapeHtml(c)}">`).join('');
+    el.innerHTML = `<div style="overflow-x:auto;"><table style="border-collapse:collapse; width:100%; font-size:13px;">
+      <tr style="background:#faf8f3;">
+        <th style="border:1px solid #ccc; padding:6px;">제목</th>
+        <th style="border:1px solid #ccc; padding:6px;">카테고리</th>
+        <th style="border:1px solid #ccc; padding:6px;">등록일</th>
+        <th style="border:1px solid #ccc; padding:6px;"></th>
+      </tr>
+      ${list.map(m=>`<tr>
+        <td style="border:1px solid #ccc; padding:6px; font-weight:600;">${escapeHtml(m.title)}</td>
+        <td style="border:1px solid #ccc; padding:6px;">${escapeHtml(m.category||'')}</td>
+        <td style="border:1px solid #ccc; padding:6px;">${m.createdAt||''}</td>
+        <td style="border:1px solid #ccc; padding:6px; white-space:nowrap;">
+          <button class="btn btn-secondary btn-sm" onclick="viewMaterial('${m.id}')">보기</button>
+          <button class="btn btn-secondary btn-sm" onclick="openMaterialForm('${m.id}')">수정</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteMaterial('${m.id}')">삭제</button>
+        </td>
+      </tr>`).join('')}
+    </table></div>`;
+  }
+
+  function openMaterialForm(id) {
+    document.getElementById('materialViewCard').style.display = 'none';
+    document.getElementById('materialFormCard').style.display = '';
+    const m = id ? _materials.find(x=>x.id===id) : null;
+    document.getElementById('materialFormTitle').textContent = m ? '자료 수정' : '새 자료 등록';
+    document.getElementById('materialFormCard').dataset.editId = m ? m.id : '';
+    document.getElementById('materialTitleInput').value = m ? m.title : '';
+    document.getElementById('materialCategoryInput').value = m ? (m.category||'') : '';
+    document.getElementById('materialContentInput').value = m ? m.content : '';
+  }
+
+  function closeMaterialForm() {
+    document.getElementById('materialFormCard').style.display = 'none';
+  }
+
+  async function saveMaterial() {
+    const title = document.getElementById('materialTitleInput').value.trim();
+    const category = document.getElementById('materialCategoryInput').value.trim();
+    const content = document.getElementById('materialContentInput').value;
+    if (!title) { alert('제목을 입력해주세요.'); return; }
+    if (!content.trim()) { alert('내용을 입력해주세요.'); return; }
+    const editId = document.getElementById('materialFormCard').dataset.editId;
+    if (editId) {
+      const m = _materials.find(x=>x.id===editId);
+      if (m) { m.title = title; m.category = category; m.content = content; }
+      if (window._fbReady) { try { await window._deleteByFieldId('geuldap_materials', editId); await window._add(window._col(window._db,'geuldap_materials'), m); } catch(e) { console.error('자료 수정 오류', e); } }
+    } else {
+      const m = { id: Date.now().toString(), title, category, content, createdAt: todayLocalDateStr() };
+      _materials.push(m);
+      if (window._fbReady) { try { await window._add(window._col(window._db,'geuldap_materials'), m); } catch(e) { console.error('자료 저장 오류', e); } }
+    }
+    localStorage.setItem('gml', JSON.stringify(_materials));
+    closeMaterialForm();
+    renderMaterialsList();
+  }
+
+  async function deleteMaterial(id) {
+    if (!confirm('이 자료를 삭제할까요? 삭제하면 되돌릴 수 없습니다.')) return;
+    window._materials = _materials.filter(m=>m.id!==id);
+    localStorage.setItem('gml', JSON.stringify(_materials));
+    if (window._fbReady) { try { await window._deleteByFieldId('geuldap_materials', id); } catch(e) { console.error('자료 삭제 오류', e); } }
+    document.getElementById('materialViewCard').style.display = 'none';
+    renderMaterialsList();
+  }
+
+  // 저장된 내용을 학원 브랜딩 테두리 안에 그대로 보여준다(줄바꿈 유지) — 화면 확인 + 인쇄 겸용.
+  function viewMaterial(id) {
+    const m = _materials.find(x=>x.id===id);
+    if (!m) return;
+    document.getElementById('materialFormCard').style.display = 'none';
+    document.getElementById('materialViewCard').style.display = '';
+    document.getElementById('materialViewBody').innerHTML = `
+      <div id="materialPrintArea" style="max-width:800px;">
+        ${vocabPrintFrameOpen(escapeHtml(m.title))}
+        ${m.category ? `<div style="text-align:center; font-size:12px; color:#888; margin-bottom:14px;">${escapeHtml(m.category)} · ${m.createdAt||''}</div>` : ''}
+        <div style="white-space:pre-wrap; font-size:14px; line-height:1.8;">${escapeHtml(m.content)}</div>
+        ${VOCAB_PRINT_FRAME_CLOSE}
+      </div>
+      <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
+        <button class="btn btn-secondary btn-sm" onclick="printVocabHTML('materialPrintArea')">🖨️ 인쇄</button>
+        <button class="btn btn-secondary btn-sm" onclick="copyToClipboardWithAlert(document.getElementById('materialViewBody').dataset.raw)">📋 복사</button>
+        <button class="btn btn-primary btn-sm" onclick="saveMaterialAsImage('${escapeHtml(m.title)}')">🖼️ 이미지로 저장(카톡 공유용)</button>
+      </div>
+    `;
+    document.getElementById('materialViewBody').dataset.raw = m.content;
+  }
+
+  // 지금 보이는 테두리 양식 그대로 사진(PNG) 파일로 저장한다 — 카카오톡에 텍스트로 붙여넣으면
+  // 줄글로만 보이지만, 사진으로 보내면 테두리·글씨체·정렬이 그대로 살아서 훨씬 보기 좋다.
+  function saveMaterialAsImage(title) {
+    const area = document.getElementById('materialPrintArea');
+    if (!area || typeof html2canvas === 'undefined') { alert('이미지 생성 기능을 불러오지 못했어요. 인터넷 연결을 확인해주세요.'); return; }
+    html2canvas(area, { backgroundColor: '#ffffff', scale: 2 }).then(canvas => {
+      const link = document.createElement('a');
+      link.download = `${title || '자료'}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    }).catch(e => alert('이미지 생성에 실패했어요: ' + e.message));
   }
 
   // ===== AI 평가 (Firebase Function 경유, 키는 서버에만 저장) =====
