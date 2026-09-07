@@ -2187,7 +2187,7 @@
 
 <script>
   // ===== 버전 정보 (콘솔에서 확인: APP_VERSION 또는 페이지 로드시 자동 출력) =====
-  const APP_VERSION = 'v7.60';
+  const APP_VERSION = 'v7.62';
   const APP_VERSION_LOG = [
     'v1.0 — 탭 구조 + UI 껍데기',
     'v1.1 — AI 문제 생성 + 개념 사다리',
@@ -2292,7 +2292,9 @@
     'v7.57 — [개선] 사용자 요청으로 인쇄 시 학원 브랜딩 헤더("글답국어독서논술")가 첫 페이지에만 나오던 것을 매 페이지 상단에 반복해서 찍히도록 변경 — vocabPrintFrameOpen()의 헤더 블록에 .vocab-print-header 클래스를 붙이고, 인쇄용 팝업 창에 @media print 전용 CSS(VOCAB_PRINT_REPEAT_HEADER_CSS)를 주입해 그 블록만 인쇄 시 position:fixed로 띄우고 @page 위쪽 여백을 확보해 페이지마다 반복되게 함(화면에서 볼 땐 기존처럼 한 번만 보임). 학습지·시험지·평가서·자료실 인쇄 모두에 공통 적용',
     'v7.58 — [신규] 자료실 이미지 저장을 "통짜 이미지"와 "페이지별 이미지(인쇄 모양)" 두 가지로 분리 — 카톡으로 사진을 보냈더니 50개 항목이 세로로 길게 이어진 한 장짜리 이미지로 나와서 인쇄했을 때처럼 페이지마다 테두리가 찍힌 여러 장으로 나눠 보내고 싶다는 요청 → 내용을 빈 줄 기준으로 항목 단위로 나눈 뒤 10개씩 묶어 페이지로 구성, 페이지마다 학원 브랜딩 테두리+헤더(제목 옆에 n/N 페이지 표시)를 입혀 화면 밖에서 렌더링 후 html2canvas로 각각 캡처해 순서대로 PNG 다운로드(saveMaterialAsPagedImages). 여러 파일이 연속 다운로드되므로 브라우저의 "여러 파일 다운로드 허용" 확인이 뜰 수 있음을 안내 문구로 미리 알림',
     'v7.59 — [버그 수정] 사용자가 실제 인쇄해보니 v7.57의 "position:fixed로 헤더를 페이지마다 반복" 방식이 크롬 인쇄 엔진에서 불안정했음(1페이지엔 헤더가 아예 안 나오고 엉뚱한 위치에 나타남) → 자료실 인쇄를 페이지별 이미지 저장과 같은 방식으로 전면 교체: 내용을 항목 단위로 나눠 페이지마다 헤더+테두리를 처음부터 포함한 독립 블록으로 만들고 그 사이에 강제 페이지 나누기(break-after:page)를 넣는 방식(printMaterialPaged, splitMaterialIntoPages 헬퍼로 페이지 분할 로직 공용화). 브라우저 인쇄 엔진의 애매한 처리에 기대지 않아 훨씬 안정적',
-    'v7.60 — [버그 수정] v7.59로도 실제 인쇄해보니 1단(세로 나열)으로는 10개 항목이 A4 한 장에 다 안 들어가서 박스가 페이지 중간에서 잘리고 테두리·헤더가 깨지는 문제 확인됨 → docx 학습지와 같은 2단(좌우 2열) 표 레이아웃으로 전면 교체(buildMaterialPageBlock 공용 함수) — 같은 10개 항목도 세로 길이가 절반으로 줄어 한 페이지에 여유 있게 들어감. 인쇄와 페이지별 이미지 저장 모두 이 함수를 공유해서 동일한 레이아웃으로 나오도록 통일'
+    'v7.60 — [버그 수정] v7.59로도 실제 인쇄해보니 1단(세로 나열)으로는 10개 항목이 A4 한 장에 다 안 들어가서 박스가 페이지 중간에서 잘리고 테두리·헤더가 깨지는 문제 확인됨 → docx 학습지와 같은 2단(좌우 2열) 표 레이아웃으로 전면 교체(buildMaterialPageBlock 공용 함수) — 같은 10개 항목도 세로 길이가 절반으로 줄어 한 페이지에 여유 있게 들어감. 인쇄와 페이지별 이미지 저장 모두 이 함수를 공유해서 동일한 레이아웃으로 나오도록 통일',
+    'v7.61 — [신규] 자료실 항목의 첫 줄이 "번호. 단어 (...)" 형태면 그 단어(사자성어 등)만 자동으로 빨간색 강조 표시(highlightMaterialItemHtml) — docx 학습지에서는 사자성어가 빨간색이었는데 앱 안의 텍스트 버전엔 서식이 없어서 안 보였던 것을 지적받아 반영. 저장은 그대로 텍스트로 하되 화면·인쇄·이미지로 보여줄 때만 정규식으로 첫 단어를 찾아 색을 입힘 — 전체 미리보기·인쇄(2단 표)·페이지별 이미지 저장 모두에 공통 적용',
+    'v7.62 — [개선] docx엔 있던 "뜻"·"예문" 라벨의 초록색(테마색) 강조도 앱 텍스트 버전엔 빠져있었다는 지적 반영 — highlightMaterialItemHtml을 줄 단위로 검사하도록 확장해 "뜻:"·"예문:" 라벨을 학원 테마색(#0d6b6b)으로, 예문 본문은 기울임으로 표시(docx와 동일한 배색). 첫 줄의 사자성어 빨간색과 함께 전체 미리보기·인쇄·이미지 저장 모두에 공통 적용'
   ];
   console.log(`%c글답 학습기 ${APP_VERSION}`, 'font-weight:bold; font-size:14px; color:#0d1b4b;');
   console.groupCollapsed('%c버전 기록 (클릭해서 펼치기)', 'color:#888; font-size:11px;');
@@ -6665,11 +6667,13 @@ ${prev ? `직전 평가(${prev.month}): 급수 ${prev.newLevel}급` : '직전 �
     if (!m) return;
     document.getElementById('materialFormCard').style.display = 'none';
     document.getElementById('materialViewCard').style.display = '';
+    const items = m.content.split(/\n\s*\n/).map(s=>s.trim()).filter(Boolean);
+    const highlightedContent = items.length ? items.map(highlightMaterialItemHtml).join('\n\n') : escapeHtml(m.content);
     document.getElementById('materialViewBody').innerHTML = `
       <div id="materialPrintArea" style="max-width:800px;">
         ${vocabPrintFrameOpen(escapeHtml(m.title))}
         ${m.category ? `<div style="text-align:center; font-size:12px; color:#888; margin-bottom:14px;">${escapeHtml(m.category)} · ${m.createdAt||''}</div>` : ''}
-        <div style="white-space:pre-wrap; font-size:14px; line-height:1.8;">${escapeHtml(m.content)}</div>
+        <div style="white-space:pre-wrap; font-size:14px; line-height:1.8;">${highlightedContent}</div>
         ${VOCAB_PRINT_FRAME_CLOSE}
       </div>
       <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
@@ -6695,12 +6699,33 @@ ${prev ? `직전 평가(${prev.month}): 급수 ${prev.newLevel}급` : '직전 �
   // 한 페이지 분량(pageItems)을 docx 학습지와 비슷한 2단 표 레이아웃으로 만든다 — 1단으로 죽 늘어놓으면
   // 항목 10개가 A4 한 장에 안 들어가서 박스가 페이지 중간에서 잘리는 문제가 있었음(실제 인쇄로 확인됨).
   // 2단으로 짜면 세로 길이가 절반으로 줄어 한 페이지 안에 안정적으로 들어간다.
+  // 항목 첫 줄이 "1. 오비이락 (烏飛梨落)"처럼 "번호. 단어 (...)" 형태면, 그 단어(사자성어 등)만
+  // 빨간색으로 강조한다 — 저장은 그냥 텍스트로 하되, 화면·인쇄·이미지에 표시할 때만 이렇게 꾸민다.
+  // 항목 첫 줄의 단어(사자성어 등)는 빨간색으로, "뜻:"·"예문:" 라벨은 학원 테마색(초록빛 teal)으로
+  // 강조한다 — docx 학습지에서 쓰던 배색을 앱 텍스트 버전에도 그대로 재현한다.
+  function highlightMaterialItemHtml(item) {
+    const lines = item.split('\n');
+    return lines.map((line, i) => {
+      if (i === 0) {
+        const m = line.match(/^(\d+\.\s*)(\S+)(.*)$/);
+        if (m) return `${escapeHtml(m[1])}<span style="color:#c0392b; font-weight:700;">${escapeHtml(m[2])}</span>${escapeHtml(m[3])}`;
+        return escapeHtml(line);
+      }
+      const labelMatch = line.match(/^(\s*)(뜻|예문)(\s*[:：]\s*)(.*)$/);
+      if (labelMatch) {
+        const isExample = labelMatch[2] === '예문';
+        return `${escapeHtml(labelMatch[1])}<span style="color:#0d6b6b; font-weight:700;">${escapeHtml(labelMatch[2])}${escapeHtml(labelMatch[3])}</span>${isExample ? `<span style="font-style:italic;">${escapeHtml(labelMatch[4])}</span>` : escapeHtml(labelMatch[4])}`;
+      }
+      return escapeHtml(line);
+    }).join('\n');
+  }
+
   function buildMaterialPageBlock(m, pageItems, pageNum, totalPages) {
     const cellStyle = 'border:1px solid #ccc; padding:10px; width:50%; vertical-align:top; white-space:pre-wrap; font-size:12.5px; line-height:1.6;';
     let rows = '';
     for (let i=0; i<pageItems.length; i+=2) {
-      const left = `<td style="${cellStyle}">${escapeHtml(pageItems[i])}</td>`;
-      const right = pageItems[i+1] ? `<td style="${cellStyle}">${escapeHtml(pageItems[i+1])}</td>` : `<td style="border:1px solid #ccc;"></td>`;
+      const left = `<td style="${cellStyle}">${highlightMaterialItemHtml(pageItems[i])}</td>`;
+      const right = pageItems[i+1] ? `<td style="${cellStyle}">${highlightMaterialItemHtml(pageItems[i+1])}</td>` : `<td style="border:1px solid #ccc;"></td>`;
       rows += `<tr>${left}${right}</tr>`;
     }
     const pageLabel = totalPages>1 ? `${escapeHtml(m.title)} (${pageNum}/${totalPages}페이지)` : escapeHtml(m.title);
