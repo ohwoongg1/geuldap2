@@ -2210,7 +2210,7 @@
 
 <script>
   // ===== 버전 정보 (콘솔에서 확인: APP_VERSION 또는 페이지 로드시 자동 출력) =====
-  const APP_VERSION = 'v7.71';
+  const APP_VERSION = 'v7.73';
   const APP_VERSION_LOG = [
     'v1.0 — 탭 구조 + UI 껍데기',
     'v1.1 — AI 문제 생성 + 개념 사다리',
@@ -2326,7 +2326,9 @@
     'v7.68 — [개선] 진단 보고서 프롬프트를 사용자가 직접 다듬은 카톡 안내문 형식(제목 줄 "[글답국어독서논술] OOO 학생 어휘력 진단 결과 안내" → 인사말 → 진단 결과 문단 → "한 달에 한 번 정도 레벨테스트를 진행" 언급 + 가정 지도 요청 → 마무리 인사)에 정확히 맞춰 재작성 — 진단 결과 설명 문단만 매번 새로 쓰고 나머지 문구는 고정 템플릿을 그대로 따르도록 지시해 매번 같은 톤·구조로 안내문이 나오게 함',
     'v7.69 — [신규] "📘 급수 향상 4주 커리큘럼" 버튼 추가 — 단순 단어 목록이었던 기존 학습지와 달리, 다음 급수(현재+1단계) 낱말로 4주치를 구성해 매주 단어 10개(뜻·예문)+확인문제 5개(정답 포함)를 제공. 급수를 올리는 걸 목표로 한 단계 위 어휘로 구성한 것이 핵심(생성VocabCurriculum). 인쇄 시 주차별로 페이지가 나뉘어(각 주차 헤더+테두리 포함) 매주 나눠서 배포할 수 있도록 함(printVocabCurriculum), 다른 학생을 봤다가 돌아와도 캐시에서 복원되도록 selectVocabStudent에도 연결',
     'v7.70 — [개선] 학습지·커리큘럼에서 배운 단어가 다음 진단 시험에 그대로 나올 수 있다는(일종의 컨닝페이퍼가 되는) 지적 반영 — 학습지/커리큘럼 생성 시 사용된 단어를 학생 문서에 기록해두고(recordVocabStudiedWords, 재원생은 Firestore에 영구 저장·최근 150개까지 유지, 상담자는 세션 동안만), 진단 시험 생성 프롬프트에 "이 단어들은 이미 학습했으니 출제하지 말 것"을 명시해 제외. 학습은 그 급수 수준의 감을 익히는 용도, 시험은 그 감이 새 단어에도 통하는지 검증하는 용도로 역할을 분리해 시험 결과의 신뢰도를 높임',
-    'v7.71 — [개선] 학습지·4주 커리큘럼도 시험지의 "채점 대기중" 자동 저장과 같은 이유로 새로고침하면 사라졌던 문제 수정 — persistVocabWorksheet/persistVocabCurriculum으로 생성 결과를 학생 문서에 저장(재원생은 Firestore 영구 저장, 상담자는 세션 동안만), selectVocabStudent가 화면 캐시가 없을 때 이 저장값에서도 복원하도록 확장'
+    'v7.71 — [개선] 학습지·4주 커리큘럼도 시험지의 "채점 대기중" 자동 저장과 같은 이유로 새로고침하면 사라졌던 문제 수정 — persistVocabWorksheet/persistVocabCurriculum으로 생성 결과를 학생 문서에 저장(재원생은 Firestore 영구 저장, 상담자는 세션 동안만), selectVocabStudent가 화면 캐시가 없을 때 이 저장값에서도 복원하도록 확장',
+    'v7.72 — [개선] 사용자 지적으로 급수 향상 커리큘럼 인쇄 시 테두리 박스가 페이지 위쪽에 붙어 아래쪽에 여백이 몰리던 문제 수정 — 주차별로 여전히 페이지를 나누되(1주차=1페이지 유지), 각 페이지를 A4 높이(min-height:247mm)의 flex 컨테이너로 감싸 박스를 세로 가운데 정렬(align-items:center)해 위아래 여백이 고르게 나뉘도록 함, wkhtmltopdf로 렌더링 확인',
+    'v7.73 — [개선] 자료실 인쇄(buildMaterialPageBlock)에도 커리큘럼과 같은 세로 가운데 정렬 적용 — 특히 항목이 적게 남는 마지막 페이지에서 아래쪽 여백이 몰리던 문제를 해결. 인쇄와 페이지별 이미지 저장(html2canvas 캡처) 모두 이 함수를 공유하므로 두 기능 다 자동으로 적용됨'
   ];
   console.log(`%c글답 학습기 ${APP_VERSION}`, 'font-weight:bold; font-size:14px; color:#0d1b4b;');
   console.groupCollapsed('%c버전 기록 (클릭해서 펼치기)', 'color:#888; font-size:11px;');
@@ -5897,22 +5899,26 @@ ${a.name}`;
         <td style="border:1px solid #ccc; padding:6px; color:#666;">${word.example}</td>
       </tr>`).join('');
       const quizRows = (w.quiz||[]).map((q,i)=>`<div style="margin-bottom:6px; font-size:13px;">${i+1}. ${q.question} <span style="color:#0d6b6b;">(정답: ${q.answer})</span></div>`).join('');
-      return `<div style="max-width:800px; ${wi<weeksData.length-1 ? 'break-after:page; page-break-after:always;' : ''} margin-bottom:20px;">
-        ${vocabPrintFrameOpen(`급수 향상 학습 커리큘럼 — ${wi+1}주차`)}
-        <div style="text-align:center; font-size:13px; color:#555; margin-bottom:4px;">현재 ${curLevel}급 → 목표 ${targetLevel}급 (${targetDef.band} ${targetDef.sub})</div>
-        <div style="text-align:center; font-size:13px; color:#888; margin-bottom:16px;">${s.name} 학생 · ${todayLocalDateStr()}</div>
-        <table style="border-collapse:collapse; width:100%; font-size:13px; margin-bottom:16px;">
-          <tr style="background:#faf8f3;">
-            <th style="border:1px solid #ccc; padding:6px;">번호</th>
-            <th style="border:1px solid #ccc; padding:6px;">낱말</th>
-            <th style="border:1px solid #ccc; padding:6px;">뜻</th>
-            <th style="border:1px solid #ccc; padding:6px;">예문</th>
-          </tr>
-          ${wordRows}
-        </table>
-        <div style="font-weight:700; margin-bottom:8px;">확인 문제</div>
-        ${quizRows}
-        ${VOCAB_PRINT_FRAME_CLOSE}
+      // 박스를 페이지 맨 위에 붙이지 않고, 위아래 여백을 균등하게 나눠 A4 한 장 안에서 세로
+      // 가운데로 오도록 한다 — 내용이 한 페이지를 다 못 채워도 아래쪽에 빈 공간이 몰리지 않게.
+      return `<div style="${wi<weeksData.length-1 ? 'break-after:page; page-break-after:always;' : ''} min-height:247mm; display:flex; align-items:center; justify-content:center;">
+        <div style="max-width:800px; width:100%;">
+          ${vocabPrintFrameOpen(`급수 향상 학습 커리큘럼 — ${wi+1}주차`)}
+          <div style="text-align:center; font-size:13px; color:#555; margin-bottom:4px;">현재 ${curLevel}급 → 목표 ${targetLevel}급 (${targetDef.band} ${targetDef.sub})</div>
+          <div style="text-align:center; font-size:13px; color:#888; margin-bottom:16px;">${s.name} 학생 · ${todayLocalDateStr()}</div>
+          <table style="border-collapse:collapse; width:100%; font-size:13px; margin-bottom:16px;">
+            <tr style="background:#faf8f3;">
+              <th style="border:1px solid #ccc; padding:6px;">번호</th>
+              <th style="border:1px solid #ccc; padding:6px;">낱말</th>
+              <th style="border:1px solid #ccc; padding:6px;">뜻</th>
+              <th style="border:1px solid #ccc; padding:6px;">예문</th>
+            </tr>
+            ${wordRows}
+          </table>
+          <div style="font-weight:700; margin-bottom:8px;">확인 문제</div>
+          ${quizRows}
+          ${VOCAB_PRINT_FRAME_CLOSE}
+        </div>
       </div>`;
     }).join('');
     box.innerHTML = `
@@ -7071,11 +7077,16 @@ ${s.name} 학생의 이번 어휘력 진단 결과를 안내드립니다.
       rows += `<tr>${left}${right}</tr>`;
     }
     const pageLabel = totalPages>1 ? `${escapeHtml(m.title)} (${pageNum}/${totalPages}페이지)` : escapeHtml(m.title);
-    return `<div style="max-width:800px; ${pageNum<totalPages ? 'break-after:page; page-break-after:always;' : ''}">
-      ${vocabPrintFrameOpen(pageLabel)}
-      ${m.category && pageNum===1 ? `<div style="text-align:center; font-size:12px; color:#888; margin-bottom:14px;">${escapeHtml(m.category)} · ${m.createdAt||''}</div>` : ''}
-      <table style="border-collapse:collapse; width:100%;">${rows}</table>
-      ${VOCAB_PRINT_FRAME_CLOSE}
+    // 박스를 페이지 맨 위에 붙이지 않고, 위아래 여백을 균등하게 나눠 A4 한 장 안에서 세로
+    // 가운데로 오도록 한다(커리큘럼 인쇄와 같은 방식) — 특히 마지막 페이지처럼 항목 수가
+    // 적게 남으면 아래쪽에 여백이 몰리기 쉬우므로.
+    return `<div style="${pageNum<totalPages ? 'break-after:page; page-break-after:always;' : ''} min-height:247mm; display:flex; align-items:center; justify-content:center;">
+      <div style="max-width:800px; width:100%;">
+        ${vocabPrintFrameOpen(pageLabel)}
+        ${m.category && pageNum===1 ? `<div style="text-align:center; font-size:12px; color:#888; margin-bottom:14px;">${escapeHtml(m.category)} · ${m.createdAt||''}</div>` : ''}
+        <table style="border-collapse:collapse; width:100%;">${rows}</table>
+        ${VOCAB_PRINT_FRAME_CLOSE}
+      </div>
     </div>`;
   }
 
