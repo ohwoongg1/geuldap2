@@ -2210,7 +2210,7 @@
 
 <script>
   // ===== 버전 정보 (콘솔에서 확인: APP_VERSION 또는 페이지 로드시 자동 출력) =====
-  const APP_VERSION = 'v7.70';
+  const APP_VERSION = 'v7.71';
   const APP_VERSION_LOG = [
     'v1.0 — 탭 구조 + UI 껍데기',
     'v1.1 — AI 문제 생성 + 개념 사다리',
@@ -2325,7 +2325,8 @@
     'v7.67 — [신규] 시험지를 생성하자마자 "채점 대기중" 상태로 자동 저장하도록 변경(사용자 선택) — 그동안은 결과를 입력해야만 저장돼서, 학생이 시험 보는 도중 새로고침되거나 컴퓨터가 꺼지면 AI가 만든 문제 자체가 통째로 사라졌음. saveVocabPendingRecord로 생성 즉시 status:"pending"인 기록을 저장하고(재생성 시 이전 대기중 기록은 지워 중복 방지), saveVocabResult 저장 시엔 새 기록을 만드는 대신 그 대기중 기록을 완료 상태로 업데이트. 이력 목록·상담 기록 목록에 "⏳ 채점 대기중" 표시 추가, currentVocabLevel·보고서·공유 기능은 대기중 기록을 급수 계산에서 제외하도록 수정, 새로고침 후 재선택해도 저장된 대기중 기록에서 시험지를 복원하도록 selectVocabStudent/reopenVocabGuest 보강',
     'v7.68 — [개선] 진단 보고서 프롬프트를 사용자가 직접 다듬은 카톡 안내문 형식(제목 줄 "[글답국어독서논술] OOO 학생 어휘력 진단 결과 안내" → 인사말 → 진단 결과 문단 → "한 달에 한 번 정도 레벨테스트를 진행" 언급 + 가정 지도 요청 → 마무리 인사)에 정확히 맞춰 재작성 — 진단 결과 설명 문단만 매번 새로 쓰고 나머지 문구는 고정 템플릿을 그대로 따르도록 지시해 매번 같은 톤·구조로 안내문이 나오게 함',
     'v7.69 — [신규] "📘 급수 향상 4주 커리큘럼" 버튼 추가 — 단순 단어 목록이었던 기존 학습지와 달리, 다음 급수(현재+1단계) 낱말로 4주치를 구성해 매주 단어 10개(뜻·예문)+확인문제 5개(정답 포함)를 제공. 급수를 올리는 걸 목표로 한 단계 위 어휘로 구성한 것이 핵심(생성VocabCurriculum). 인쇄 시 주차별로 페이지가 나뉘어(각 주차 헤더+테두리 포함) 매주 나눠서 배포할 수 있도록 함(printVocabCurriculum), 다른 학생을 봤다가 돌아와도 캐시에서 복원되도록 selectVocabStudent에도 연결',
-    'v7.70 — [개선] 학습지·커리큘럼에서 배운 단어가 다음 진단 시험에 그대로 나올 수 있다는(일종의 컨닝페이퍼가 되는) 지적 반영 — 학습지/커리큘럼 생성 시 사용된 단어를 학생 문서에 기록해두고(recordVocabStudiedWords, 재원생은 Firestore에 영구 저장·최근 150개까지 유지, 상담자는 세션 동안만), 진단 시험 생성 프롬프트에 "이 단어들은 이미 학습했으니 출제하지 말 것"을 명시해 제외. 학습은 그 급수 수준의 감을 익히는 용도, 시험은 그 감이 새 단어에도 통하는지 검증하는 용도로 역할을 분리해 시험 결과의 신뢰도를 높임'
+    'v7.70 — [개선] 학습지·커리큘럼에서 배운 단어가 다음 진단 시험에 그대로 나올 수 있다는(일종의 컨닝페이퍼가 되는) 지적 반영 — 학습지/커리큘럼 생성 시 사용된 단어를 학생 문서에 기록해두고(recordVocabStudiedWords, 재원생은 Firestore에 영구 저장·최근 150개까지 유지, 상담자는 세션 동안만), 진단 시험 생성 프롬프트에 "이 단어들은 이미 학습했으니 출제하지 말 것"을 명시해 제외. 학습은 그 급수 수준의 감을 익히는 용도, 시험은 그 감이 새 단어에도 통하는지 검증하는 용도로 역할을 분리해 시험 결과의 신뢰도를 높임',
+    'v7.71 — [개선] 학습지·4주 커리큘럼도 시험지의 "채점 대기중" 자동 저장과 같은 이유로 새로고침하면 사라졌던 문제 수정 — persistVocabWorksheet/persistVocabCurriculum으로 생성 결과를 학생 문서에 저장(재원생은 Firestore 영구 저장, 상담자는 세션 동안만), selectVocabStudent가 화면 캐시가 없을 때 이 저장값에서도 복원하도록 확장'
   ];
   console.log(`%c글답 학습기 ${APP_VERSION}`, 'font-weight:bold; font-size:14px; color:#0d1b4b;');
   console.groupCollapsed('%c버전 기록 (클릭해서 펼치기)', 'color:#888; font-size:11px;');
@@ -5734,8 +5735,8 @@ ${a.name}`;
     document.getElementById('vocabResultForm').style.display = 'none';
     // 이 학생에 대해 방금 만든 학습지·시험지가 남아있으면(다른 학생을 봤다가 돌아온 경우 등)
     // 캐시에서 그대로 복원한다 — 아이가 아직 시험을 푸는 중일 수 있으므로 새로 만들지 않는다.
-    // 화면 메모리에 캐시가 없어도(새로고침 등으로 날아간 경우) 저장된 "채점 대기중" 기록이 있으면
-    // 거기서 문제를 복원한다 — 이게 바로 대기중 자동 저장을 하는 이유다.
+    // 화면 메모리에 캐시가 없어도(새로고침 등으로 날아간 경우) 저장된 값이 있으면 거기서 복원한다
+    // — 시험지는 "채점 대기중" 기록에서, 학습지·커리큘럼은 학생 문서에 저장해둔 값에서 복원한다.
     const pendingRec = !selectedVocabStudent._vocabTestCache
       ? _vocabRecords.find(r=>r.studentId===id && r.status==='pending')
       : null;
@@ -5750,6 +5751,12 @@ ${a.name}`;
       renderVocabWorksheetBox(selectedVocabStudent._vocabWordsCache);
     } else if (selectedVocabStudent._vocabCurriculumCache) {
       renderVocabCurriculumBox(selectedVocabStudent._vocabCurriculumCache);
+    } else if (selectedVocabStudent.vocabWorksheetSaved) {
+      selectedVocabStudent._vocabWordsCache = selectedVocabStudent.vocabWorksheetSaved;
+      renderVocabWorksheetBox(selectedVocabStudent.vocabWorksheetSaved);
+    } else if (selectedVocabStudent.vocabCurriculumSaved) {
+      selectedVocabStudent._vocabCurriculumCache = selectedVocabStudent.vocabCurriculumSaved;
+      renderVocabCurriculumBox(selectedVocabStudent.vocabCurriculumSaved);
     } else {
       document.getElementById('vocabWorksheetResult').innerHTML = '';
     }
@@ -5797,6 +5804,7 @@ ${a.name}`;
       const words = JSON.parse(clean);
       selectedVocabStudent._vocabWordsCache = { lvl, words };
       await recordVocabStudiedWords(s, words.map(w=>w.word));
+      await persistVocabWorksheet(s, { lvl, words });
       renderVocabWorksheetBox({ lvl, words });
     } catch(e) {
       box.innerHTML = `<div style="color:#c00; font-size:13px;">학습지 생성 실패: ${e.message}</div>`;
@@ -5869,6 +5877,7 @@ ${a.name}`;
       selectedVocabStudent._vocabCurriculumCache = { curLevel, targetLevel, weeksData };
       const allWords = weeksData.flatMap(w=>(w.words||[]).map(x=>x.word));
       await recordVocabStudiedWords(s, allWords);
+      await persistVocabCurriculum(s, { curLevel, targetLevel, weeksData });
       renderVocabCurriculumBox({ curLevel, targetLevel, weeksData });
     } catch(e) {
       box.innerHTML = `<div style="color:#c00; font-size:13px;">커리큘럼 생성 실패: ${e.message}</div>`;
@@ -5987,7 +5996,24 @@ ${levelDescText}${avoidText}
     }
   }
 
+  // 학습지·커리큘럼을 만든 결과를 학생 문서에 저장해둔다 — 새로고침해도 사라지지 않게 하기 위함
+  // (시험지의 "채점 대기중" 자동 저장과 같은 이유). 재원생만 영구 저장하고, 상담자는 세션 동안만.
+  async function persistVocabWorksheet(s, cache) {
+    s.vocabWorksheetSaved = cache;
+    if (s.isGuest) return;
+    const idx = _students.findIndex(x=>x.id===s.id);
+    if (idx > -1) { _students[idx].vocabWorksheetSaved = cache; localStorage.setItem('gs', JSON.stringify(_students)); }
+    if (window._fbReady) { try { await window._updateByFieldId('geuldap_students', s.id, { vocabWorksheetSaved: cache }); } catch(e) { console.error('학습지 저장 오류', e); } }
+  }
+  async function persistVocabCurriculum(s, cache) {
+    s.vocabCurriculumSaved = cache;
+    if (s.isGuest) return;
+    const idx = _students.findIndex(x=>x.id===s.id);
+    if (idx > -1) { _students[idx].vocabCurriculumSaved = cache; localStorage.setItem('gs', JSON.stringify(_students)); }
+    if (window._fbReady) { try { await window._updateByFieldId('geuldap_students', s.id, { vocabCurriculumSaved: cache }); } catch(e) { console.error('커리큘럼 저장 오류', e); } }
+  }
 
+  // 시험지를 만든 즉시 "채점 대기중" 상태로 저장해둔다 — 학생이 시험을 보는 도중 새로고침되거나
   // 컴퓨터가 꺼져도 문제가 통째로 사라지지 않게 하기 위함(사용자 요청). 같은 학생이 이전에 만들어
   // 놓고 채점하지 않은 대기중 기록이 있으면(재생성한 경우) 그건 지우고 새 것만 남긴다 — 대기중
   // 기록이 여러 개 쌓이지 않도록.
