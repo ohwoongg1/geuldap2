@@ -2209,7 +2209,7 @@
 
 <script>
   // ===== 버전 정보 (콘솔에서 확인: APP_VERSION 또는 페이지 로드시 자동 출력) =====
-  const APP_VERSION = 'v7.64';
+  const APP_VERSION = 'v7.65';
   const APP_VERSION_LOG = [
     'v1.0 — 탭 구조 + UI 껍데기',
     'v1.1 — AI 문제 생성 + 개념 사다리',
@@ -2318,7 +2318,8 @@
     'v7.61 — [신규] 자료실 항목의 첫 줄이 "번호. 단어 (...)" 형태면 그 단어(사자성어 등)만 자동으로 빨간색 강조 표시(highlightMaterialItemHtml) — docx 학습지에서는 사자성어가 빨간색이었는데 앱 안의 텍스트 버전엔 서식이 없어서 안 보였던 것을 지적받아 반영. 저장은 그대로 텍스트로 하되 화면·인쇄·이미지로 보여줄 때만 정규식으로 첫 단어를 찾아 색을 입힘 — 전체 미리보기·인쇄(2단 표)·페이지별 이미지 저장 모두에 공통 적용',
     'v7.62 — [개선] docx엔 있던 "뜻"·"예문" 라벨의 초록색(테마색) 강조도 앱 텍스트 버전엔 빠져있었다는 지적 반영 — highlightMaterialItemHtml을 줄 단위로 검사하도록 확장해 "뜻:"·"예문:" 라벨을 학원 테마색(#0d6b6b)으로, 예문 본문은 기울임으로 표시(docx와 동일한 배색). 첫 줄의 사자성어 빨간색과 함께 전체 미리보기·인쇄·이미지 저장 모두에 공통 적용',
     'v7.63 — [신규] 자료실에 파일 첨부(전단지 이미지·PDF 등) 기능과 카테고리 필터 추가 — ①이미 연결돼 있던 Firebase Storage(학생 글 사진 업로드에 쓰던 것과 같은 인프라)를 재사용해 window._uploadMaterialFile/_deleteMaterialFile 헬퍼 추가, 새 자료 등록 폼에 파일 입력 필드를 넣어 텍스트 내용 없이 파일만 등록하는 것도 가능하게 함(이미지는 미리보기, 그 외 파일은 다운로드 버튼) ②목록 위에 카테고리 드롭다운 필터 추가해 등록된 카테고리로 자료를 걸러볼 수 있게 함 ③기본 시드 자료(사자성어 학습지) 카테고리를 "사자성어"에서 "어휘력"로 변경(향후 속담·관용구·한자 자료도 같은 큰 카테고리로 묶이도록) — 이미 저장된 기존 자료의 카테고리는 자동으로 안 바뀌므로 "수정" 버튼으로 직접 바꿔야 함',
-    'v7.64 — [버그 수정] 텍스트 항목 없이 파일만 등록한 자료(전단지 이미지 등)는 인쇄 버튼 자체가 안 보이던 문제 수정 — 텍스트 항목이 있으면 기존처럼 페이지 분할 인쇄(printMaterialPaged), 파일만 있으면 지금 보이는 화면을 그대로 한 장으로 인쇄(printVocabHTML)하도록 분기 처리'
+    'v7.64 — [버그 수정] 텍스트 항목 없이 파일만 등록한 자료(전단지 이미지 등)는 인쇄 버튼 자체가 안 보이던 문제 수정 — 텍스트 항목이 있으면 기존처럼 페이지 분할 인쇄(printMaterialPaged), 파일만 있으면 지금 보이는 화면을 그대로 한 장으로 인쇄(printVocabHTML)하도록 분기 처리',
+    'v7.65 — [개선] 사용자 지적으로 파일만 등록한 자료(전단지 등)는 학원 브랜딩 테두리를 씌우지 않고 원본 그대로 표시·인쇄·이미지 저장하도록 변경 — 전단지는 이미 그 자체로 완성된 디자인(로고·주소·QR코드 포함)이라 테두리를 또 두르면 중복이었음. 텍스트 항목이 있는 자료는 기존처럼 테두리 유지, 파일만 있는 자료만 테두리 생략'
   ];
   console.log(`%c글답 학습기 ${APP_VERSION}`, 'font-weight:bold; font-size:14px; color:#0d1b4b;');
   console.groupCollapsed('%c버전 기록 (클릭해서 펼치기)', 'color:#888; font-size:11px;');
@@ -6738,19 +6739,27 @@ ${prev ? `직전 평가(${prev.month}): 급수 ${prev.newLevel}급` : '직전 �
     const items = m.content ? m.content.split(/\n\s*\n/).map(s=>s.trim()).filter(Boolean) : [];
     const highlightedContent = items.length ? items.map(highlightMaterialItemHtml).join('\n\n') : '';
     const isImageFile = m.file && /\.(png|jpe?g|gif|webp)$/i.test(m.file.name||'');
+    // 첨부 파일(전단지 등)은 그 자체로 완성된 디자인인 경우가 많아, 텍스트 내용이 따로 없으면
+    // 학원 테두리를 씌우지 않고 원본 그대로 보여준다 — 이미 파일 안에 로고·주소 등이 다 있는데
+    // 그 위에 또 테두리를 두르면 중복이라는 지적을 반영.
+    const fileOnly = !!m.file && items.length===0;
     const fileHtml = m.file
       ? (isImageFile
-          ? `<div style="text-align:center; margin-top:14px;"><img src="${m.file.url}" style="max-width:100%; border:1px solid #ddd; border-radius:6px;"></div>`
-          : `<div style="margin-top:14px; text-align:center;"><a href="${m.file.url}" target="_blank" class="btn btn-secondary btn-sm">📎 ${escapeHtml(m.file.name)} 다운로드</a></div>`)
+          ? `<div style="text-align:center; ${fileOnly?'':'margin-top:14px;'}"><img src="${m.file.url}" style="max-width:100%; ${fileOnly?'':'border:1px solid #ddd; border-radius:6px;'}"></div>`
+          : `<div style="${fileOnly?'':'margin-top:14px;'} text-align:center;"><a href="${m.file.url}" target="_blank" class="btn btn-secondary btn-sm">📎 ${escapeHtml(m.file.name)} 다운로드</a></div>`)
       : '';
+    const bodyHtml = fileOnly
+      ? `<div id="materialPrintArea" style="max-width:800px;">${fileHtml}</div>`
+      : `<div id="materialPrintArea" style="max-width:800px;">
+          ${vocabPrintFrameOpen(escapeHtml(m.title))}
+          ${m.category ? `<div style="text-align:center; font-size:12px; color:#888; margin-bottom:14px;">${escapeHtml(m.category)} · ${m.createdAt||''}</div>` : ''}
+          ${highlightedContent ? `<div style="white-space:pre-wrap; font-size:14px; line-height:1.8;">${highlightedContent}</div>` : ''}
+          ${fileHtml}
+          ${VOCAB_PRINT_FRAME_CLOSE}
+        </div>`;
     document.getElementById('materialViewBody').innerHTML = `
-      <div id="materialPrintArea" style="max-width:800px;">
-        ${vocabPrintFrameOpen(escapeHtml(m.title))}
-        ${m.category ? `<div style="text-align:center; font-size:12px; color:#888; margin-bottom:14px;">${escapeHtml(m.category)} · ${m.createdAt||''}</div>` : ''}
-        ${highlightedContent ? `<div style="white-space:pre-wrap; font-size:14px; line-height:1.8;">${highlightedContent}</div>` : ''}
-        ${fileHtml}
-        ${VOCAB_PRINT_FRAME_CLOSE}
-      </div>
+      ${fileOnly ? `<div style="font-size:12px; color:#888; margin-bottom:6px;">${escapeHtml(m.title)}${m.category ? ' · ' + escapeHtml(m.category) : ''}</div>` : ''}
+      ${bodyHtml}
       <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
         ${items.length
           ? `<button class="btn btn-secondary btn-sm" onclick="printMaterialPaged('${m.id}')">🖨️ 인쇄</button>`
