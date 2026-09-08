@@ -2209,7 +2209,7 @@
 
 <script>
   // ===== 버전 정보 (콘솔에서 확인: APP_VERSION 또는 페이지 로드시 자동 출력) =====
-  const APP_VERSION = 'v7.65';
+  const APP_VERSION = 'v7.66';
   const APP_VERSION_LOG = [
     'v1.0 — 탭 구조 + UI 껍데기',
     'v1.1 — AI 문제 생성 + 개념 사다리',
@@ -2319,7 +2319,8 @@
     'v7.62 — [개선] docx엔 있던 "뜻"·"예문" 라벨의 초록색(테마색) 강조도 앱 텍스트 버전엔 빠져있었다는 지적 반영 — highlightMaterialItemHtml을 줄 단위로 검사하도록 확장해 "뜻:"·"예문:" 라벨을 학원 테마색(#0d6b6b)으로, 예문 본문은 기울임으로 표시(docx와 동일한 배색). 첫 줄의 사자성어 빨간색과 함께 전체 미리보기·인쇄·이미지 저장 모두에 공통 적용',
     'v7.63 — [신규] 자료실에 파일 첨부(전단지 이미지·PDF 등) 기능과 카테고리 필터 추가 — ①이미 연결돼 있던 Firebase Storage(학생 글 사진 업로드에 쓰던 것과 같은 인프라)를 재사용해 window._uploadMaterialFile/_deleteMaterialFile 헬퍼 추가, 새 자료 등록 폼에 파일 입력 필드를 넣어 텍스트 내용 없이 파일만 등록하는 것도 가능하게 함(이미지는 미리보기, 그 외 파일은 다운로드 버튼) ②목록 위에 카테고리 드롭다운 필터 추가해 등록된 카테고리로 자료를 걸러볼 수 있게 함 ③기본 시드 자료(사자성어 학습지) 카테고리를 "사자성어"에서 "어휘력"로 변경(향후 속담·관용구·한자 자료도 같은 큰 카테고리로 묶이도록) — 이미 저장된 기존 자료의 카테고리는 자동으로 안 바뀌므로 "수정" 버튼으로 직접 바꿔야 함',
     'v7.64 — [버그 수정] 텍스트 항목 없이 파일만 등록한 자료(전단지 이미지 등)는 인쇄 버튼 자체가 안 보이던 문제 수정 — 텍스트 항목이 있으면 기존처럼 페이지 분할 인쇄(printMaterialPaged), 파일만 있으면 지금 보이는 화면을 그대로 한 장으로 인쇄(printVocabHTML)하도록 분기 처리',
-    'v7.65 — [개선] 사용자 지적으로 파일만 등록한 자료(전단지 등)는 학원 브랜딩 테두리를 씌우지 않고 원본 그대로 표시·인쇄·이미지 저장하도록 변경 — 전단지는 이미 그 자체로 완성된 디자인(로고·주소·QR코드 포함)이라 테두리를 또 두르면 중복이었음. 텍스트 항목이 있는 자료는 기존처럼 테두리 유지, 파일만 있는 자료만 테두리 생략'
+    'v7.65 — [개선] 사용자 지적으로 파일만 등록한 자료(전단지 등)는 학원 브랜딩 테두리를 씌우지 않고 원본 그대로 표시·인쇄·이미지 저장하도록 변경 — 전단지는 이미 그 자체로 완성된 디자인(로고·주소·QR코드 포함)이라 테두리를 또 두르면 중복이었음. 텍스트 항목이 있는 자료는 기존처럼 테두리 유지, 파일만 있는 자료만 테두리 생략',
+    'v7.66 — [버그 수정] 자료실 인쇄에서 고쳤던 것과 같은 증상(1페이지에 헤더 누락, 페이지 중간에서 테두리 잘림)이 어휘 진단 시험지 인쇄에도 그대로 있었음(실제 인쇄로 확인) — position:fixed 반복 헤더 방식을 버리고 자료실과 같은 원리로 교체: 문제를 페이지당 8개씩(A4 한 장에 안정적으로 들어가는 수, 테스트로 확인) 미리 나눠 각 페이지가 처음부터 자기 헤더+테두리를 포함한 독립 블록이 되도록 하고 페이지 나누기를 강제로 넣음(printVocabTestPaged, buildVocabTestRowHtml 헬퍼로 문제 행 렌더링 공용화). 학습지·평가서 인쇄는 문항 수가 적어 아직 기존 방식 유지 — 같은 증상 보이면 동일하게 고칠 예정'
   ];
   console.log(`%c글답 학습기 ${APP_VERSION}`, 'font-weight:bold; font-size:14px; color:#0d1b4b;');
   console.groupCollapsed('%c버전 기록 (클릭해서 펼치기)', 'color:#888; font-size:11px;');
@@ -5850,12 +5851,11 @@ ${levelDescText}
 
   // 시험지 화면을 그린다 — 새로 AI가 만든 직후에도, 다른 학생을 봤다가 돌아왔을 때 캐시에서 복원할 때도 이 함수를 쓴다.
   // 학생이 시험을 다 풀 때까지 시간이 걸리므로, 그사이 다른 탭에 갔다 와도 마지막 시험지가 그대로 남아있어야 한다.
-  function renderVocabTestBox(qs) {
-    const s = selectedVocabStudent;
-    const levelsInRange = [...new Set(qs.map(q=>q.level))].sort((a,b)=>a-b);
-    const box = document.getElementById('vocabWorksheetResult');
-    const optionLabels = ['①','②','③','④'];
-    const rows = qs.map((q,i)=>`<tr>
+  const VOCAB_TEST_QUESTIONS_PER_PRINT_PAGE = 8; // A4 한 장에 안정적으로 들어가는 문제 수(테스트로 확인)
+
+  // 시험지 문제 한 줄(<tr>)의 HTML을 만든다 — 화면 표시와 인쇄 페이지 분할에서 공통으로 쓴다.
+  function buildVocabTestRowHtml(q, i, optionLabels) {
+    return `<tr>
       <td style="border:1px solid #ccc; padding:8px; width:30px; text-align:center;">${i+1}</td>
       <td style="border:1px solid #ccc; padding:8px;">
         <div style="font-size:11px; color:#0d6b6b; margin-bottom:2px;">[${q.type||''}]</div>
@@ -5867,7 +5867,15 @@ ${levelDescText}
           ${(q.options||[]).map((op,oi)=>`<button type="button" class="vocab-opt-btn" data-q="${i}" data-opt="${oi}" onclick="selectVocabAnswer(${i},${oi})" style="border:1px solid #ccc; border-radius:5px; width:26px; height:26px; font-size:12px; background:#fff; cursor:pointer;">${optionLabels[oi]}</button>`).join('')}
         </div>
       </td>
-    </tr>`).join('');
+    </tr>`;
+  }
+
+  function renderVocabTestBox(qs) {
+    const s = selectedVocabStudent;
+    const levelsInRange = [...new Set(qs.map(q=>q.level))].sort((a,b)=>a-b);
+    const box = document.getElementById('vocabWorksheetResult');
+    const optionLabels = ['①','②','③','④'];
+    const rows = qs.map((q,i)=>buildVocabTestRowHtml(q, i, optionLabels)).join('');
     const answerRows = qs.map((q,i)=>`<tr>
       <td style="border:1px solid #ccc; padding:6px; text-align:center;">${i+1}</td>
       <td style="border:1px solid #ccc; padding:6px; text-align:center;">${q.level}급</td>
@@ -5890,7 +5898,7 @@ ${levelDescText}
         ${VOCAB_PRINT_FRAME_CLOSE}
         </div>
         <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
-          <button class="btn btn-secondary btn-sm" onclick="printVocabHTML('vocabTestPrintArea')">🖨️ 시험지 인쇄</button>
+          <button class="btn btn-secondary btn-sm" onclick="printVocabTestPaged()">🖨️ 시험지 인쇄</button>
           <button class="btn btn-secondary btn-sm" onclick="toggleVocabAnswerKey()">🔑 정답지 보기/숨기기</button>
           <button class="btn btn-primary btn-sm" onclick="gradeVocabInteractive()">✅ 위에서 고른 답으로 채점하기</button>
         </div>
@@ -5982,6 +5990,41 @@ ${levelDescText}
     const container = document.getElementById(areaId);
     const w = window.open('', '_blank');
     w.document.write(`<html><head><style>${VOCAB_PRINT_REPEAT_HEADER_CSS}</style></head><body>${container.outerHTML}</body></html>`);
+    w.document.close();
+    w.print();
+  }
+
+  // position:fixed로 헤더를 페이지마다 반복시키던 방식은 자료실 인쇄에서 실제로 불안정한 것이
+  // 확인되어(1페이지에 헤더 누락, 페이지 중간에서 테두리가 잘림) 시험지 인쇄도 자료실과 같은
+  // 원리로 바꾼다 — 문제를 페이지 단위(8문제)로 미리 나눠, 각 페이지가 처음부터 자기 헤더+테두리를
+  // 포함한 독립 블록이 되도록 하고 그 사이에 강제 페이지 나누기를 넣는다.
+  function printVocabTestPaged() {
+    const s = selectedVocabStudent;
+    const qs = s && s._vocabTestCache;
+    if (!qs) return;
+    const optionLabels = ['①','②','③','④'];
+    const pages = [];
+    for (let i=0; i<qs.length; i+=VOCAB_TEST_QUESTIONS_PER_PRINT_PAGE) pages.push(qs.slice(i, i+VOCAB_TEST_QUESTIONS_PER_PRINT_PAGE));
+    const blocks = pages.map((pageQs, p) => {
+      const globalStartIndex = p * VOCAB_TEST_QUESTIONS_PER_PRINT_PAGE;
+      const rows = pageQs.map((q,i)=>buildVocabTestRowHtml(q, globalStartIndex+i, optionLabels)).join('');
+      const pageLabel = pages.length>1 ? `어휘 진단 시험지 (객관식) (${p+1}/${pages.length}페이지)` : '어휘 진단 시험지 (객관식)';
+      return `<div style="max-width:800px; ${p<pages.length-1 ? 'break-after:page; page-break-after:always;' : ''}">
+        ${vocabPrintFrameOpen(pageLabel)}
+        <div style="text-align:center; font-size:13px; color:#888; margin-bottom:14px;">${escapeHtml(s.name)} · ${escapeHtml(s.grade||'')} · ${todayLocalDateStr()} · 이름: ________</div>
+        <table style="border-collapse:collapse; width:100%; font-size:13px;">
+          <tr style="background:#faf8f3;">
+            <th style="border:1px solid #ccc; padding:8px;">번호</th>
+            <th style="border:1px solid #ccc; padding:8px;">문제 / 보기</th>
+            <th style="border:1px solid #ccc; padding:8px;">답</th>
+          </tr>
+          ${rows}
+        </table>
+        ${VOCAB_PRINT_FRAME_CLOSE}
+      </div>`;
+    }).join('');
+    const w = window.open('', '_blank');
+    w.document.write(`<html><body>${blocks}</body></html>`);
     w.document.close();
     w.print();
   }
