@@ -1142,6 +1142,7 @@
 
     <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:20px;">
       <button class="btn btn-secondary btn-sm" onclick="generateVocabWorksheet()">📄 학습지 생성</button>
+      <button class="btn btn-secondary btn-sm" onclick="generateVocabCurriculum()">📘 급수 향상 4주 커리큘럼</button>
       <button class="btn btn-secondary btn-sm" onclick="generateVocabTest()">📝 진단 시험지 생성</button>
       <button class="btn btn-primary btn-sm" onclick="openVocabResultForm()">✅ 시험 결과 입력</button>
       <button class="btn btn-secondary btn-sm" onclick="generateVocabParentReport()">👨‍👩‍👧 진단 보고서 생성</button>
@@ -2209,7 +2210,7 @@
 
 <script>
   // ===== 버전 정보 (콘솔에서 확인: APP_VERSION 또는 페이지 로드시 자동 출력) =====
-  const APP_VERSION = 'v7.68';
+  const APP_VERSION = 'v7.70';
   const APP_VERSION_LOG = [
     'v1.0 — 탭 구조 + UI 껍데기',
     'v1.1 — AI 문제 생성 + 개념 사다리',
@@ -2322,7 +2323,9 @@
     'v7.65 — [개선] 사용자 지적으로 파일만 등록한 자료(전단지 등)는 학원 브랜딩 테두리를 씌우지 않고 원본 그대로 표시·인쇄·이미지 저장하도록 변경 — 전단지는 이미 그 자체로 완성된 디자인(로고·주소·QR코드 포함)이라 테두리를 또 두르면 중복이었음. 텍스트 항목이 있는 자료는 기존처럼 테두리 유지, 파일만 있는 자료만 테두리 생략',
     'v7.66 — [버그 수정] 자료실 인쇄에서 고쳤던 것과 같은 증상(1페이지에 헤더 누락, 페이지 중간에서 테두리 잘림)이 어휘 진단 시험지 인쇄에도 그대로 있었음(실제 인쇄로 확인) — position:fixed 반복 헤더 방식을 버리고 자료실과 같은 원리로 교체: 문제를 페이지당 8개씩(A4 한 장에 안정적으로 들어가는 수, 테스트로 확인) 미리 나눠 각 페이지가 처음부터 자기 헤더+테두리를 포함한 독립 블록이 되도록 하고 페이지 나누기를 강제로 넣음(printVocabTestPaged, buildVocabTestRowHtml 헬퍼로 문제 행 렌더링 공용화). 학습지·평가서 인쇄는 문항 수가 적어 아직 기존 방식 유지 — 같은 증상 보이면 동일하게 고칠 예정',
     'v7.67 — [신규] 시험지를 생성하자마자 "채점 대기중" 상태로 자동 저장하도록 변경(사용자 선택) — 그동안은 결과를 입력해야만 저장돼서, 학생이 시험 보는 도중 새로고침되거나 컴퓨터가 꺼지면 AI가 만든 문제 자체가 통째로 사라졌음. saveVocabPendingRecord로 생성 즉시 status:"pending"인 기록을 저장하고(재생성 시 이전 대기중 기록은 지워 중복 방지), saveVocabResult 저장 시엔 새 기록을 만드는 대신 그 대기중 기록을 완료 상태로 업데이트. 이력 목록·상담 기록 목록에 "⏳ 채점 대기중" 표시 추가, currentVocabLevel·보고서·공유 기능은 대기중 기록을 급수 계산에서 제외하도록 수정, 새로고침 후 재선택해도 저장된 대기중 기록에서 시험지를 복원하도록 selectVocabStudent/reopenVocabGuest 보강',
-    'v7.68 — [개선] 진단 보고서 프롬프트를 사용자가 직접 다듬은 카톡 안내문 형식(제목 줄 "[글답국어독서논술] OOO 학생 어휘력 진단 결과 안내" → 인사말 → 진단 결과 문단 → "한 달에 한 번 정도 레벨테스트를 진행" 언급 + 가정 지도 요청 → 마무리 인사)에 정확히 맞춰 재작성 — 진단 결과 설명 문단만 매번 새로 쓰고 나머지 문구는 고정 템플릿을 그대로 따르도록 지시해 매번 같은 톤·구조로 안내문이 나오게 함'
+    'v7.68 — [개선] 진단 보고서 프롬프트를 사용자가 직접 다듬은 카톡 안내문 형식(제목 줄 "[글답국어독서논술] OOO 학생 어휘력 진단 결과 안내" → 인사말 → 진단 결과 문단 → "한 달에 한 번 정도 레벨테스트를 진행" 언급 + 가정 지도 요청 → 마무리 인사)에 정확히 맞춰 재작성 — 진단 결과 설명 문단만 매번 새로 쓰고 나머지 문구는 고정 템플릿을 그대로 따르도록 지시해 매번 같은 톤·구조로 안내문이 나오게 함',
+    'v7.69 — [신규] "📘 급수 향상 4주 커리큘럼" 버튼 추가 — 단순 단어 목록이었던 기존 학습지와 달리, 다음 급수(현재+1단계) 낱말로 4주치를 구성해 매주 단어 10개(뜻·예문)+확인문제 5개(정답 포함)를 제공. 급수를 올리는 걸 목표로 한 단계 위 어휘로 구성한 것이 핵심(생성VocabCurriculum). 인쇄 시 주차별로 페이지가 나뉘어(각 주차 헤더+테두리 포함) 매주 나눠서 배포할 수 있도록 함(printVocabCurriculum), 다른 학생을 봤다가 돌아와도 캐시에서 복원되도록 selectVocabStudent에도 연결',
+    'v7.70 — [개선] 학습지·커리큘럼에서 배운 단어가 다음 진단 시험에 그대로 나올 수 있다는(일종의 컨닝페이퍼가 되는) 지적 반영 — 학습지/커리큘럼 생성 시 사용된 단어를 학생 문서에 기록해두고(recordVocabStudiedWords, 재원생은 Firestore에 영구 저장·최근 150개까지 유지, 상담자는 세션 동안만), 진단 시험 생성 프롬프트에 "이 단어들은 이미 학습했으니 출제하지 말 것"을 명시해 제외. 학습은 그 급수 수준의 감을 익히는 용도, 시험은 그 감이 새 단어에도 통하는지 검증하는 용도로 역할을 분리해 시험 결과의 신뢰도를 높임'
   ];
   console.log(`%c글답 학습기 ${APP_VERSION}`, 'font-weight:bold; font-size:14px; color:#0d1b4b;');
   console.groupCollapsed('%c버전 기록 (클릭해서 펼치기)', 'color:#888; font-size:11px;');
@@ -5745,6 +5748,8 @@ ${a.name}`;
       renderVocabTestBox(pendingRec.questions);
     } else if (selectedVocabStudent._vocabWordsCache) {
       renderVocabWorksheetBox(selectedVocabStudent._vocabWordsCache);
+    } else if (selectedVocabStudent._vocabCurriculumCache) {
+      renderVocabCurriculumBox(selectedVocabStudent._vocabCurriculumCache);
     } else {
       document.getElementById('vocabWorksheetResult').innerHTML = '';
     }
@@ -5773,10 +5778,12 @@ ${a.name}`;
     const def = vocabLevelDef(lvl);
     const box = document.getElementById('vocabWorksheetResult');
     box.innerHTML = '<div style="color:#888; font-size:13px;">AI가 어휘 학습지를 만들고 있어요...</div>';
+    const alreadyStudied = s.vocabStudiedWords || [];
+    const avoidText = alreadyStudied.length ? `\n이미 이전에 학습한 낱말이라 이번엔 피해주세요: ${alreadyStudied.join(', ')}` : '';
     const prompt = `당신은 한국 국어 어휘 교육 전문가입니다. 아래 급수 기준에 맞는 어휘 학습지를 만들어주세요.
 
 급수: ${lvl}급 (${def.band} 학생 대상, ${def.sub} 단계)
-이 급수의 어휘 범위(반드시 이 범위 안에서만 어휘를 골라주세요): ${def.desc}
+이 급수의 어휘 범위(반드시 이 범위 안에서만 어휘를 골라주세요): ${def.desc}${avoidText}
 
 요구사항:
 - 이 급수 범위를 벗어나지 않는 어휘 15개를 선정
@@ -5789,6 +5796,7 @@ ${a.name}`;
       const clean = text.replace(/```json|```/g,'').trim();
       const words = JSON.parse(clean);
       selectedVocabStudent._vocabWordsCache = { lvl, words };
+      await recordVocabStudiedWords(s, words.map(w=>w.word));
       renderVocabWorksheetBox({ lvl, words });
     } catch(e) {
       box.innerHTML = `<div style="color:#c00; font-size:13px;">학습지 생성 실패: ${e.message}</div>`;
@@ -5829,6 +5837,92 @@ ${a.name}`;
     `;
   }
 
+  // 급수를 올리기 위한 4주치 학습 커리큘럼 — 지금 아는 단어만 반복하는 게 아니라, 다음 급수(한 단계 위)
+  // 낱말로 구성해서 목표를 두고 끌어올리는 용도. 매주 단어 10개(뜻+예문)+확인문제 5개(정답 포함)로
+  // 구성하고, 한 번에 4주치를 만들어 각 주차를 인쇄 시 한 페이지씩 나눠 배포할 수 있게 한다.
+  async function generateVocabCurriculum() {
+    const s = selectedVocabStudent;
+    const curLevel = currentVocabLevel(s);
+    const targetLevel = Math.min(VOCAB_MAX_LEVEL, curLevel + 1);
+    const curDef = vocabLevelDef(curLevel);
+    const targetDef = vocabLevelDef(targetLevel);
+    const box = document.getElementById('vocabWorksheetResult');
+    box.innerHTML = '<div style="color:#888; font-size:13px;">AI가 4주치 커리큘럼을 만들고 있어요...</div>';
+    const alreadyStudied = s.vocabStudiedWords || [];
+    const avoidText = alreadyStudied.length ? `\n이미 이전에 학습한 낱말이라 이번엔 피해주세요: ${alreadyStudied.join(', ')}` : '';
+    const prompt = `당신은 한국 국어 어휘 교육 전문가입니다. 학생의 어휘 급수를 한 단계 끌어올리기 위한 4주치 학습 커리큘럼을 만들어주세요.
+
+현재 급수: ${curLevel}급 (${curDef.band} ${curDef.sub})
+목표 급수: ${targetLevel}급 (${targetDef.band} ${targetDef.sub}) — 이 급수 범위를 벗어나지 않는 어휘로만 구성
+목표 급수 어휘 범위: ${targetDef.desc}${avoidText}
+
+요구사항:
+- 총 4주차, 각 주차마다 단어 10개(뜻+예문)와 확인문제 5개(문제+정답)를 구성
+- 단어는 목표 급수 범위 안에서만 선정하고, 4개 주차에 걸쳐 서로 다른 단어로 구성(중복 최소화)
+- 확인문제는 그 주차에 나온 단어를 활용해 "빈칸에 알맞은 낱말 쓰기" 또는 "낱말 뜻 쓰기" 형태로 구성(주관식 서술형, 4지선다 아님)
+- 설명이나 코드블록 없이, 반드시 아래 형식의 JSON 배열로만 응답:
+[{"week":1,"words":[{"word":"낱말","meaning":"뜻","example":"예문"}],"quiz":[{"question":"문제","answer":"정답"}]}]`;
+    try {
+      const text = await callGemini(prompt);
+      const clean = text.replace(/```json|```/g,'').trim();
+      const weeksData = JSON.parse(clean);
+      selectedVocabStudent._vocabCurriculumCache = { curLevel, targetLevel, weeksData };
+      const allWords = weeksData.flatMap(w=>(w.words||[]).map(x=>x.word));
+      await recordVocabStudiedWords(s, allWords);
+      renderVocabCurriculumBox({ curLevel, targetLevel, weeksData });
+    } catch(e) {
+      box.innerHTML = `<div style="color:#c00; font-size:13px;">커리큘럼 생성 실패: ${e.message}</div>`;
+    }
+  }
+
+  function renderVocabCurriculumBox(cache) {
+    const s = selectedVocabStudent;
+    const { curLevel, targetLevel, weeksData } = cache;
+    const targetDef = vocabLevelDef(targetLevel);
+    const box = document.getElementById('vocabWorksheetResult');
+    const weekBlocksHtml = weeksData.map((w,wi)=>{
+      const wordRows = (w.words||[]).map((word,i)=>`<tr>
+        <td style="border:1px solid #ccc; padding:6px; width:26px; text-align:center;">${i+1}</td>
+        <td style="border:1px solid #ccc; padding:6px; font-weight:600;">${word.word}</td>
+        <td style="border:1px solid #ccc; padding:6px;">${word.meaning}</td>
+        <td style="border:1px solid #ccc; padding:6px; color:#666;">${word.example}</td>
+      </tr>`).join('');
+      const quizRows = (w.quiz||[]).map((q,i)=>`<div style="margin-bottom:6px; font-size:13px;">${i+1}. ${q.question} <span style="color:#0d6b6b;">(정답: ${q.answer})</span></div>`).join('');
+      return `<div style="max-width:800px; ${wi<weeksData.length-1 ? 'break-after:page; page-break-after:always;' : ''} margin-bottom:20px;">
+        ${vocabPrintFrameOpen(`급수 향상 학습 커리큘럼 — ${wi+1}주차`)}
+        <div style="text-align:center; font-size:13px; color:#555; margin-bottom:4px;">현재 ${curLevel}급 → 목표 ${targetLevel}급 (${targetDef.band} ${targetDef.sub})</div>
+        <div style="text-align:center; font-size:13px; color:#888; margin-bottom:16px;">${s.name} 학생 · ${todayLocalDateStr()}</div>
+        <table style="border-collapse:collapse; width:100%; font-size:13px; margin-bottom:16px;">
+          <tr style="background:#faf8f3;">
+            <th style="border:1px solid #ccc; padding:6px;">번호</th>
+            <th style="border:1px solid #ccc; padding:6px;">낱말</th>
+            <th style="border:1px solid #ccc; padding:6px;">뜻</th>
+            <th style="border:1px solid #ccc; padding:6px;">예문</th>
+          </tr>
+          ${wordRows}
+        </table>
+        <div style="font-weight:700; margin-bottom:8px;">확인 문제</div>
+        ${quizRows}
+        ${VOCAB_PRINT_FRAME_CLOSE}
+      </div>`;
+    }).join('');
+    box.innerHTML = `
+      <div id="vocabCurriculumPrintArea">${weekBlocksHtml}</div>
+      <div style="margin-top:10px;">
+        <button class="btn btn-secondary btn-sm" onclick="printVocabCurriculum()">🖨️ 4주치 전체 인쇄</button>
+      </div>
+    `;
+  }
+
+  function printVocabCurriculum() {
+    const container = document.getElementById('vocabCurriculumPrintArea');
+    if (!container) return;
+    const w = window.open('', '_blank');
+    w.document.write(`<html><body>${container.innerHTML}</body></html>`);
+    w.document.close();
+    w.print();
+  }
+
   // 진단 테스트(상담·월평가 공용) — 기준 급수 하나가 아니라, 기준 급수 위아래 VOCAB_TEST_SPAN 급수까지
   // 섞어서 출제한다. 학생의 실제 수준이 학년 표준보다 높거나 낮을 수 있으므로, 여러 급수에 걸친
   // 문제로 "어디까지 통과하는지" 진단해서 정확한 실제 급수를 찾아낸다.
@@ -5845,11 +5939,13 @@ ${a.name}`;
       const d = vocabLevelDef(l);
       return `${l}급(${d.band} ${d.sub}): ${d.desc}`;
     }).join('\n');
+    const alreadyStudied = s.vocabStudiedWords || [];
+    const avoidText = alreadyStudied.length ? `\n\n※ 아래 낱말은 이 학생이 학습지·커리큘럼으로 이미 공부한 적이 있으니, 이번 진단 시험에서는 절대 출제하지 마세요(같은 급수 범위 안의 다른 낱말로 대신 출제 — 외운 단어가 아니라 진짜 실력을 확인하기 위함): ${alreadyStudied.join(', ')}` : '';
     const prompt = `당신은 한국 국어 어휘 교육 전문가입니다. 학생의 실제 어휘력 수준을 정확히 진단하기 위한 4지선다 객관식 시험지를 만들어주세요.
 
 기준 급수: ${baseLevel}급 (학년 표준)
 출제 범위: ${minLevel}급 ~ ${maxLevel}급 (아래 각 급수 기준에서 각각 ${VOCAB_QUESTIONS_PER_LEVEL}문제씩, 총 ${levelsInRange.length*VOCAB_QUESTIONS_PER_LEVEL}문제)
-${levelDescText}
+${levelDescText}${avoidText}
 
 요구사항:
 - 각 급수마다 정확히 ${VOCAB_QUESTIONS_PER_LEVEL}문제씩, 그 급수 범위를 벗어나지 않는 어휘로 출제
@@ -5875,7 +5971,23 @@ ${levelDescText}
     }
   }
 
-  // 시험지를 만든 즉시 "채점 대기중" 상태로 저장해둔다 — 학생이 시험을 보는 도중 새로고침되거나
+  // 학습지·커리큘럼으로 이미 나간 단어를 기록해둔다 — 나중에 진단 시험을 만들 때 이 단어들은
+  // 출제에서 제외해서, "본 단어라서 맞힘"이 아니라 같은 수준의 다른 단어로 진짜 실력이 늘었는지
+  // 확인하게 한다(학습은 그 수준의 감을 익히는 것, 시험은 그 감이 새 단어에도 통하는지 검증하는 것).
+  // 재원생은 학생 문서에 영구 저장, 상담자는 세션 동안만(어차피 집에 가져가 공부할 자료가 아니므로).
+  async function recordVocabStudiedWords(s, newWords) {
+    if (!newWords || newWords.length===0) return;
+    const existing = s.vocabStudiedWords || [];
+    const merged = [...new Set([...existing, ...newWords])].slice(-150); // 최근 150개까지만 유지
+    s.vocabStudiedWords = merged;
+    if (!s.isGuest) {
+      const idx = _students.findIndex(x=>x.id===s.id);
+      if (idx > -1) { _students[idx].vocabStudiedWords = merged; localStorage.setItem('gs', JSON.stringify(_students)); }
+      if (window._fbReady) { try { await window._updateByFieldId('geuldap_students', s.id, { vocabStudiedWords: merged }); } catch(e) { console.error('학습 단어 기록 오류', e); } }
+    }
+  }
+
+
   // 컴퓨터가 꺼져도 문제가 통째로 사라지지 않게 하기 위함(사용자 요청). 같은 학생이 이전에 만들어
   // 놓고 채점하지 않은 대기중 기록이 있으면(재생성한 경우) 그건 지우고 새 것만 남긴다 — 대기중
   // 기록이 여러 개 쌓이지 않도록.
