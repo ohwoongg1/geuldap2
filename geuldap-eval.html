@@ -2209,7 +2209,7 @@
 
 <script>
   // ===== 버전 정보 (콘솔에서 확인: APP_VERSION 또는 페이지 로드시 자동 출력) =====
-  const APP_VERSION = 'v7.66';
+  const APP_VERSION = 'v7.67';
   const APP_VERSION_LOG = [
     'v1.0 — 탭 구조 + UI 껍데기',
     'v1.1 — AI 문제 생성 + 개념 사다리',
@@ -2320,7 +2320,8 @@
     'v7.63 — [신규] 자료실에 파일 첨부(전단지 이미지·PDF 등) 기능과 카테고리 필터 추가 — ①이미 연결돼 있던 Firebase Storage(학생 글 사진 업로드에 쓰던 것과 같은 인프라)를 재사용해 window._uploadMaterialFile/_deleteMaterialFile 헬퍼 추가, 새 자료 등록 폼에 파일 입력 필드를 넣어 텍스트 내용 없이 파일만 등록하는 것도 가능하게 함(이미지는 미리보기, 그 외 파일은 다운로드 버튼) ②목록 위에 카테고리 드롭다운 필터 추가해 등록된 카테고리로 자료를 걸러볼 수 있게 함 ③기본 시드 자료(사자성어 학습지) 카테고리를 "사자성어"에서 "어휘력"로 변경(향후 속담·관용구·한자 자료도 같은 큰 카테고리로 묶이도록) — 이미 저장된 기존 자료의 카테고리는 자동으로 안 바뀌므로 "수정" 버튼으로 직접 바꿔야 함',
     'v7.64 — [버그 수정] 텍스트 항목 없이 파일만 등록한 자료(전단지 이미지 등)는 인쇄 버튼 자체가 안 보이던 문제 수정 — 텍스트 항목이 있으면 기존처럼 페이지 분할 인쇄(printMaterialPaged), 파일만 있으면 지금 보이는 화면을 그대로 한 장으로 인쇄(printVocabHTML)하도록 분기 처리',
     'v7.65 — [개선] 사용자 지적으로 파일만 등록한 자료(전단지 등)는 학원 브랜딩 테두리를 씌우지 않고 원본 그대로 표시·인쇄·이미지 저장하도록 변경 — 전단지는 이미 그 자체로 완성된 디자인(로고·주소·QR코드 포함)이라 테두리를 또 두르면 중복이었음. 텍스트 항목이 있는 자료는 기존처럼 테두리 유지, 파일만 있는 자료만 테두리 생략',
-    'v7.66 — [버그 수정] 자료실 인쇄에서 고쳤던 것과 같은 증상(1페이지에 헤더 누락, 페이지 중간에서 테두리 잘림)이 어휘 진단 시험지 인쇄에도 그대로 있었음(실제 인쇄로 확인) — position:fixed 반복 헤더 방식을 버리고 자료실과 같은 원리로 교체: 문제를 페이지당 8개씩(A4 한 장에 안정적으로 들어가는 수, 테스트로 확인) 미리 나눠 각 페이지가 처음부터 자기 헤더+테두리를 포함한 독립 블록이 되도록 하고 페이지 나누기를 강제로 넣음(printVocabTestPaged, buildVocabTestRowHtml 헬퍼로 문제 행 렌더링 공용화). 학습지·평가서 인쇄는 문항 수가 적어 아직 기존 방식 유지 — 같은 증상 보이면 동일하게 고칠 예정'
+    'v7.66 — [버그 수정] 자료실 인쇄에서 고쳤던 것과 같은 증상(1페이지에 헤더 누락, 페이지 중간에서 테두리 잘림)이 어휘 진단 시험지 인쇄에도 그대로 있었음(실제 인쇄로 확인) — position:fixed 반복 헤더 방식을 버리고 자료실과 같은 원리로 교체: 문제를 페이지당 8개씩(A4 한 장에 안정적으로 들어가는 수, 테스트로 확인) 미리 나눠 각 페이지가 처음부터 자기 헤더+테두리를 포함한 독립 블록이 되도록 하고 페이지 나누기를 강제로 넣음(printVocabTestPaged, buildVocabTestRowHtml 헬퍼로 문제 행 렌더링 공용화). 학습지·평가서 인쇄는 문항 수가 적어 아직 기존 방식 유지 — 같은 증상 보이면 동일하게 고칠 예정',
+    'v7.67 — [신규] 시험지를 생성하자마자 "채점 대기중" 상태로 자동 저장하도록 변경(사용자 선택) — 그동안은 결과를 입력해야만 저장돼서, 학생이 시험 보는 도중 새로고침되거나 컴퓨터가 꺼지면 AI가 만든 문제 자체가 통째로 사라졌음. saveVocabPendingRecord로 생성 즉시 status:"pending"인 기록을 저장하고(재생성 시 이전 대기중 기록은 지워 중복 방지), saveVocabResult 저장 시엔 새 기록을 만드는 대신 그 대기중 기록을 완료 상태로 업데이트. 이력 목록·상담 기록 목록에 "⏳ 채점 대기중" 표시 추가, currentVocabLevel·보고서·공유 기능은 대기중 기록을 급수 계산에서 제외하도록 수정, 새로고침 후 재선택해도 저장된 대기중 기록에서 시험지를 복원하도록 selectVocabStudent/reopenVocabGuest 보강'
   ];
   console.log(`%c글답 학습기 ${APP_VERSION}`, 'font-weight:bold; font-size:14px; color:#0d1b4b;');
   console.groupCollapsed('%c버전 기록 (클릭해서 펼치기)', 'color:#888; font-size:11px;');
@@ -5587,11 +5588,11 @@ ${a.name}`;
     return _vocabRecords.filter(r=>r.studentId===studentId).sort((a,b)=>a.month.localeCompare(b.month));
   }
 
-  // 가장 최근 평가의 판정 급수를 현재(기준) 급수로 본다. 평가 이력이 아예 없으면
-  // 학년 기준 시작 급수(VOCAB_GRADE_START_LEVEL)를 기본값으로 쓴다 — 초4와 중3이
-  // 전혀 다른 수준에서 시작하도록 하기 위함.
+  // 가장 최근 "완료된" 평가의 판정 급수를 현재(기준) 급수로 본다. 채점 대기중(status:'pending') 기록은
+  // 아직 급수가 없으므로 건너뛴다. 평가 이력이 아예 없으면 학년 기준 시작 급수를 기본값으로 쓴다
+  // — 초4와 중3이 전혀 다른 수준에서 시작하도록 하기 위함.
   function currentVocabLevel(s) {
-    const recs = vocabRecordsFor(s.id);
+    const recs = vocabRecordsFor(s.id).filter(r=>r.status!=='pending');
     if (recs.length===0) return VOCAB_GRADE_START_LEVEL[s.grade] || 1;
     return recs[recs.length-1].newLevel;
   }
@@ -5649,11 +5650,11 @@ ${a.name}`;
         <th style="border:1px solid #ccc; padding:6px;">진단 급수</th>
         <th style="border:1px solid #ccc; padding:6px;"></th>
       </tr>
-      ${guestRecs.map(r=>`<tr>
+      ${guestRecs.map(r=>`<tr ${r.status==='pending' ? 'style="background:#fffbe6;"' : ''}>
         <td style="border:1px solid #ccc; padding:6px;">${escapeHtml(r.studentName)}</td>
         <td style="border:1px solid #ccc; padding:6px;">${escapeHtml(r.grade||'')}</td>
         <td style="border:1px solid #ccc; padding:6px;">${r.date||r.month}</td>
-        <td style="border:1px solid #ccc; padding:6px;">${r.newLevel}급</td>
+        <td style="border:1px solid #ccc; padding:6px;">${r.status==='pending' ? '<span style="color:#a8710a; font-weight:600;">⏳ 채점 대기중</span>' : `${r.newLevel}급`}</td>
         <td style="border:1px solid #ccc; padding:6px; white-space:nowrap;">
           <button class="btn btn-secondary btn-sm" onclick="reopenVocabGuest('${r.studentId}')">보기</button>
           <button class="btn btn-danger btn-sm" onclick="deleteVocabRecord('${r.id}')">삭제</button>
@@ -5669,9 +5670,17 @@ ${a.name}`;
     selectedVocabStudent = { id: studentId, name: rec.studentName, grade: rec.grade, isGuest: true };
     document.getElementById('vocabGuestForm').style.display = 'none';
     document.getElementById('vocabDetailSection').style.display = '';
-    document.getElementById('vocabWorksheetResult').innerHTML = '';
     document.getElementById('vocabParentReportResult').innerHTML = '';
     document.getElementById('vocabResultForm').style.display = 'none';
+    // 마지막 기록이 아직 채점 대기중이면 그 시험지를 복원해서 바로 이어서 채점할 수 있게 한다.
+    if (rec.status==='pending' && rec.questions) {
+      selectedVocabStudent._vocabTestCache = rec.questions;
+      selectedVocabStudent._vocabPendingRecordId = rec.id;
+      vocabInteractiveAnswers = {};
+      renderVocabTestBox(rec.questions);
+    } else {
+      document.getElementById('vocabWorksheetResult').innerHTML = '';
+    }
     renderVocabStatus();
     renderVocabHistory();
   }
@@ -5682,6 +5691,11 @@ ${a.name}`;
     window._vocabRecords = _vocabRecords.filter(r=>r.id!==recordId);
     localStorage.setItem('gvr', JSON.stringify(_vocabRecords));
     if (window._fbReady) { try { await window._deleteByFieldId('geuldap_vocab_records', recordId); } catch(e) { console.error('어휘 기록 삭제 오류', e); } }
+    if (selectedVocabStudent && selectedVocabStudent._vocabPendingRecordId===recordId) {
+      selectedVocabStudent._vocabPendingRecordId = null;
+      selectedVocabStudent._vocabTestCache = null;
+      document.getElementById('vocabWorksheetResult').innerHTML = '';
+    }
     if (selectedVocabStudent) { renderVocabStatus(); renderVocabHistory(); }
     renderVocabTab();
   }
@@ -5716,8 +5730,18 @@ ${a.name}`;
     document.getElementById('vocabResultForm').style.display = 'none';
     // 이 학생에 대해 방금 만든 학습지·시험지가 남아있으면(다른 학생을 봤다가 돌아온 경우 등)
     // 캐시에서 그대로 복원한다 — 아이가 아직 시험을 푸는 중일 수 있으므로 새로 만들지 않는다.
+    // 화면 메모리에 캐시가 없어도(새로고침 등으로 날아간 경우) 저장된 "채점 대기중" 기록이 있으면
+    // 거기서 문제를 복원한다 — 이게 바로 대기중 자동 저장을 하는 이유다.
+    const pendingRec = !selectedVocabStudent._vocabTestCache
+      ? _vocabRecords.find(r=>r.studentId===id && r.status==='pending')
+      : null;
     if (selectedVocabStudent._vocabTestCache) {
       renderVocabTestBox(selectedVocabStudent._vocabTestCache);
+    } else if (pendingRec && pendingRec.questions) {
+      selectedVocabStudent._vocabTestCache = pendingRec.questions;
+      selectedVocabStudent._vocabPendingRecordId = pendingRec.id;
+      vocabInteractiveAnswers = {};
+      renderVocabTestBox(pendingRec.questions);
     } else if (selectedVocabStudent._vocabWordsCache) {
       renderVocabWorksheetBox(selectedVocabStudent._vocabWordsCache);
     } else {
@@ -5843,10 +5867,32 @@ ${levelDescText}
       const qs = JSON.parse(clean);
       selectedVocabStudent._vocabTestCache = qs;
       vocabInteractiveAnswers = {};
+      await saveVocabPendingRecord(s, qs, baseLevel);
       renderVocabTestBox(qs);
     } catch(e) {
       box.innerHTML = `<div style="color:#c00; font-size:13px;">시험지 생성 실패: ${e.message}</div>`;
     }
+  }
+
+  // 시험지를 만든 즉시 "채점 대기중" 상태로 저장해둔다 — 학생이 시험을 보는 도중 새로고침되거나
+  // 컴퓨터가 꺼져도 문제가 통째로 사라지지 않게 하기 위함(사용자 요청). 같은 학생이 이전에 만들어
+  // 놓고 채점하지 않은 대기중 기록이 있으면(재생성한 경우) 그건 지우고 새 것만 남긴다 — 대기중
+  // 기록이 여러 개 쌓이지 않도록.
+  async function saveVocabPendingRecord(s, qs, baseLevel) {
+    const prevPendingId = s._vocabPendingRecordId;
+    if (prevPendingId) {
+      window._vocabRecords = _vocabRecords.filter(r=>r.id!==prevPendingId);
+      if (window._fbReady) { try { await window._deleteByFieldId('geuldap_vocab_records', prevPendingId); } catch(e) { console.error('이전 대기중 기록 삭제 오류', e); } }
+    }
+    const rec = {
+      id: Date.now().toString(), studentId: s.id, studentName: s.name, grade: s.grade, isGuest: !!s.isGuest,
+      month: todayLocalDateStr().slice(0,7), date: todayLocalDateStr(),
+      status: 'pending', oldLevel: baseLevel, questions: qs
+    };
+    _vocabRecords.push(rec);
+    s._vocabPendingRecordId = rec.id;
+    localStorage.setItem('gvr', JSON.stringify(_vocabRecords));
+    if (window._fbReady) { try { await window._add(window._col(window._db,'geuldap_vocab_records'), rec); } catch(e) { console.error('대기중 기록 저장 오류', e); } }
   }
 
   // 시험지 화면을 그린다 — 새로 AI가 만든 직후에도, 다른 학생을 봤다가 돌아왔을 때 캐시에서 복원할 때도 이 함수를 쓴다.
@@ -6089,13 +6135,21 @@ ${levelDescText}
     const resultLabel = diagnosed>oldLevel ? '상승' : diagnosed<oldLevel ? '하락' : '유지';
     // 시험지를 나중에 "다시보기"할 수 있도록 실제 문제(questions)와, 화면에서 채점했다면
     // 학생이 고른 답(answers)까지 함께 저장해둔다. 종이 채점만 한 경우는 answers가 비어 있을 수 있다.
+    // 시험지 생성 시점에 이미 "채점 대기중"으로 저장해둔 기록이 있으면 그 기록을 완료 상태로
+    // 업데이트한다(같은 시험이 대기중+완료 두 건으로 중복 저장되지 않도록).
+    const pendingId = s._vocabPendingRecordId;
     const rec = {
-      id: Date.now().toString(), studentId: s.id, studentName: s.name, grade: s.grade, isGuest: !!s.isGuest,
+      id: pendingId || Date.now().toString(), studentId: s.id, studentName: s.name, grade: s.grade, isGuest: !!s.isGuest,
       month, date: todayLocalDateStr(), total, correct, score,
       oldLevel, newLevel: diagnosed, resultLabel, breakdown, toppedOut,
       questions: selectedVocabStudent._vocabTestCache || null,
       answers: Object.keys(vocabInteractiveAnswers||{}).length ? { ...vocabInteractiveAnswers } : null
     };
+    if (pendingId) {
+      window._vocabRecords = _vocabRecords.filter(r=>r.id!==pendingId);
+      if (window._fbReady) { try { await window._deleteByFieldId('geuldap_vocab_records', pendingId); } catch(e) { console.error('대기중 기록 교체 오류', e); } }
+      s._vocabPendingRecordId = null;
+    }
     _vocabRecords.push(rec);
     localStorage.setItem('gvr', JSON.stringify(_vocabRecords));
     if (window._fbReady) await window._add(window._col(window._db,'geuldap_vocab_records'), rec).catch(console.error);
@@ -6114,7 +6168,14 @@ ${levelDescText}
     if (recs.length===0) { el.innerHTML = '<div style="font-size:12px; color:#aaa;">아직 평가 이력이 없습니다.</div>'; return; }
     el.innerHTML = `<div style="overflow-x:auto;"><table style="border-collapse:collapse; width:100%; font-size:13px;">
       <tr style="background:#faf8f3;"><th style="border:1px solid #ccc; padding:6px;">월</th><th style="border:1px solid #ccc; padding:6px;">점수</th><th style="border:1px solid #ccc; padding:6px;">급수 변화</th><th style="border:1px solid #ccc; padding:6px;">결과</th><th style="border:1px solid #ccc; padding:6px;"></th></tr>
-      ${recs.map(r=>`<tr>
+      ${recs.map(r=>r.status==='pending' ? `<tr style="background:#fffbe6;">
+        <td style="border:1px solid #ccc; padding:6px;">${r.month}</td>
+        <td style="border:1px solid #ccc; padding:6px; color:#a8710a; font-weight:600;" colspan="3">⏳ 채점 대기중 (${r.date}에 생성됨, 기준 ${r.oldLevel}급)</td>
+        <td style="border:1px solid #ccc; padding:6px; white-space:nowrap;">
+          <button class="btn btn-secondary btn-sm" onclick="viewVocabRecordTest('${r.id}')">📄 시험지 보기</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteVocabRecord('${r.id}')">삭제</button>
+        </td>
+      </tr>` : `<tr>
         <td style="border:1px solid #ccc; padding:6px;">${r.month}</td>
         <td style="border:1px solid #ccc; padding:6px;">${r.correct}/${r.total} (${r.score}점)</td>
         <td style="border:1px solid #ccc; padding:6px;">${r.oldLevel}급 → ${r.newLevel}급</td>
@@ -6173,10 +6234,10 @@ ${levelDescText}
   // 직전 평가와 비교 + 실제 학년 대비 급수 위치를 담은 보고서를 AI로 작성 (상담 자료 또는 학부모 보고서로 활용)
   async function generateVocabParentReport() {
     const s = selectedVocabStudent;
-    const recs = s.isGuest ? [] : vocabRecordsFor(s.id);
-    const guestRec = s.isGuest ? _vocabRecords.filter(r=>r.studentId===s.id).sort((a,b)=>a.month.localeCompare(b.month)) : null;
+    const recs = s.isGuest ? [] : vocabRecordsFor(s.id).filter(r=>r.status!=='pending');
+    const guestRec = s.isGuest ? _vocabRecords.filter(r=>r.studentId===s.id && r.status!=='pending').sort((a,b)=>a.month.localeCompare(b.month)) : null;
     const allRecs = s.isGuest ? guestRec : recs;
-    if (!allRecs || allRecs.length===0) { alert('아직 저장된 평가 기록이 없습니다. 먼저 시험 결과를 입력해주세요.'); return; }
+    if (!allRecs || allRecs.length===0) { alert('아직 채점 완료된 평가 기록이 없습니다. 먼저 시험 결과를 입력해주세요.'); return; }
     const box = document.getElementById('vocabParentReportResult');
     box.innerHTML = '<div style="color:#888; font-size:13px;">보고서를 작성하고 있어요...</div>';
     const last = allRecs[allRecs.length-1];
@@ -6307,7 +6368,8 @@ ${prev ? `직전 평가(${prev.month}): 급수 ${prev.newLevel}급` : '직전 �
 
   function getSelectedVocabLastRecord() {
     const s = selectedVocabStudent;
-    const recs = s.isGuest ? _vocabRecords.filter(r=>r.studentId===s.id).sort((a,b)=>a.month.localeCompare(b.month)) : vocabRecordsFor(s.id);
+    const recs = (s.isGuest ? _vocabRecords.filter(r=>r.studentId===s.id) : vocabRecordsFor(s.id)).filter(r=>r.status!=='pending');
+    recs.sort((a,b)=>a.month.localeCompare(b.month));
     return { s, last: recs[recs.length-1] };
   }
 
