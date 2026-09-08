@@ -1169,9 +1169,13 @@
 <div class="page" id="page-materials">
   <div class="card">
     <div class="card-title">자료실</div>
-    <div style="font-size:12px; color:#888; margin-bottom:14px;">사자성어 학습지, 문제은행 등 반복해서 쓰는 학습 자료를 저장해두고, 필요할 때마다 학원 브랜딩 양식으로 다시 인쇄할 수 있어요.</div>
-    <div style="margin-bottom:14px;">
+    <div style="font-size:12px; color:#888; margin-bottom:14px;">사자성어 학습지, 전단지, 문제은행 등 반복해서 쓰는 자료를 저장해두고, 필요할 때마다 학원 브랜딩 양식으로 다시 인쇄하거나 첨부 파일을 내려받을 수 있어요.</div>
+    <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:14px;">
       <button class="btn btn-primary btn-sm" onclick="openMaterialForm()">＋ 새 자료 등록</button>
+      <label style="font-size:13px; color:#888; margin-left:8px;">카테고리</label>
+      <select id="materialCategoryFilter" onchange="renderMaterialsList()" style="padding:6px 10px; border:1px solid #ddd; border-radius:6px; font-size:13px;">
+        <option value="">전체</option>
+      </select>
     </div>
     <div id="materialsList"></div>
   </div>
@@ -1184,12 +1188,17 @@
     </div>
     <div class="form-group">
       <label>카테고리</label>
-      <input type="text" id="materialCategoryInput" placeholder="예: 사자성어, 속담, 관용구, 문제은행 등" list="materialCategoryList">
+      <input type="text" id="materialCategoryInput" placeholder="예: 어휘력, 전단지, 문제은행 등" list="materialCategoryList">
       <datalist id="materialCategoryList"></datalist>
     </div>
     <div class="form-group">
-      <label>내용 (그대로 인쇄됩니다)</label>
-      <textarea id="materialContentInput" rows="14" style="width:100%; font-family:inherit; font-size:13px; padding:10px; border:1px solid #ddd; border-radius:8px;"></textarea>
+      <label>내용 (그대로 인쇄됩니다, 파일만 등록할 경우 비워둬도 됨)</label>
+      <textarea id="materialContentInput" rows="12" style="width:100%; font-family:inherit; font-size:13px; padding:10px; border:1px solid #ddd; border-radius:8px;"></textarea>
+    </div>
+    <div class="form-group">
+      <label>첨부 파일 (전단지 이미지, PDF 등 — 선택 사항)</label>
+      <input type="file" id="materialFileInput" accept="image/*,.pdf">
+      <div id="materialFileCurrent" style="font-size:12px; color:#888; margin-top:4px;"></div>
     </div>
     <div style="display:flex; gap:8px;">
       <button class="btn btn-primary btn-sm" onclick="saveMaterial()">💾 저장</button>
@@ -2062,6 +2071,19 @@
       try { await deleteObject(ref(storage, f.path)); } catch(e) { console.log('Storage 삭제 실패(무시):', e); }
     }
   };
+  // 자료실에 전단지·이미지·PDF 등 실제 파일을 첨부할 때 쓴다(내용은 텍스트로 저장하되, 파일은
+  // 필요한 경우만 별도로 Storage에 올리는 방식 — 모든 자료를 파일로 강제하지 않는다).
+  window._uploadMaterialFile = async function(materialId, dataUrl, fileName) {
+    const path = `materials/${materialId}/${fileName}`;
+    const r = ref(storage, path);
+    await uploadString(r, dataUrl, 'data_url');
+    const url = await getDownloadURL(r);
+    return { path, url, name: fileName };
+  };
+  window._deleteMaterialFile = async function(path) {
+    if (!path) return;
+    try { await deleteObject(ref(storage, path)); } catch(e) { console.log('자료실 파일 삭제 실패(무시):', e); }
+  };
   // 저장된 다운로드 URL에서 파일을 다시 읽어 base64/텍스트로 변환 (재시도용)
   window._fetchLrFileAsData = async function(storedFile) {
     const res = await fetch(storedFile.url);
@@ -2163,7 +2185,7 @@
   // 자료실이 비어있으면(처음 쓰는 경우) 방금 만든 사자성어 학습지를 기본 자료로 한 번만 등록해둔다.
   if (window._materials.length === 0) {
     const seed = {
-      id: 'seed_sajaseongeo_' + Date.now(), title: '사자성어 학습지 (50개)', category: '사자성어',
+      id: 'seed_sajaseongeo_' + Date.now(), title: '사자성어 학습지 (50개)', category: '어휘력',
       content: DEFAULT_SAJASEONGEO_MATERIAL_TEXT, createdAt: todayLocalDateStr()
     };
     window._materials.push(seed);
@@ -2187,7 +2209,7 @@
 
 <script>
   // ===== 버전 정보 (콘솔에서 확인: APP_VERSION 또는 페이지 로드시 자동 출력) =====
-  const APP_VERSION = 'v7.62';
+  const APP_VERSION = 'v7.63';
   const APP_VERSION_LOG = [
     'v1.0 — 탭 구조 + UI 껍데기',
     'v1.1 — AI 문제 생성 + 개념 사다리',
@@ -2294,7 +2316,8 @@
     'v7.59 — [버그 수정] 사용자가 실제 인쇄해보니 v7.57의 "position:fixed로 헤더를 페이지마다 반복" 방식이 크롬 인쇄 엔진에서 불안정했음(1페이지엔 헤더가 아예 안 나오고 엉뚱한 위치에 나타남) → 자료실 인쇄를 페이지별 이미지 저장과 같은 방식으로 전면 교체: 내용을 항목 단위로 나눠 페이지마다 헤더+테두리를 처음부터 포함한 독립 블록으로 만들고 그 사이에 강제 페이지 나누기(break-after:page)를 넣는 방식(printMaterialPaged, splitMaterialIntoPages 헬퍼로 페이지 분할 로직 공용화). 브라우저 인쇄 엔진의 애매한 처리에 기대지 않아 훨씬 안정적',
     'v7.60 — [버그 수정] v7.59로도 실제 인쇄해보니 1단(세로 나열)으로는 10개 항목이 A4 한 장에 다 안 들어가서 박스가 페이지 중간에서 잘리고 테두리·헤더가 깨지는 문제 확인됨 → docx 학습지와 같은 2단(좌우 2열) 표 레이아웃으로 전면 교체(buildMaterialPageBlock 공용 함수) — 같은 10개 항목도 세로 길이가 절반으로 줄어 한 페이지에 여유 있게 들어감. 인쇄와 페이지별 이미지 저장 모두 이 함수를 공유해서 동일한 레이아웃으로 나오도록 통일',
     'v7.61 — [신규] 자료실 항목의 첫 줄이 "번호. 단어 (...)" 형태면 그 단어(사자성어 등)만 자동으로 빨간색 강조 표시(highlightMaterialItemHtml) — docx 학습지에서는 사자성어가 빨간색이었는데 앱 안의 텍스트 버전엔 서식이 없어서 안 보였던 것을 지적받아 반영. 저장은 그대로 텍스트로 하되 화면·인쇄·이미지로 보여줄 때만 정규식으로 첫 단어를 찾아 색을 입힘 — 전체 미리보기·인쇄(2단 표)·페이지별 이미지 저장 모두에 공통 적용',
-    'v7.62 — [개선] docx엔 있던 "뜻"·"예문" 라벨의 초록색(테마색) 강조도 앱 텍스트 버전엔 빠져있었다는 지적 반영 — highlightMaterialItemHtml을 줄 단위로 검사하도록 확장해 "뜻:"·"예문:" 라벨을 학원 테마색(#0d6b6b)으로, 예문 본문은 기울임으로 표시(docx와 동일한 배색). 첫 줄의 사자성어 빨간색과 함께 전체 미리보기·인쇄·이미지 저장 모두에 공통 적용'
+    'v7.62 — [개선] docx엔 있던 "뜻"·"예문" 라벨의 초록색(테마색) 강조도 앱 텍스트 버전엔 빠져있었다는 지적 반영 — highlightMaterialItemHtml을 줄 단위로 검사하도록 확장해 "뜻:"·"예문:" 라벨을 학원 테마색(#0d6b6b)으로, 예문 본문은 기울임으로 표시(docx와 동일한 배색). 첫 줄의 사자성어 빨간색과 함께 전체 미리보기·인쇄·이미지 저장 모두에 공통 적용',
+    'v7.63 — [신규] 자료실에 파일 첨부(전단지 이미지·PDF 등) 기능과 카테고리 필터 추가 — ①이미 연결돼 있던 Firebase Storage(학생 글 사진 업로드에 쓰던 것과 같은 인프라)를 재사용해 window._uploadMaterialFile/_deleteMaterialFile 헬퍼 추가, 새 자료 등록 폼에 파일 입력 필드를 넣어 텍스트 내용 없이 파일만 등록하는 것도 가능하게 함(이미지는 미리보기, 그 외 파일은 다운로드 버튼) ②목록 위에 카테고리 드롭다운 필터 추가해 등록된 카테고리로 자료를 걸러볼 수 있게 함 ③기본 시드 자료(사자성어 학습지) 카테고리를 "사자성어"에서 "어휘력"로 변경(향후 속담·관용구·한자 자료도 같은 큰 카테고리로 묶이도록) — 이미 저장된 기존 자료의 카테고리는 자동으로 안 바뀌므로 "수정" 버튼으로 직접 바꿔야 함'
   ];
   console.log(`%c글답 학습기 ${APP_VERSION}`, 'font-weight:bold; font-size:14px; color:#0d1b4b;');
   console.groupCollapsed('%c버전 기록 (클릭해서 펼치기)', 'color:#888; font-size:11px;');
@@ -6590,22 +6613,33 @@ ${prev ? `직전 평가(${prev.month}): 급수 ${prev.newLevel}급` : '직전 �
   function renderMaterialsList() {
     const el = document.getElementById('materialsList');
     if (!el) return;
-    const list = _materials.slice().sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||''));
-    if (list.length===0) { el.innerHTML = '<div class="empty"><div class="empty-icon">📚</div><div>등록된 자료가 없습니다</div></div>'; return; }
-    // 카테고리 자동완성 목록 갱신
-    const cats = [...new Set(_materials.map(m=>m.category).filter(Boolean))];
+    // 카테고리 자동완성 + 필터 드롭다운 갱신
+    const cats = [...new Set(_materials.map(m=>m.category).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ko'));
     const dl = document.getElementById('materialCategoryList');
     if (dl) dl.innerHTML = cats.map(c=>`<option value="${escapeHtml(c)}">`).join('');
+    const filterSel = document.getElementById('materialCategoryFilter');
+    const currentFilter = filterSel ? filterSel.value : '';
+    if (filterSel) {
+      filterSel.innerHTML = '<option value="">전체</option>' + cats.map(c=>`<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+      filterSel.value = cats.includes(currentFilter) ? currentFilter : '';
+    }
+    const activeFilter = filterSel ? filterSel.value : '';
+    const list = _materials.slice()
+      .filter(m => !activeFilter || m.category===activeFilter)
+      .sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||''));
+    if (list.length===0) { el.innerHTML = '<div class="empty"><div class="empty-icon">📚</div><div>등록된 자료가 없습니다</div></div>'; return; }
     el.innerHTML = `<div style="overflow-x:auto;"><table style="border-collapse:collapse; width:100%; font-size:13px;">
       <tr style="background:#faf8f3;">
         <th style="border:1px solid #ccc; padding:6px;">제목</th>
         <th style="border:1px solid #ccc; padding:6px;">카테고리</th>
+        <th style="border:1px solid #ccc; padding:6px;">첨부</th>
         <th style="border:1px solid #ccc; padding:6px;">등록일</th>
         <th style="border:1px solid #ccc; padding:6px;"></th>
       </tr>
       ${list.map(m=>`<tr>
         <td style="border:1px solid #ccc; padding:6px; font-weight:600;">${escapeHtml(m.title)}</td>
         <td style="border:1px solid #ccc; padding:6px;">${escapeHtml(m.category||'')}</td>
+        <td style="border:1px solid #ccc; padding:6px; text-align:center;">${m.file ? '📎' : ''}</td>
         <td style="border:1px solid #ccc; padding:6px;">${m.createdAt||''}</td>
         <td style="border:1px solid #ccc; padding:6px; white-space:nowrap;">
           <button class="btn btn-secondary btn-sm" onclick="viewMaterial('${m.id}')">보기</button>
@@ -6624,26 +6658,55 @@ ${prev ? `직전 평가(${prev.month}): 급수 ${prev.newLevel}급` : '직전 �
     document.getElementById('materialFormCard').dataset.editId = m ? m.id : '';
     document.getElementById('materialTitleInput').value = m ? m.title : '';
     document.getElementById('materialCategoryInput').value = m ? (m.category||'') : '';
-    document.getElementById('materialContentInput').value = m ? m.content : '';
+    document.getElementById('materialContentInput').value = m ? m.content||'' : '';
+    document.getElementById('materialFileInput').value = '';
+    document.getElementById('materialFileCurrent').innerHTML = m && m.file
+      ? `현재 첨부: <a href="${m.file.url}" target="_blank">${escapeHtml(m.file.name)}</a> — 새 파일을 고르면 교체됩니다.`
+      : '';
   }
 
   function closeMaterialForm() {
     document.getElementById('materialFormCard').style.display = 'none';
   }
 
+  // 파일 입력을 data URL 문자열로 읽어온다(Storage 업로드용).
+  function readFileAsDataUrl(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
   async function saveMaterial() {
     const title = document.getElementById('materialTitleInput').value.trim();
     const category = document.getElementById('materialCategoryInput').value.trim();
     const content = document.getElementById('materialContentInput').value;
+    const fileInput = document.getElementById('materialFileInput');
+    const newFile = fileInput.files[0];
     if (!title) { alert('제목을 입력해주세요.'); return; }
-    if (!content.trim()) { alert('내용을 입력해주세요.'); return; }
+    if (!content.trim() && !newFile) { alert('내용을 입력하거나 파일을 첨부해주세요.'); return; }
     const editId = document.getElementById('materialFormCard').dataset.editId;
-    if (editId) {
-      const m = _materials.find(x=>x.id===editId);
-      if (m) { m.title = title; m.category = category; m.content = content; }
+    const isEdit = !!editId;
+    const m = isEdit ? _materials.find(x=>x.id===editId) : { id: Date.now().toString(), createdAt: todayLocalDateStr() };
+    if (!m) return;
+    m.title = title; m.category = category; m.content = content;
+    // 전단지·이미지·PDF 같은 실제 파일은 선택 사항으로만 첨부 — 모든 자료를 파일로 강제하지 않는다.
+    if (newFile) {
+      if (window._fbReady && window._uploadMaterialFile) {
+        try {
+          if (m.file) await window._deleteMaterialFile(m.file.path); // 기존 첨부 있으면 교체 전 삭제
+          const dataUrl = await readFileAsDataUrl(newFile);
+          m.file = await window._uploadMaterialFile(m.id, dataUrl, newFile.name);
+        } catch(e) { alert('파일 업로드에 실패했어요: ' + e.message); return; }
+      } else {
+        alert('파일 업로드 기능을 쓰려면 인터넷/서버 연결이 필요해요. 내용(텍스트)만 우선 저장할게요.');
+      }
+    }
+    if (isEdit) {
       if (window._fbReady) { try { await window._deleteByFieldId('geuldap_materials', editId); await window._add(window._col(window._db,'geuldap_materials'), m); } catch(e) { console.error('자료 수정 오류', e); } }
     } else {
-      const m = { id: Date.now().toString(), title, category, content, createdAt: todayLocalDateStr() };
       _materials.push(m);
       if (window._fbReady) { try { await window._add(window._col(window._db,'geuldap_materials'), m); } catch(e) { console.error('자료 저장 오류', e); } }
     }
@@ -6654,9 +6717,13 @@ ${prev ? `직전 평가(${prev.month}): 급수 ${prev.newLevel}급` : '직전 �
 
   async function deleteMaterial(id) {
     if (!confirm('이 자료를 삭제할까요? 삭제하면 되돌릴 수 없습니다.')) return;
-    window._materials = _materials.filter(m=>m.id!==id);
+    const m = _materials.find(x=>x.id===id);
+    window._materials = _materials.filter(x=>x.id!==id);
     localStorage.setItem('gml', JSON.stringify(_materials));
-    if (window._fbReady) { try { await window._deleteByFieldId('geuldap_materials', id); } catch(e) { console.error('자료 삭제 오류', e); } }
+    if (window._fbReady) {
+      try { await window._deleteByFieldId('geuldap_materials', id); } catch(e) { console.error('자료 삭제 오류', e); }
+      if (m && m.file) await window._deleteMaterialFile(m.file.path);
+    }
     document.getElementById('materialViewCard').style.display = 'none';
     renderMaterialsList();
   }
@@ -6667,23 +6734,30 @@ ${prev ? `직전 평가(${prev.month}): 급수 ${prev.newLevel}급` : '직전 �
     if (!m) return;
     document.getElementById('materialFormCard').style.display = 'none';
     document.getElementById('materialViewCard').style.display = '';
-    const items = m.content.split(/\n\s*\n/).map(s=>s.trim()).filter(Boolean);
-    const highlightedContent = items.length ? items.map(highlightMaterialItemHtml).join('\n\n') : escapeHtml(m.content);
+    const items = m.content ? m.content.split(/\n\s*\n/).map(s=>s.trim()).filter(Boolean) : [];
+    const highlightedContent = items.length ? items.map(highlightMaterialItemHtml).join('\n\n') : '';
+    const isImageFile = m.file && /\.(png|jpe?g|gif|webp)$/i.test(m.file.name||'');
+    const fileHtml = m.file
+      ? (isImageFile
+          ? `<div style="text-align:center; margin-top:14px;"><img src="${m.file.url}" style="max-width:100%; border:1px solid #ddd; border-radius:6px;"></div>`
+          : `<div style="margin-top:14px; text-align:center;"><a href="${m.file.url}" target="_blank" class="btn btn-secondary btn-sm">📎 ${escapeHtml(m.file.name)} 다운로드</a></div>`)
+      : '';
     document.getElementById('materialViewBody').innerHTML = `
       <div id="materialPrintArea" style="max-width:800px;">
         ${vocabPrintFrameOpen(escapeHtml(m.title))}
         ${m.category ? `<div style="text-align:center; font-size:12px; color:#888; margin-bottom:14px;">${escapeHtml(m.category)} · ${m.createdAt||''}</div>` : ''}
-        <div style="white-space:pre-wrap; font-size:14px; line-height:1.8;">${highlightedContent}</div>
+        ${highlightedContent ? `<div style="white-space:pre-wrap; font-size:14px; line-height:1.8;">${highlightedContent}</div>` : ''}
+        ${fileHtml}
         ${VOCAB_PRINT_FRAME_CLOSE}
       </div>
       <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
-        <button class="btn btn-secondary btn-sm" onclick="printMaterialPaged('${m.id}')">🖨️ 인쇄</button>
-        <button class="btn btn-secondary btn-sm" onclick="copyToClipboardWithAlert(document.getElementById('materialViewBody').dataset.raw)">📋 복사</button>
+        ${items.length ? `<button class="btn btn-secondary btn-sm" onclick="printMaterialPaged('${m.id}')">🖨️ 인쇄</button>` : ''}
+        ${m.content ? `<button class="btn btn-secondary btn-sm" onclick="copyToClipboardWithAlert(document.getElementById('materialViewBody').dataset.raw)">📋 복사</button>` : ''}
         <button class="btn btn-secondary btn-sm" onclick="saveMaterialAsImage('${escapeHtml(m.title)}')">🖼️ 통짜 이미지로 저장</button>
-        <button class="btn btn-primary btn-sm" onclick="saveMaterialAsPagedImages('${m.id}')">🖼️ 페이지별 이미지로 저장(인쇄 모양)</button>
+        ${items.length ? `<button class="btn btn-primary btn-sm" onclick="saveMaterialAsPagedImages('${m.id}')">🖼️ 페이지별 이미지로 저장(인쇄 모양)</button>` : ''}
       </div>
     `;
-    document.getElementById('materialViewBody').dataset.raw = m.content;
+    document.getElementById('materialViewBody').dataset.raw = m.content || '';
   }
 
   // 내용을 빈 줄 기준 항목 단위로 나눈다 — 인쇄/이미지 페이지 분할에 공통으로 쓴다.
