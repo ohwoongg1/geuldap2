@@ -2210,7 +2210,7 @@
 
 <script>
   // ===== 버전 정보 (콘솔에서 확인: APP_VERSION 또는 페이지 로드시 자동 출력) =====
-  const APP_VERSION = 'v7.81';
+  const APP_VERSION = 'v7.82';
   const APP_VERSION_LOG = [
     'v1.0 — 탭 구조 + UI 껍데기',
     'v1.1 — AI 문제 생성 + 개념 사다리',
@@ -2336,7 +2336,8 @@
     'v7.78 — [버그 수정] 사용자가 실제 시험지에서 "빈칸고르기" 문제의 문맥이 어색하고 오답도 그럴듯하게 맞아떨어져 정답이 하나로 안 떨어지는 경우를 발견(예: "민우는 ( ) 안도의 한숨을 쉬었다"에 "다행히"도 "갑자기"도 부자연스럽거나 그럴듯하게 들림) → 진단 시험 프롬프트에 "빈칸고르기" 전용 지침 추가: 정답을 넣었을 때 자연스러운 실제 문장이어야 하고, 나머지 3개 오답은 그 자리에 넣었을 때 문맥상 확실히 어색해야 하며, AI 스스로 각 보기를 대입해보고 애매하면 문장을 다시 구성하도록 지시',
     'v7.79 — [버그 수정] 사용자가 발견한 더 심각한 사례 — 속담 빈칸 문제("동생은... ( )부터 마신다더니...")의 보기들이 서로 다른 속담과 엉뚱한 낱말 조각이 뒤섞여 나옴("떡 줄 사람은 생각지도 않는데 김칫국"에 "밥", "끝" 같은 무관한 말이 붙는 식) → 원인으로 추정되는 "속담을 대화문 안에 중첩해서 넣는 구조"를 금지하고, 보기 4개는 반드시 같은 형식·비슷한 길이의 단순한 낱말/짧은 어구로만 구성하도록(서로 다른 속담·관용구 전체를 나열하거나 관련 없는 조각을 이어 붙이는 것 금지) 프롬프트에 명시',
     'v7.80 — [버그 수정] "밑줄 친 낱말은 무엇인가요" 유형 문제에서 실제로는 밑줄 서식이 전혀 안 그어져 있던 문제 발견 — AI가 지문에서 밑줄 대상 낱말을 __낱말__로 표시하도록 프롬프트에 지시하고, 렌더링 시 renderUnderlineMarkers()로 그 마커를 실제 <u> 밑줄로 변환하도록 함(buildVocabTestRowHtml, viewVocabRecordTest 시험지 다시보기 화면 모두 적용)',
-    'v7.81 — [버그 수정] 평가서 인쇄에서 학원 헤더("글답국어독서논술")가 아예 안 보이는 문제 발견 — 원인은 v7.57에서 도입했다가 v7.59부터 실제로는 안 쓰기로 한 "position:fixed로 헤더 반복" 낡은 CSS(VOCAB_PRINT_REPEAT_HEADER_CSS)가 printVocabHTML·printVocabReportCertificate 두 곳에 계속 주입되고 있었던 것 — 이 CSS가 헤더를 top:-26mm로 화면 밖에 밀어내버려서 평가서·학습지 단일 페이지 인쇄에서 헤더가 안 보였음. 두 함수에서 해당 CSS 주입을 제거하고, 더 이상 어디서도 안 쓰는 VOCAB_PRINT_REPEAT_HEADER_CSS 상수 정의 자체를 삭제해 재발 방지'
+    'v7.81 — [버그 수정] 평가서 인쇄에서 학원 헤더("글답국어독서논술")가 아예 안 보이는 문제 발견 — 원인은 v7.57에서 도입했다가 v7.59부터 실제로는 안 쓰기로 한 "position:fixed로 헤더 반복" 낡은 CSS(VOCAB_PRINT_REPEAT_HEADER_CSS)가 printVocabHTML·printVocabReportCertificate 두 곳에 계속 주입되고 있었던 것 — 이 CSS가 헤더를 top:-26mm로 화면 밖에 밀어내버려서 평가서·학습지 단일 페이지 인쇄에서 헤더가 안 보였음. 두 함수에서 해당 CSS 주입을 제거하고, 더 이상 어디서도 안 쓰는 VOCAB_PRINT_REPEAT_HEADER_CSS 상수 정의 자체를 삭제해 재발 방지',
+    'v7.82 — [신규] 사용자 제안으로 진단 보고서도 시험지처럼 그 달 평가 기록에 저장하도록 변경 — "진단 보고서 생성" 시 작성된 텍스트를 해당 기록의 report 필드에 저장(geuldap_vocab_records에도 반영), 평가 이력 표에 "📝 보고서 보기" 버튼 추가(viewVocabRecordReport)로 재생성 없이 그때 작성됐던 문구를 그대로 다시 확인·인쇄·복사 가능'
   ];
   console.log(`%c글답 학습기 ${APP_VERSION}`, 'font-weight:bold; font-size:14px; color:#0d1b4b;');
   console.groupCollapsed('%c버전 기록 (클릭해서 펼치기)', 'color:#888; font-size:11px;');
@@ -6335,6 +6336,7 @@ ${levelDescText}${avoidText}
         <td style="border:1px solid #ccc; padding:6px;">${r.resultLabel}</td>
         <td style="border:1px solid #ccc; padding:6px; white-space:nowrap;">
           ${r.questions ? `<button class="btn btn-secondary btn-sm" onclick="viewVocabRecordTest('${r.id}')">📄 시험지 보기</button>` : ''}
+          ${r.report ? `<button class="btn btn-secondary btn-sm" onclick="viewVocabRecordReport('${r.id}')">📝 보고서 보기</button>` : ''}
           <button class="btn btn-danger btn-sm" onclick="deleteVocabRecord('${r.id}')">삭제</button>
         </td>
       </tr>`).join('')}
@@ -6431,6 +6433,9 @@ ${s.name} 학생의 이번 어휘력 진단 결과를 안내드립니다.
 - 마크다운 기호(#, *, ** 등) 없이 일반 문장으로만 작성`;
     try {
       const text = await callGemini(prompt);
+      last.report = text; // 나중에 "보고서 보기"로 다시 볼 수 있도록 그 달 기록에 저장해둔다
+      localStorage.setItem('gvr', JSON.stringify(_vocabRecords));
+      if (window._fbReady) { try { await window._updateByFieldId('geuldap_vocab_records', last.id, { report: text }); } catch(e2) { console.error('보고서 저장 오류', e2); } }
       box.innerHTML = `
         <div style="border:1px solid #eee; border-radius:10px; padding:16px; background:#faf8f3;">
           <div style="font-weight:700; margin-bottom:8px;">어휘력 진단 보고서</div>
@@ -6444,9 +6449,28 @@ ${s.name} 학생의 이번 어휘력 진단 결과를 안내드립니다.
           </div>
         </div>
       `;
+      renderVocabHistory();
     } catch(e) {
       box.innerHTML = `<div style="color:#c00; font-size:13px;">보고서 생성 실패: ${e.message}</div>`;
     }
+  }
+
+  // 기록에 저장해둔 보고서를 다시 보여준다 — 재생성 없이 그때 작성됐던 문구 그대로 확인 가능.
+  function viewVocabRecordReport(recordId) {
+    const rec = _vocabRecords.find(r=>r.id===recordId);
+    if (!rec || !rec.report) { alert('이 기록에는 저장된 보고서가 없습니다.'); return; }
+    const box = document.getElementById('vocabParentReportResult');
+    box.innerHTML = `
+      <div style="border:1px solid #eee; border-radius:10px; padding:16px; background:#faf8f3;">
+        <div style="font-weight:700; margin-bottom:8px;">어휘력 진단 보고서 (${rec.month})</div>
+        <textarea id="vocabParentReportText" rows="10" style="width:100%; font-size:14px; line-height:1.7; padding:10px; border:1px solid #ddd; border-radius:8px; font-family:inherit;">${rec.report}</textarea>
+        <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
+          <button class="btn btn-secondary btn-sm" onclick="copyVocabReportOnly()">📋 보고서만 복사</button>
+          <button class="btn btn-primary btn-sm" onclick="printVocabReportCertificate()">🖨️ 평가서 인쇄</button>
+        </div>
+      </div>
+    `;
+    box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
 
   // 위 텍스트(원장님이 수정했을 수도 있는 최신 값)를 그대로 가져와, 학원 브랜딩 테두리 안에
