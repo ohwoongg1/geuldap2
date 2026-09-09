@@ -2210,7 +2210,7 @@
 
 <script>
   // ===== 버전 정보 (콘솔에서 확인: APP_VERSION 또는 페이지 로드시 자동 출력) =====
-  const APP_VERSION = 'v7.84';
+  const APP_VERSION = 'v7.85';
   const APP_VERSION_LOG = [
     'v1.0 — 탭 구조 + UI 껍데기',
     'v1.1 — AI 문제 생성 + 개념 사다리',
@@ -2339,7 +2339,8 @@
     'v7.81 — [버그 수정] 평가서 인쇄에서 학원 헤더("글답국어독서논술")가 아예 안 보이는 문제 발견 — 원인은 v7.57에서 도입했다가 v7.59부터 실제로는 안 쓰기로 한 "position:fixed로 헤더 반복" 낡은 CSS(VOCAB_PRINT_REPEAT_HEADER_CSS)가 printVocabHTML·printVocabReportCertificate 두 곳에 계속 주입되고 있었던 것 — 이 CSS가 헤더를 top:-26mm로 화면 밖에 밀어내버려서 평가서·학습지 단일 페이지 인쇄에서 헤더가 안 보였음. 두 함수에서 해당 CSS 주입을 제거하고, 더 이상 어디서도 안 쓰는 VOCAB_PRINT_REPEAT_HEADER_CSS 상수 정의 자체를 삭제해 재발 방지',
     'v7.82 — [신규] 사용자 제안으로 진단 보고서도 시험지처럼 그 달 평가 기록에 저장하도록 변경 — "진단 보고서 생성" 시 작성된 텍스트를 해당 기록의 report 필드에 저장(geuldap_vocab_records에도 반영), 평가 이력 표에 "📝 보고서 보기" 버튼 추가(viewVocabRecordReport)로 재생성 없이 그때 작성됐던 문구를 그대로 다시 확인·인쇄·복사 가능',
     'v7.83 — [신규] 동일 시험지 재채점 + 특정 기록 보고서 재작성 기능 추가 — ①"시험지 보기"에 "🔄 이 시험지로 다시 채점하기" 버튼 추가(regradeVocabRecordTest) — 급수별 정답 수를 잘못 입력했을 때 새 기록을 만들지 않고 같은 문제로 다시 채점해 그 기록을 수정(saveVocabResult에 재채점 분기 추가, 기준 급수는 원래 값 유지). 기존 급수별 점수를 결과 입력 폼에 미리 채워 넣어 처음부터 다시 세지 않아도 되게 함 ②"보고서 보기"에 "🔄 이 기록 보고서 다시 작성" 버튼 추가 — generateVocabParentReport가 targetRecordId를 받아 최신이 아닌 과거 기록도 대상으로 새로 작성 가능하도록 확장 [버그 수정] 겸사겸사 발견한 문제 — printVocabReportCertificate가 항상 최신 기록만 인쇄해서, 과거 기록의 보고서를 보다가 인쇄하면 엉뚱한(최신) 기록 데이터가 찍히는 버그가 있었음 → 이 함수도 targetRecordId를 받도록 수정해 항상 지금 보고 있는 기록 기준으로 인쇄되게 함',
-    'v7.84 — [신규] "시험지 보기(채점 결과)" 화면에 "🖼️ 채점 결과 이미지로 저장(카톡 공유용)" 버튼 추가 — 그동안은 "문제만 복사"로 텍스트만 가능했는데, 학원 브랜딩 테두리+정답/오답 색상 표시(○/✕)가 그대로 살아있는 화면을 html2canvas로 캡처해 PNG로 저장하도록 함(saveVocabGradedTestAsImage) — 카톡에 사진으로 보내면 실제 채점된 시험지 모양 그대로 전달 가능'
+    'v7.84 — [신규] "시험지 보기(채점 결과)" 화면에 "🖼️ 채점 결과 이미지로 저장(카톡 공유용)" 버튼 추가 — 그동안은 "문제만 복사"로 텍스트만 가능했는데, 학원 브랜딩 테두리+정답/오답 색상 표시(○/✕)가 그대로 살아있는 화면을 html2canvas로 캡처해 PNG로 저장하도록 함(saveVocabGradedTestAsImage) — 카톡에 사진으로 보내면 실제 채점된 시험지 모양 그대로 전달 가능',
+    'v7.85 — [개선] 20문제 채점 결과가 세로로 긴 사진 한 장으로 나와 카톡으로 보기 불편하다는 지적 — 자료실·시험지 인쇄와 같은 원리로 "🖼️ 페이지별 이미지로 저장" 버튼 추가(saveVocabGradedTestAsPagedImages), 페이지당 8문제씩(VOCAB_TEST_QUESTIONS_PER_PRINT_PAGE) 나눠 각 페이지마다 학원 브랜딩 테두리를 입힌 여러 장의 PNG로 순서대로 다운로드. 문제 행/페이지 렌더링 로직을 buildVocabGradedRowHtml/buildVocabGradedPageBlock으로 공용화해 화면 표시·통짜 이미지·페이지별 이미지가 모두 같은 코드를 공유하도록 정리'
   ];
   console.log(`%c글답 학습기 ${APP_VERSION}`, 'font-weight:bold; font-size:14px; color:#0d1b4b;');
   console.groupCollapsed('%c버전 기록 (클릭해서 펼치기)', 'color:#888; font-size:11px;');
@@ -6371,36 +6372,55 @@ ${levelDescText}${avoidText}
 
   // 저장된 기록에 남아있는 문제(questions)와 화면에서 고른 답(answers, 있는 경우)을 그대로
   // 다시 보여준다 — 읽기 전용이라 클릭해도 채점 결과가 바뀌지 않는다.
+  // 채점 결과 문제 한 줄(<tr>)의 HTML을 만든다 — "시험지 보기" 화면과 페이지별 이미지 저장에서 공용으로 쓴다.
+  function buildVocabGradedRowHtml(q, i, rec, optionLabels) {
+    const selected = rec.answers ? rec.answers[i] : undefined;
+    const hasSelection = selected !== undefined && selected !== null;
+    const isCorrect = hasSelection && selected === q.answerIndex;
+    const optsHtml = (q.options||[]).map((op,oi)=>{
+      let style = 'border:1px solid #ccc; border-radius:5px; padding:3px 8px; font-size:12px; display:inline-block; margin:2px;';
+      let mark = '';
+      if (hasSelection && oi===selected) {
+        style += isCorrect ? 'background:#0d6b6b;color:#fff;' : 'background:#c0392b;color:#fff;';
+        mark = isCorrect ? ' ○' : ' ✕';
+      } else if (oi===q.answerIndex && (!hasSelection || !isCorrect)) {
+        style += 'border-color:#0d6b6b; border-width:2px; color:#0d6b6b;';
+        mark = ' ○';
+      }
+      return `<span style="${style}">${optionLabels[oi]} ${op}${mark}</span>`;
+    }).join('');
+    return `<tr>
+      <td style="border:1px solid #ccc; padding:6px; width:30px; text-align:center;">${i+1}</td>
+      <td style="border:1px solid #ccc; padding:8px;">
+        <div style="font-size:11px; color:#0d6b6b;">[${q.type||''}] ${q.level}급</div>
+        <div>${renderUnderlineMarkers(q.question)}</div>
+        <div style="margin-top:4px;">${optsHtml}</div>
+        ${q.explanation ? `<div style="font-size:12px; color:#888; margin-top:4px;">해설: ${q.explanation}</div>` : ''}
+      </td>
+    </tr>`;
+  }
+
+  // 채점 결과를 페이지 단위(자료실·시험지 인쇄와 같은 개수)로 나눈 한 페이지 블록을 만든다.
+  function buildVocabGradedPageBlock(rec, pageQs, startIndex, pageNum, totalPages) {
+    const optionLabels = ['①','②','③','④'];
+    const rows = pageQs.map((q,i)=>buildVocabGradedRowHtml(q, startIndex+i, rec, optionLabels)).join('');
+    const pageLabel = totalPages>1 ? `어휘 진단 시험지 · 채점 결과 (${rec.month}) (${pageNum}/${totalPages}페이지)` : `어휘 진단 시험지 · 채점 결과 (${rec.month})`;
+    return `<div style="max-width:800px; ${pageNum<totalPages ? 'break-after:page; page-break-after:always;' : ''}">
+      ${vocabPrintFrameOpen(pageLabel)}
+      ${pageNum===1 ? `<div style="text-align:center; font-size:13px; color:#888; margin-bottom:14px;">${escapeHtml(rec.studentName)} · ${escapeHtml(rec.grade||'')}${rec.answers ? '' : ' · ⚠ 급수별 정답 수만 저장되어 학생이 고른 답은 표시되지 않음'}</div>` : ''}
+      <table style="border-collapse:collapse; width:100%; font-size:13px;">
+        <tr style="background:#faf8f3;"><th style="border:1px solid #ccc; padding:6px;">번호</th><th style="border:1px solid #ccc; padding:6px;">문제 / 보기</th></tr>
+        ${rows}
+      </table>
+      ${VOCAB_PRINT_FRAME_CLOSE}
+    </div>`;
+  }
+
   function viewVocabRecordTest(recordId) {
     const rec = _vocabRecords.find(r=>r.id===recordId);
     if (!rec || !rec.questions) { alert('이 기록에는 저장된 시험지가 없습니다.'); return; }
     const optionLabels = ['①','②','③','④'];
-    const rows = rec.questions.map((q,i)=>{
-      const selected = rec.answers ? rec.answers[i] : undefined;
-      const hasSelection = selected !== undefined && selected !== null;
-      const isCorrect = hasSelection && selected === q.answerIndex;
-      const optsHtml = (q.options||[]).map((op,oi)=>{
-        let style = 'border:1px solid #ccc; border-radius:5px; padding:3px 8px; font-size:12px; display:inline-block; margin:2px;';
-        let mark = '';
-        if (hasSelection && oi===selected) {
-          style += isCorrect ? 'background:#0d6b6b;color:#fff;' : 'background:#c0392b;color:#fff;';
-          mark = isCorrect ? ' ○' : ' ✕';
-        } else if (oi===q.answerIndex && (!hasSelection || !isCorrect)) {
-          style += 'border-color:#0d6b6b; border-width:2px; color:#0d6b6b;';
-          mark = ' ○';
-        }
-        return `<span style="${style}">${optionLabels[oi]} ${op}${mark}</span>`;
-      }).join('');
-      return `<tr>
-        <td style="border:1px solid #ccc; padding:6px; width:30px; text-align:center;">${i+1}</td>
-        <td style="border:1px solid #ccc; padding:8px;">
-          <div style="font-size:11px; color:#0d6b6b;">[${q.type||''}] ${q.level}급</div>
-          <div>${renderUnderlineMarkers(q.question)}</div>
-          <div style="margin-top:4px;">${optsHtml}</div>
-          ${q.explanation ? `<div style="font-size:12px; color:#888; margin-top:4px;">해설: ${q.explanation}</div>` : ''}
-        </td>
-      </tr>`;
-    }).join('');
+    const rows = rec.questions.map((q,i)=>buildVocabGradedRowHtml(q, i, rec, optionLabels)).join('');
     const box = document.getElementById('vocabWorksheetResult');
     box.innerHTML = `
       <div id="vocabRecordTestPrintArea" style="max-width:800px;">
@@ -6414,7 +6434,8 @@ ${levelDescText}${avoidText}
       </div>
       <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
         <button class="btn btn-primary btn-sm" onclick="regradeVocabRecordTest('${rec.id}')">🔄 이 시험지로 다시 채점하기</button>
-        <button class="btn btn-secondary btn-sm" onclick="saveVocabGradedTestAsImage('${rec.id}')">🖼️ 채점 결과 이미지로 저장(카톡 공유용)</button>
+        <button class="btn btn-secondary btn-sm" onclick="saveVocabGradedTestAsImage('${rec.id}')">🖼️ 통짜 이미지로 저장</button>
+        <button class="btn btn-primary btn-sm" onclick="saveVocabGradedTestAsPagedImages('${rec.id}')">🖼️ 페이지별 이미지로 저장(카톡 공유용)</button>
       </div>
     `;
   }
@@ -6430,6 +6451,38 @@ ${levelDescText}${avoidText}
       link.href = canvas.toDataURL('image/png');
       link.click();
     }).catch(e => alert('이미지 생성에 실패했어요: ' + e.message));
+  }
+
+  // 문제 수가 많으면(20문제 등) 한 장의 세로로 긴 사진 대신, 인쇄와 같은 개수(페이지당 8문제)로
+  // 나눠서 여러 장의 이미지로 저장한다 — 카톡으로 보기엔 이 쪽이 훨씬 편하다.
+  async function saveVocabGradedTestAsPagedImages(recordId) {
+    const rec = _vocabRecords.find(r=>r.id===recordId);
+    if (!rec || !rec.questions) return;
+    if (typeof html2canvas === 'undefined') { alert('이미지 생성 기능을 불러오지 못했어요. 인터넷 연결을 확인해주세요.'); return; }
+    const pages = [];
+    for (let i=0; i<rec.questions.length; i+=VOCAB_TEST_QUESTIONS_PER_PRINT_PAGE) pages.push(rec.questions.slice(i, i+VOCAB_TEST_QUESTIONS_PER_PRINT_PAGE));
+    if (pages.length>1) alert(`${pages.length}장으로 나눠서 저장할게요. 브라우저가 "여러 파일 다운로드를 허용할까요?" 라고 물으면 허용해주세요.`);
+    for (let p=0; p<pages.length; p++) {
+      const wrap = document.createElement('div');
+      wrap.style.position = 'fixed';
+      wrap.style.left = '-9999px';
+      wrap.style.top = '0';
+      wrap.style.width = '780px';
+      wrap.style.background = '#fff';
+      wrap.innerHTML = buildVocabGradedPageBlock(rec, pages[p], p*VOCAB_TEST_QUESTIONS_PER_PRINT_PAGE, p+1, pages.length);
+      document.body.appendChild(wrap);
+      try {
+        const canvas = await html2canvas(wrap, { backgroundColor: '#ffffff', scale: 2 });
+        const link = document.createElement('a');
+        link.download = `${rec.studentName}_채점결과_${rec.month}_${p+1}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+      } catch(e) {
+        alert(`${p+1}페이지 이미지 생성에 실패했어요: ` + e.message);
+      }
+      document.body.removeChild(wrap);
+      await new Promise(res=>setTimeout(res, 400));
+    }
   }
 
   // 저장된 시험지를 다시 채점 모드로 불러온다 — 급수별 정답 수를 잘못 입력했거나 채점을 고쳐야 할 때,
