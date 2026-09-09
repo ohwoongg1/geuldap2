@@ -2210,7 +2210,7 @@
 
 <script>
   // ===== 버전 정보 (콘솔에서 확인: APP_VERSION 또는 페이지 로드시 자동 출력) =====
-  const APP_VERSION = 'v7.73';
+  const APP_VERSION = 'v7.74';
   const APP_VERSION_LOG = [
     'v1.0 — 탭 구조 + UI 껍데기',
     'v1.1 — AI 문제 생성 + 개념 사다리',
@@ -2328,7 +2328,8 @@
     'v7.70 — [개선] 학습지·커리큘럼에서 배운 단어가 다음 진단 시험에 그대로 나올 수 있다는(일종의 컨닝페이퍼가 되는) 지적 반영 — 학습지/커리큘럼 생성 시 사용된 단어를 학생 문서에 기록해두고(recordVocabStudiedWords, 재원생은 Firestore에 영구 저장·최근 150개까지 유지, 상담자는 세션 동안만), 진단 시험 생성 프롬프트에 "이 단어들은 이미 학습했으니 출제하지 말 것"을 명시해 제외. 학습은 그 급수 수준의 감을 익히는 용도, 시험은 그 감이 새 단어에도 통하는지 검증하는 용도로 역할을 분리해 시험 결과의 신뢰도를 높임',
     'v7.71 — [개선] 학습지·4주 커리큘럼도 시험지의 "채점 대기중" 자동 저장과 같은 이유로 새로고침하면 사라졌던 문제 수정 — persistVocabWorksheet/persistVocabCurriculum으로 생성 결과를 학생 문서에 저장(재원생은 Firestore 영구 저장, 상담자는 세션 동안만), selectVocabStudent가 화면 캐시가 없을 때 이 저장값에서도 복원하도록 확장',
     'v7.72 — [개선] 사용자 지적으로 급수 향상 커리큘럼 인쇄 시 테두리 박스가 페이지 위쪽에 붙어 아래쪽에 여백이 몰리던 문제 수정 — 주차별로 여전히 페이지를 나누되(1주차=1페이지 유지), 각 페이지를 A4 높이(min-height:247mm)의 flex 컨테이너로 감싸 박스를 세로 가운데 정렬(align-items:center)해 위아래 여백이 고르게 나뉘도록 함, wkhtmltopdf로 렌더링 확인',
-    'v7.73 — [개선] 자료실 인쇄(buildMaterialPageBlock)에도 커리큘럼과 같은 세로 가운데 정렬 적용 — 특히 항목이 적게 남는 마지막 페이지에서 아래쪽 여백이 몰리던 문제를 해결. 인쇄와 페이지별 이미지 저장(html2canvas 캡처) 모두 이 함수를 공유하므로 두 기능 다 자동으로 적용됨'
+    'v7.73 — [개선] 자료실 인쇄(buildMaterialPageBlock)에도 커리큘럼과 같은 세로 가운데 정렬 적용 — 특히 항목이 적게 남는 마지막 페이지에서 아래쪽 여백이 몰리던 문제를 해결. 인쇄와 페이지별 이미지 저장(html2canvas 캡처) 모두 이 함수를 공유하므로 두 기능 다 자동으로 적용됨',
+    'v7.74 — [개선] 사용자가 어휘 진단 시험지 인쇄(특히 마지막 페이지, 문제 4개만 남는 경우)에서 같은 여백 쏠림 증상을 확인 — printVocabTestPaged에도 세로 가운데 정렬 적용. 같은 문제가 학습지·평가서 단일 페이지 인쇄(printVocabHTML, printVocabReportCertificate)에도 있을 수 있어 선제적으로 두 곳에도 동일하게 적용, 이제 어휘력 탭의 모든 인쇄물(학습지·시험지·평가서·커리큘럼·자료실)이 같은 세로 중앙 정렬 방식을 공유'
   ];
   console.log(`%c글답 학습기 ${APP_VERSION}`, 'font-weight:bold; font-size:14px; color:#0d1b4b;');
   console.groupCollapsed('%c버전 기록 (클릭해서 펼치기)', 'color:#888; font-size:11px;');
@@ -6180,7 +6181,8 @@ ${levelDescText}${avoidText}
   function printVocabHTML(areaId) {
     const container = document.getElementById(areaId);
     const w = window.open('', '_blank');
-    w.document.write(`<html><head><style>${VOCAB_PRINT_REPEAT_HEADER_CSS}</style></head><body>${container.outerHTML}</body></html>`);
+    const wrapped = `<div style="min-height:247mm; display:flex; align-items:center; justify-content:center;"><div style="width:100%;">${container.outerHTML}</div></div>`;
+    w.document.write(`<html><head><style>${VOCAB_PRINT_REPEAT_HEADER_CSS}</style></head><body>${wrapped}</body></html>`);
     w.document.close();
     w.print();
   }
@@ -6200,18 +6202,22 @@ ${levelDescText}${avoidText}
       const globalStartIndex = p * VOCAB_TEST_QUESTIONS_PER_PRINT_PAGE;
       const rows = pageQs.map((q,i)=>buildVocabTestRowHtml(q, globalStartIndex+i, optionLabels)).join('');
       const pageLabel = pages.length>1 ? `어휘 진단 시험지 (객관식) (${p+1}/${pages.length}페이지)` : '어휘 진단 시험지 (객관식)';
-      return `<div style="max-width:800px; ${p<pages.length-1 ? 'break-after:page; page-break-after:always;' : ''}">
-        ${vocabPrintFrameOpen(pageLabel)}
-        <div style="text-align:center; font-size:13px; color:#888; margin-bottom:14px;">${escapeHtml(s.name)} · ${escapeHtml(s.grade||'')} · ${todayLocalDateStr()} · 이름: ________</div>
-        <table style="border-collapse:collapse; width:100%; font-size:13px;">
-          <tr style="background:#faf8f3;">
-            <th style="border:1px solid #ccc; padding:8px;">번호</th>
-            <th style="border:1px solid #ccc; padding:8px;">문제 / 보기</th>
-            <th style="border:1px solid #ccc; padding:8px;">답</th>
-          </tr>
-          ${rows}
-        </table>
-        ${VOCAB_PRINT_FRAME_CLOSE}
+      // 박스를 페이지 맨 위에 붙이지 않고 세로 가운데로 오도록 한다 — 특히 마지막 페이지처럼
+      // 문제가 몇 개 안 남으면 아래쪽에 여백이 몰리기 쉬우므로(자료실·커리큘럼과 같은 방식).
+      return `<div style="${p<pages.length-1 ? 'break-after:page; page-break-after:always;' : ''} min-height:247mm; display:flex; align-items:center; justify-content:center;">
+        <div style="max-width:800px; width:100%;">
+          ${vocabPrintFrameOpen(pageLabel)}
+          <div style="text-align:center; font-size:13px; color:#888; margin-bottom:14px;">${escapeHtml(s.name)} · ${escapeHtml(s.grade||'')} · ${todayLocalDateStr()} · 이름: ________</div>
+          <table style="border-collapse:collapse; width:100%; font-size:13px;">
+            <tr style="background:#faf8f3;">
+              <th style="border:1px solid #ccc; padding:8px;">번호</th>
+              <th style="border:1px solid #ccc; padding:8px;">문제 / 보기</th>
+              <th style="border:1px solid #ccc; padding:8px;">답</th>
+            </tr>
+            ${rows}
+          </table>
+          ${VOCAB_PRINT_FRAME_CLOSE}
+        </div>
       </div>`;
     }).join('');
     const w = window.open('', '_blank');
@@ -6478,7 +6484,8 @@ ${s.name} 학생의 이번 어휘력 진단 결과를 안내드립니다.
         ${VOCAB_PRINT_FRAME_CLOSE}
       </div>`;
     const w = window.open('', '_blank');
-    w.document.write(`<html><head><style>${VOCAB_PRINT_REPEAT_HEADER_CSS}</style></head><body>${bodyHtml}</body></html>`);
+    const wrapped = `<div style="min-height:247mm; display:flex; align-items:center; justify-content:center;"><div style="width:100%;">${bodyHtml}</div></div>`;
+    w.document.write(`<html><head><style>${VOCAB_PRINT_REPEAT_HEADER_CSS}</style></head><body>${wrapped}</body></html>`);
     w.document.close();
     w.print();
   }
