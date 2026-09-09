@@ -2210,7 +2210,7 @@
 
 <script>
   // ===== 버전 정보 (콘솔에서 확인: APP_VERSION 또는 페이지 로드시 자동 출력) =====
-  const APP_VERSION = 'v7.82';
+  const APP_VERSION = 'v7.84';
   const APP_VERSION_LOG = [
     'v1.0 — 탭 구조 + UI 껍데기',
     'v1.1 — AI 문제 생성 + 개념 사다리',
@@ -2337,7 +2337,9 @@
     'v7.79 — [버그 수정] 사용자가 발견한 더 심각한 사례 — 속담 빈칸 문제("동생은... ( )부터 마신다더니...")의 보기들이 서로 다른 속담과 엉뚱한 낱말 조각이 뒤섞여 나옴("떡 줄 사람은 생각지도 않는데 김칫국"에 "밥", "끝" 같은 무관한 말이 붙는 식) → 원인으로 추정되는 "속담을 대화문 안에 중첩해서 넣는 구조"를 금지하고, 보기 4개는 반드시 같은 형식·비슷한 길이의 단순한 낱말/짧은 어구로만 구성하도록(서로 다른 속담·관용구 전체를 나열하거나 관련 없는 조각을 이어 붙이는 것 금지) 프롬프트에 명시',
     'v7.80 — [버그 수정] "밑줄 친 낱말은 무엇인가요" 유형 문제에서 실제로는 밑줄 서식이 전혀 안 그어져 있던 문제 발견 — AI가 지문에서 밑줄 대상 낱말을 __낱말__로 표시하도록 프롬프트에 지시하고, 렌더링 시 renderUnderlineMarkers()로 그 마커를 실제 <u> 밑줄로 변환하도록 함(buildVocabTestRowHtml, viewVocabRecordTest 시험지 다시보기 화면 모두 적용)',
     'v7.81 — [버그 수정] 평가서 인쇄에서 학원 헤더("글답국어독서논술")가 아예 안 보이는 문제 발견 — 원인은 v7.57에서 도입했다가 v7.59부터 실제로는 안 쓰기로 한 "position:fixed로 헤더 반복" 낡은 CSS(VOCAB_PRINT_REPEAT_HEADER_CSS)가 printVocabHTML·printVocabReportCertificate 두 곳에 계속 주입되고 있었던 것 — 이 CSS가 헤더를 top:-26mm로 화면 밖에 밀어내버려서 평가서·학습지 단일 페이지 인쇄에서 헤더가 안 보였음. 두 함수에서 해당 CSS 주입을 제거하고, 더 이상 어디서도 안 쓰는 VOCAB_PRINT_REPEAT_HEADER_CSS 상수 정의 자체를 삭제해 재발 방지',
-    'v7.82 — [신규] 사용자 제안으로 진단 보고서도 시험지처럼 그 달 평가 기록에 저장하도록 변경 — "진단 보고서 생성" 시 작성된 텍스트를 해당 기록의 report 필드에 저장(geuldap_vocab_records에도 반영), 평가 이력 표에 "📝 보고서 보기" 버튼 추가(viewVocabRecordReport)로 재생성 없이 그때 작성됐던 문구를 그대로 다시 확인·인쇄·복사 가능'
+    'v7.82 — [신규] 사용자 제안으로 진단 보고서도 시험지처럼 그 달 평가 기록에 저장하도록 변경 — "진단 보고서 생성" 시 작성된 텍스트를 해당 기록의 report 필드에 저장(geuldap_vocab_records에도 반영), 평가 이력 표에 "📝 보고서 보기" 버튼 추가(viewVocabRecordReport)로 재생성 없이 그때 작성됐던 문구를 그대로 다시 확인·인쇄·복사 가능',
+    'v7.83 — [신규] 동일 시험지 재채점 + 특정 기록 보고서 재작성 기능 추가 — ①"시험지 보기"에 "🔄 이 시험지로 다시 채점하기" 버튼 추가(regradeVocabRecordTest) — 급수별 정답 수를 잘못 입력했을 때 새 기록을 만들지 않고 같은 문제로 다시 채점해 그 기록을 수정(saveVocabResult에 재채점 분기 추가, 기준 급수는 원래 값 유지). 기존 급수별 점수를 결과 입력 폼에 미리 채워 넣어 처음부터 다시 세지 않아도 되게 함 ②"보고서 보기"에 "🔄 이 기록 보고서 다시 작성" 버튼 추가 — generateVocabParentReport가 targetRecordId를 받아 최신이 아닌 과거 기록도 대상으로 새로 작성 가능하도록 확장 [버그 수정] 겸사겸사 발견한 문제 — printVocabReportCertificate가 항상 최신 기록만 인쇄해서, 과거 기록의 보고서를 보다가 인쇄하면 엉뚱한(최신) 기록 데이터가 찍히는 버그가 있었음 → 이 함수도 targetRecordId를 받도록 수정해 항상 지금 보고 있는 기록 기준으로 인쇄되게 함',
+    'v7.84 — [신규] "시험지 보기(채점 결과)" 화면에 "🖼️ 채점 결과 이미지로 저장(카톡 공유용)" 버튼 추가 — 그동안은 "문제만 복사"로 텍스트만 가능했는데, 학원 브랜딩 테두리+정답/오답 색상 표시(○/✕)가 그대로 살아있는 화면을 html2canvas로 캡처해 PNG로 저장하도록 함(saveVocabGradedTestAsImage) — 카톡에 사진으로 보내면 실제 채점된 시험지 모양 그대로 전달 가능'
   ];
   console.log(`%c글답 학습기 ${APP_VERSION}`, 'font-weight:bold; font-size:14px; color:#0d1b4b;');
   console.groupCollapsed('%c버전 기록 (클릭해서 펼치기)', 'color:#888; font-size:11px;');
@@ -6283,8 +6285,32 @@ ${levelDescText}${avoidText}
       total += levelTotal; correct += levelCorrect;
     });
     const { diagnosed, toppedOut } = diagnoseVocabLevel(breakdown);
-    const oldLevel = currentVocabLevel(s);
     const score = total>0 ? Math.round(correct/total*100) : 0;
+
+    // 이미 저장된 기록을 "다시 채점" 중이라면(regradeVocabRecordTest로 진입) 새 기록을 만들지 않고
+    // 그 기록의 채점 결과만 고쳐 쓴다 — 기준 급수(oldLevel)는 원래 값을 그대로 유지한다(다른 기록들이
+    // 그 값을 기준으로 이어져 있으므로 함부로 바꾸지 않음).
+    const regradeId = s._vocabRegradeRecordId;
+    if (regradeId) {
+      const idx = _vocabRecords.findIndex(r=>r.id===regradeId);
+      if (idx===-1) { alert('다시 채점할 기록을 찾을 수 없습니다.'); s._vocabRegradeRecordId = null; return; }
+      const rec = _vocabRecords[idx];
+      rec.total = total; rec.correct = correct; rec.score = score; rec.breakdown = breakdown; rec.toppedOut = toppedOut;
+      rec.newLevel = diagnosed;
+      rec.resultLabel = diagnosed>rec.oldLevel ? '상승' : diagnosed<rec.oldLevel ? '하락' : '유지';
+      if (Object.keys(vocabInteractiveAnswers||{}).length) rec.answers = { ...vocabInteractiveAnswers };
+      localStorage.setItem('gvr', JSON.stringify(_vocabRecords));
+      if (window._fbReady) { try { await window._updateByFieldId('geuldap_vocab_records', regradeId, { total, correct, score, breakdown, toppedOut, newLevel: diagnosed, resultLabel: rec.resultLabel, answers: rec.answers||null }); } catch(e) { console.error('재채점 저장 오류', e); } }
+      s._vocabRegradeRecordId = null;
+      document.getElementById('vocabResultForm').style.display = 'none';
+      renderVocabStatus();
+      renderVocabHistory();
+      renderVocabTab();
+      alert(`재채점 완료! ${rec.month} 기록이 수정됐어요 → 진단 급수: ${diagnosed}급 (기준 ${rec.oldLevel}급 대비 ${rec.resultLabel})`);
+      return;
+    }
+
+    const oldLevel = currentVocabLevel(s);
     const month = todayLocalDateStr().slice(0,7);
     const resultLabel = diagnosed>oldLevel ? '상승' : diagnosed<oldLevel ? '하락' : '유지';
     // 시험지를 나중에 "다시보기"할 수 있도록 실제 문제(questions)와, 화면에서 채점했다면
@@ -6377,17 +6403,62 @@ ${levelDescText}${avoidText}
     }).join('');
     const box = document.getElementById('vocabWorksheetResult');
     box.innerHTML = `
-      <div style="font-size:12px; color:#0d6b6b; margin-bottom:8px; font-weight:700;">📄 ${rec.month} 시험지 다시보기 (읽기 전용${rec.answers ? '' : ' — 이 기록은 급수별 정답 수만 저장되어 있어 문제·정답만 보여주고 학생이 고른 답은 표시되지 않습니다'})</div>
-      <table style="border-collapse:collapse; width:100%; font-size:13px;">
-        <tr style="background:#faf8f3;"><th style="border:1px solid #ccc; padding:6px;">번호</th><th style="border:1px solid #ccc; padding:6px;">문제 / 보기</th></tr>
-        ${rows}
-      </table>
+      <div id="vocabRecordTestPrintArea" style="max-width:800px;">
+        ${vocabPrintFrameOpen(`어휘 진단 시험지 · 채점 결과 (${rec.month})`)}
+        <div style="text-align:center; font-size:13px; color:#888; margin-bottom:14px;">${escapeHtml(rec.studentName)} · ${escapeHtml(rec.grade||'')}${rec.answers ? '' : ' · ⚠ 급수별 정답 수만 저장되어 학생이 고른 답은 표시되지 않음'}</div>
+        <table style="border-collapse:collapse; width:100%; font-size:13px;">
+          <tr style="background:#faf8f3;"><th style="border:1px solid #ccc; padding:6px;">번호</th><th style="border:1px solid #ccc; padding:6px;">문제 / 보기</th></tr>
+          ${rows}
+        </table>
+        ${VOCAB_PRINT_FRAME_CLOSE}
+      </div>
+      <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
+        <button class="btn btn-primary btn-sm" onclick="regradeVocabRecordTest('${rec.id}')">🔄 이 시험지로 다시 채점하기</button>
+        <button class="btn btn-secondary btn-sm" onclick="saveVocabGradedTestAsImage('${rec.id}')">🖼️ 채점 결과 이미지로 저장(카톡 공유용)</button>
+      </div>
     `;
+  }
+
+  // 채점된 시험지 화면(정답·오답 표시 포함)을 학원 브랜딩 테두리 그대로 사진으로 저장한다.
+  function saveVocabGradedTestAsImage(recordId) {
+    const rec = _vocabRecords.find(r=>r.id===recordId);
+    const area = document.getElementById('vocabRecordTestPrintArea');
+    if (!area || typeof html2canvas === 'undefined') { alert('이미지 생성 기능을 불러오지 못했어요. 인터넷 연결을 확인해주세요.'); return; }
+    html2canvas(area, { backgroundColor: '#ffffff', scale: 2 }).then(canvas => {
+      const link = document.createElement('a');
+      link.download = `${rec ? rec.studentName+'_' : ''}채점결과_${rec ? rec.month : ''}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    }).catch(e => alert('이미지 생성에 실패했어요: ' + e.message));
+  }
+
+  // 저장된 시험지를 다시 채점 모드로 불러온다 — 급수별 정답 수를 잘못 입력했거나 채점을 고쳐야 할 때,
+  // 새 시험을 만들지 않고 같은 문제로 다시 정답을 고르고 결과를 저장(수정)할 수 있게 한다.
+  function regradeVocabRecordTest(recordId) {
+    const rec = _vocabRecords.find(r=>r.id===recordId);
+    if (!rec || !rec.questions) { alert('이 기록에는 저장된 시험지가 없습니다.'); return; }
+    selectedVocabStudent._vocabTestCache = rec.questions;
+    selectedVocabStudent._vocabRegradeRecordId = rec.id;
+    selectedVocabStudent._vocabPendingRecordId = null;
+    vocabInteractiveAnswers = rec.answers ? { ...rec.answers } : {};
+    renderVocabTestBox(rec.questions);
+    // 처음부터 다시 세지 않도록, 기존에 저장돼 있던 급수별 정답 수를 결과 입력 폼에 미리 채워둔다.
+    if (rec.breakdown) {
+      document.querySelectorAll('.vocab-level-input').forEach(inp => {
+        const level = parseInt(inp.dataset.level);
+        const found = rec.breakdown.find(b=>b.level===level);
+        if (found) inp.value = found.correct;
+      });
+    }
+    openVocabResultForm();
+    alert(`${rec.month} 기록을 다시 채점할 수 있게 불러왔어요. 답을 다시 고르거나 급수별 정답 수를 고친 뒤 "저장 및 급수 진단"을 누르면 이 기록이 수정됩니다(새 기록이 추가되지 않아요).`);
   }
 
 
   // 직전 평가와 비교 + 실제 학년 대비 급수 위치를 담은 보고서를 AI로 작성 (상담 자료 또는 학부모 보고서로 활용)
-  async function generateVocabParentReport() {
+  // targetRecordId를 주면 그 기록을 기준으로(그 기록이 최신이 아니어도) 보고서를 다시 작성한다 —
+  // 안 주면 기존처럼 가장 최근 완료 기록을 기준으로 새로 작성.
+  async function generateVocabParentReport(targetRecordId) {
     const s = selectedVocabStudent;
     const recs = s.isGuest ? [] : vocabRecordsFor(s.id).filter(r=>r.status!=='pending');
     const guestRec = s.isGuest ? _vocabRecords.filter(r=>r.studentId===s.id && r.status!=='pending').sort((a,b)=>a.month.localeCompare(b.month)) : null;
@@ -6395,8 +6466,9 @@ ${levelDescText}${avoidText}
     if (!allRecs || allRecs.length===0) { alert('아직 채점 완료된 평가 기록이 없습니다. 먼저 시험 결과를 입력해주세요.'); return; }
     const box = document.getElementById('vocabParentReportResult');
     box.innerHTML = '<div style="color:#888; font-size:13px;">보고서를 작성하고 있어요...</div>';
-    const last = allRecs[allRecs.length-1];
-    const prev = allRecs.length>1 ? allRecs[allRecs.length-2] : null;
+    const last = targetRecordId ? (allRecs.find(r=>r.id===targetRecordId) || allRecs[allRecs.length-1]) : allRecs[allRecs.length-1];
+    const lastIdx = allRecs.findIndex(r=>r.id===last.id);
+    const prev = lastIdx>0 ? allRecs[lastIdx-1] : null;
     const lvlDef = vocabLevelDef(last.newLevel);
     const gradeStartLevel = VOCAB_GRADE_START_LEVEL[s.grade] || 1;
     const diffFromGrade = last.newLevel - gradeStartLevel;
@@ -6444,7 +6516,7 @@ ${s.name} 학생의 이번 어휘력 진단 결과를 안내드립니다.
             <button class="btn btn-secondary btn-sm" onclick="copyVocabResultOnly()">📋 결과만 복사</button>
             <button class="btn btn-secondary btn-sm" onclick="copyVocabQuestionsOnly()">📋 문제만 복사</button>
             <button class="btn btn-secondary btn-sm" onclick="copyVocabReportOnly()">📋 보고서만 복사</button>
-            <button class="btn btn-primary btn-sm" onclick="printVocabReportCertificate()">🖨️ 평가서 인쇄</button>
+            <button class="btn btn-primary btn-sm" onclick="printVocabReportCertificate('${last.id}')">🖨️ 평가서 인쇄</button>
             <button class="btn btn-primary btn-sm" onclick="shareVocabToParent()">📤 전체 한번에 복사</button>
           </div>
         </div>
@@ -6466,7 +6538,8 @@ ${s.name} 학생의 이번 어휘력 진단 결과를 안내드립니다.
         <textarea id="vocabParentReportText" rows="10" style="width:100%; font-size:14px; line-height:1.7; padding:10px; border:1px solid #ddd; border-radius:8px; font-family:inherit;">${rec.report}</textarea>
         <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
           <button class="btn btn-secondary btn-sm" onclick="copyVocabReportOnly()">📋 보고서만 복사</button>
-          <button class="btn btn-primary btn-sm" onclick="printVocabReportCertificate()">🖨️ 평가서 인쇄</button>
+          <button class="btn btn-primary btn-sm" onclick="printVocabReportCertificate('${rec.id}')">🖨️ 평가서 인쇄</button>
+          <button class="btn btn-secondary btn-sm" onclick="generateVocabParentReport('${rec.id}')">🔄 이 기록 보고서 다시 작성</button>
         </div>
       </div>
     `;
@@ -6475,12 +6548,14 @@ ${s.name} 학생의 이번 어휘력 진단 결과를 안내드립니다.
 
   // 위 텍스트(원장님이 수정했을 수도 있는 최신 값)를 그대로 가져와, 학원 브랜딩 테두리 안에
   // 급수 결과표 + 글 형태로 정리한 인쇄용 평가서를 새 창에 띄워 인쇄한다.
-  function printVocabReportCertificate() {
+  // targetRecordId를 주면 그 기록 기준으로 인쇄한다 — 안 주면 기존처럼 최신 완료 기록 기준.
+  // (이 인자가 없으면 과거 기록의 보고서를 보다가 인쇄해도 최신 기록 데이터가 찍히는 문제가 있었음)
+  function printVocabReportCertificate(targetRecordId) {
     const s = selectedVocabStudent;
     const ta = document.getElementById('vocabParentReportText');
     const text = ta ? ta.value : '';
     const recs = s.isGuest ? _vocabRecords.filter(r=>r.studentId===s.id).sort((a,b)=>a.month.localeCompare(b.month)) : vocabRecordsFor(s.id);
-    const last = recs[recs.length-1];
+    const last = targetRecordId ? (recs.find(r=>r.id===targetRecordId) || recs[recs.length-1]) : recs[recs.length-1];
     if (!last) { alert('평가 기록을 찾을 수 없습니다.'); return; }
     const lvlDef = vocabLevelDef(last.newLevel);
     const breakdownRows = (last.breakdown||[]).map(b=>`<tr>
