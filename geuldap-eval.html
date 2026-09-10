@@ -2050,6 +2050,12 @@
   window._db = db;
   window._col = collection;
   window._add = addDoc;
+  // window._fbReady는 "초기 데이터 전체 로딩이 끝났는지"를 나타내는 플래그라 실제로 true가 되기까지
+  // 시간이 걸린다. 그런데 여러 저장 함수가 이 플래그로 "지금 Firestore에 써도 되는지"를 판단하고
+  // 있었고, 그 사이(로딩 중)에 빠르게 뭔가를 저장하면 Firestore에는 전혀 안 쓰이고 이 컴퓨터의
+  // 로컬 저장소에만 남는 버그가 실제로 여러 번 발생했다(자료실, 어휘력 기록 등). Firebase SDK
+  // 자체는 이 시점에 이미 준비돼 있으므로, "쓰기 가능 여부"는 이 함수로 판단한다.
+  window._fbWriteReady = function() { return !!(window._db && window._col && window._add); };
   window._get = getDocs;
   window._q = query;
   window._where = where;
@@ -2181,14 +2187,34 @@
       [stf_, window._staff], [exp_, window._expenses], [vr_, window._vocabRecords], [ml_, window._materials],
       [vst_, window._vocabStandardTests]
     ];
+    const serverIdSets = {};
     targets.forEach(([result, arr], i) => {
       if (result.status === 'fulfilled') {
-        result.value.forEach(d => mergeFromServer(arr, d.data()));
+        const ids = new Set();
+        result.value.forEach(d => { const data = d.data(); ids.add(data.id); mergeFromServer(arr, data); });
+        serverIdSets[names[i]] = ids;
       } else {
         window._fbLoadFailedCollections.push(names[i]);
         console.error(names[i] + ' 로드 실패(재시도 3번 다 실패, 로컬 캐시로 대체됨):', result.reason);
       }
     });
+    // 예전 버그로 이 컴퓨터의 로컬 저장소에만 남고 서버(Firestore)에는 한 번도 올라가지 못한
+    // 기록이 있을 수 있다(자료실·어휘력 기록 등에서 실제로 발생했음). 방금 서버에서 받아온
+    // 목록에 없는 로컬 항목은 이 컴퓨터에서 만들어졌지만 서버엔 없다는 뜻이므로, 원장님이 따로
+    // 뭘 누르지 않아도 지금 자동으로 서버에 올려서 다른 기기에서도 보이게 한다.
+    if (window._fbWriteReady()) {
+      const healTargets = [['geuldap_vocab_records', window._vocabRecords], ['geuldap_materials', window._materials]];
+      for (const [collName, arr] of healTargets) {
+        const serverIds = serverIdSets[collName];
+        if (!serverIds) continue; // 그 컬렉션 로드 자체가 실패했으면 건드리지 않음(오판 방지)
+        for (const item of arr) {
+          if (item && item.id && !serverIds.has(item.id)) {
+            try { await window._add(window._col(window._db, collName), item); console.log(`로컬 전용 기록 자동 복구: ${collName}/${item.id}`); }
+            catch(e4) { console.error('자동 복구 실패:', collName, item.id, e4); }
+          }
+        }
+      }
+    }
     try {
       const asDoc = await getDoc(doc(db, 'geuldap_settings', 'academy'));
       if (asDoc.exists()) window._academySettings = asDoc.data();
@@ -2237,7 +2263,7 @@
 
 <script>
   // ===== 버전 정보 (콘솔에서 확인: APP_VERSION 또는 페이지 로드시 자동 출력) =====
-  const APP_VERSION = 'v7.95';
+  const APP_VERSION = 'v7.96';
   const APP_VERSION_LOG = [
     'v1.0 — 탭 구조 + UI 껍데기',
     'v1.1 — AI 문제 생성 + 개념 사다리',
@@ -2377,7 +2403,8 @@
     'v7.92 — [구조 변경] 사용자가 "한자어조합" 유형의 실제 문제 양상을 다시 지적 — "공연"이라는 낱말을 두고 같은 발음의 서로 다른 한자 표기 중 정답을 고르는 식이라, 이건 어휘력이 아니라 순수 한자 시험이라는 지적에 공감해 "한자어조합" 문제 유형 자체를 폐기. 이제 한자어로 된 낱말도 한자 표기를 고르게 하지 않고, 다른 낱말과 똑같이 뜻고르기·빈칸고르기·비슷한말고르기·반대말고르기 4가지 유형으로만 뜻 이해 여부를 확인하도록 프롬프트 변경(한자 표기·정확한 한자를 고르는 문제 금지를 명시)',
     'v7.93 — [버그 수정] 사용자가 "성취도 현황" 대시보드를 열어둔 상태에서 오늘 새로 저장한 학생 결과가 표에 안 나타나는 문제 발견 — 원인은 시험 결과 저장(saveVocabResult, 재채점 포함)·기록 삭제(deleteVocabRecord) 뒤에 대시보드를 다시 그리는 호출이 빠져있어서, 대시보드를 미리 열어둔 채로 다른 학생 결과를 저장해도 표가 그 시점에 멈춰있던 것 → refreshVocabDashboardIfOpen() 헬퍼를 추가해 대시보드가 현재 화면에 열려있을 때만 자동으로 다시 그리도록 세 지점(재채점 저장·신규 결과 저장·기록 삭제)에 모두 연결',
     'v7.94 — [개선] 사용자 요청으로 "성취도 현황" 대시보드(전체 학생 비교표 + 개별 성장 추이)에서 상담자(미등록 방문자) 기록을 제외 — 상담은 일회성이라 재원생 성취도 추이를 보는 이 대시보드의 목적과 맞지 않음. renderVocabDashboard의 완료 기록 필터에 !r.isGuest 조건 추가',
-    'v7.95 — [버그 수정] 사용자가 집(다른 컴퓨터)에서 자료실을 열었을 때 "교육청자료"(파일 첨부) 항목이 목록에 아예 안 보이는 문제 발견 — 원인은 saveMaterial()이 Firestore 저장 여부를 window._fbReady(초기 데이터 전체 로딩 완료 플래그)로 판단하고 있어서, 앱을 켜자마자 빠르게 자료를 등록하면 아직 로딩이 안 끝나 이 플래그가 false인 상태로 저장이 되어 Firestore에는 전혀 저장되지 않고 그 컴퓨터의 로컬 저장소에만 남는 경우가 있었음(같은 컴퓨터에서는 정상으로 보이지만 다른 기기에서는 항목 자체가 없음) → window._fbReady 대신 Firebase SDK 자체가 준비됐는지(window._db/_col/_add 존재 여부)로 판단하도록 변경해 초기 로딩 중에도 정상 저장되게 하고, 그래도 저장 안 되는 극히 드문 경우엔 "이 컴퓨터에만 임시 저장됨" 안내를 명확히 띄우도록 함'
+    'v7.95 — [버그 수정] 사용자가 집(다른 컴퓨터)에서 자료실을 열었을 때 "교육청자료"(파일 첨부) 항목이 목록에 아예 안 보이는 문제 발견 — 원인은 saveMaterial()이 Firestore 저장 여부를 window._fbReady(초기 데이터 전체 로딩 완료 플래그)로 판단하고 있어서, 앱을 켜자마자 빠르게 자료를 등록하면 아직 로딩이 안 끝나 이 플래그가 false인 상태로 저장이 되어 Firestore에는 전혀 저장되지 않고 그 컴퓨터의 로컬 저장소에만 남는 경우가 있었음(같은 컴퓨터에서는 정상으로 보이지만 다른 기기에서는 항목 자체가 없음) → window._fbReady 대신 Firebase SDK 자체가 준비됐는지(window._db/_col/_add 존재 여부)로 판단하도록 변경해 초기 로딩 중에도 정상 저장되게 하고, 그래도 저장 안 되는 극히 드문 경우엔 "이 컴퓨터에만 임시 저장됨" 안내를 명확히 띄우도록 함',
+    'v7.96 — [버그 수정+복구] 같은 원인의 버그가 어휘력 기록에서도 재현됨(학원 컴퓨터에서 저장한 어휘력 테스트가 집에서는 안 보임) — window._fbReady로 저장 여부를 판단하던 어휘력 관련 11개 지점(시험 결과 저장·재채점·대기중 기록·표준 시험지·학습 단어 기록·학습지/커리큘럼 저장·삭제·보고서 저장) 전부를 새로 만든 공용 판정 함수 window._fbWriteReady()(Firebase SDK 준비 여부로 판단, _fbReady보다 훨씬 이른 시점에 true가 됨)로 교체. 추가로 초기 데이터 로딩 시 서버에 없는 로컬 전용 기록(과거 버그로 로컬에만 남았던 것들)을 자동으로 서버에 동기화하는 자동 복구 로직 추가 — 데이터가 남아있는 그 컴퓨터에서 앱을 다시 열기만 하면 서버로 자동 복구되어 다른 기기에서도 보이게 됨(어휘력 기록·자료실 대상)'
   ];
   console.log(`%c글답 학습기 ${APP_VERSION}`, 'font-weight:bold; font-size:14px; color:#0d1b4b;');
   console.groupCollapsed('%c버전 기록 (클릭해서 펼치기)', 'color:#888; font-size:11px;');
@@ -5854,7 +5881,7 @@ ${a.name}`;
     if (!confirm('이 평가 기록을 삭제할까요? 삭제하면 되돌릴 수 없습니다.')) return;
     window._vocabRecords = _vocabRecords.filter(r=>r.id!==recordId);
     localStorage.setItem('gvr', JSON.stringify(_vocabRecords));
-    if (window._fbReady) { try { await window._deleteByFieldId('geuldap_vocab_records', recordId); } catch(e) { console.error('어휘 기록 삭제 오류', e); } }
+    if (window._fbWriteReady()) { try { await window._deleteByFieldId('geuldap_vocab_records', recordId); } catch(e) { console.error('어휘 기록 삭제 오류', e); } }
     if (selectedVocabStudent && selectedVocabStudent._vocabPendingRecordId===recordId) {
       selectedVocabStudent._vocabPendingRecordId = null;
       selectedVocabStudent._vocabTestCache = null;
@@ -6194,7 +6221,7 @@ ${levelDescText}${avoidText}
     const rec = { id: 'std_' + level, level, questions: qs, createdAt: todayLocalDateStr() };
     window._vocabStandardTests.push(rec);
     localStorage.setItem('gvst', JSON.stringify(_vocabStandardTests));
-    if (window._fbReady) { try { await window._add(window._col(window._db,'geuldap_vocab_standard_tests'), rec); } catch(e) { console.error('표준 시험지 저장 오류', e); } }
+    if (window._fbWriteReady()) { try { await window._add(window._col(window._db,'geuldap_vocab_standard_tests'), rec); } catch(e) { console.error('표준 시험지 저장 오류', e); } }
   }
 
   // 학습지·커리큘럼으로 이미 나간 단어를 기록해둔다 — 나중에 진단 시험을 만들 때 이 단어들은
@@ -6209,7 +6236,7 @@ ${levelDescText}${avoidText}
     if (!s.isGuest) {
       const idx = _students.findIndex(x=>x.id===s.id);
       if (idx > -1) { _students[idx].vocabStudiedWords = merged; localStorage.setItem('gs', JSON.stringify(_students)); }
-      if (window._fbReady) { try { await window._updateByFieldId('geuldap_students', s.id, { vocabStudiedWords: merged }); } catch(e) { console.error('학습 단어 기록 오류', e); } }
+      if (window._fbWriteReady()) { try { await window._updateByFieldId('geuldap_students', s.id, { vocabStudiedWords: merged }); } catch(e) { console.error('학습 단어 기록 오류', e); } }
     }
   }
 
@@ -6220,14 +6247,14 @@ ${levelDescText}${avoidText}
     if (s.isGuest) return;
     const idx = _students.findIndex(x=>x.id===s.id);
     if (idx > -1) { _students[idx].vocabWorksheetSaved = cache; localStorage.setItem('gs', JSON.stringify(_students)); }
-    if (window._fbReady) { try { await window._updateByFieldId('geuldap_students', s.id, { vocabWorksheetSaved: cache }); } catch(e) { console.error('학습지 저장 오류', e); } }
+    if (window._fbWriteReady()) { try { await window._updateByFieldId('geuldap_students', s.id, { vocabWorksheetSaved: cache }); } catch(e) { console.error('학습지 저장 오류', e); } }
   }
   async function persistVocabCurriculum(s, cache) {
     s.vocabCurriculumSaved = cache;
     if (s.isGuest) return;
     const idx = _students.findIndex(x=>x.id===s.id);
     if (idx > -1) { _students[idx].vocabCurriculumSaved = cache; localStorage.setItem('gs', JSON.stringify(_students)); }
-    if (window._fbReady) { try { await window._updateByFieldId('geuldap_students', s.id, { vocabCurriculumSaved: cache }); } catch(e) { console.error('커리큘럼 저장 오류', e); } }
+    if (window._fbWriteReady()) { try { await window._updateByFieldId('geuldap_students', s.id, { vocabCurriculumSaved: cache }); } catch(e) { console.error('커리큘럼 저장 오류', e); } }
   }
 
   // 시험지를 만든 즉시 "채점 대기중" 상태로 저장해둔다 — 학생이 시험을 보는 도중 새로고침되거나
@@ -6238,7 +6265,7 @@ ${levelDescText}${avoidText}
     const prevPendingId = s._vocabPendingRecordId;
     if (prevPendingId) {
       window._vocabRecords = _vocabRecords.filter(r=>r.id!==prevPendingId);
-      if (window._fbReady) { try { await window._deleteByFieldId('geuldap_vocab_records', prevPendingId); } catch(e) { console.error('이전 대기중 기록 삭제 오류', e); } }
+      if (window._fbWriteReady()) { try { await window._deleteByFieldId('geuldap_vocab_records', prevPendingId); } catch(e) { console.error('이전 대기중 기록 삭제 오류', e); } }
     }
     const rec = {
       id: Date.now().toString(), studentId: s.id, studentName: s.name, grade: s.grade, isGuest: !!s.isGuest,
@@ -6248,7 +6275,7 @@ ${levelDescText}${avoidText}
     _vocabRecords.push(rec);
     s._vocabPendingRecordId = rec.id;
     localStorage.setItem('gvr', JSON.stringify(_vocabRecords));
-    if (window._fbReady) { try { await window._add(window._col(window._db,'geuldap_vocab_records'), rec); } catch(e) { console.error('대기중 기록 저장 오류', e); } }
+    if (window._fbWriteReady()) { try { await window._add(window._col(window._db,'geuldap_vocab_records'), rec); } catch(e) { console.error('대기중 기록 저장 오류', e); } }
   }
 
   // 시험지 화면을 그린다 — 새로 AI가 만든 직후에도, 다른 학생을 봤다가 돌아왔을 때 캐시에서 복원할 때도 이 함수를 쓴다.
@@ -6494,7 +6521,7 @@ ${levelDescText}${avoidText}
       rec.resultLabel = diagnosed>rec.oldLevel ? '상승' : diagnosed<rec.oldLevel ? '하락' : '유지';
       if (Object.keys(vocabInteractiveAnswers||{}).length) rec.answers = { ...vocabInteractiveAnswers };
       localStorage.setItem('gvr', JSON.stringify(_vocabRecords));
-      if (window._fbReady) { try { await window._updateByFieldId('geuldap_vocab_records', regradeId, { total, correct, score, breakdown, toppedOut, newLevel: diagnosed, resultLabel: rec.resultLabel, answers: rec.answers||null }); } catch(e) { console.error('재채점 저장 오류', e); } }
+      if (window._fbWriteReady()) { try { await window._updateByFieldId('geuldap_vocab_records', regradeId, { total, correct, score, breakdown, toppedOut, newLevel: diagnosed, resultLabel: rec.resultLabel, answers: rec.answers||null }); } catch(e) { console.error('재채점 저장 오류', e); } }
       s._vocabRegradeRecordId = null;
       document.getElementById('vocabResultForm').style.display = 'none';
       renderVocabStatus();
@@ -6522,12 +6549,12 @@ ${levelDescText}${avoidText}
     };
     if (pendingId) {
       window._vocabRecords = _vocabRecords.filter(r=>r.id!==pendingId);
-      if (window._fbReady) { try { await window._deleteByFieldId('geuldap_vocab_records', pendingId); } catch(e) { console.error('대기중 기록 교체 오류', e); } }
+      if (window._fbWriteReady()) { try { await window._deleteByFieldId('geuldap_vocab_records', pendingId); } catch(e) { console.error('대기중 기록 교체 오류', e); } }
       s._vocabPendingRecordId = null;
     }
     _vocabRecords.push(rec);
     localStorage.setItem('gvr', JSON.stringify(_vocabRecords));
-    if (window._fbReady) await window._add(window._col(window._db,'geuldap_vocab_records'), rec).catch(console.error);
+    if (window._fbWriteReady()) await window._add(window._col(window._db,'geuldap_vocab_records'), rec).catch(console.error);
     document.getElementById('vocabResultForm').style.display = 'none';
     renderVocabStatus();
     renderVocabHistory();
@@ -6749,7 +6776,7 @@ ${s.name} 학생의 이번 어휘력 진단 결과를 안내드립니다.
       const text = await callGemini(prompt);
       last.report = text; // 나중에 "보고서 보기"로 다시 볼 수 있도록 그 달 기록에 저장해둔다
       localStorage.setItem('gvr', JSON.stringify(_vocabRecords));
-      if (window._fbReady) { try { await window._updateByFieldId('geuldap_vocab_records', last.id, { report: text }); } catch(e2) { console.error('보고서 저장 오류', e2); } }
+      if (window._fbWriteReady()) { try { await window._updateByFieldId('geuldap_vocab_records', last.id, { report: text }); } catch(e2) { console.error('보고서 저장 오류', e2); } }
       box.innerHTML = `
         <div style="border:1px solid #eee; border-radius:10px; padding:16px; background:#faf8f3;">
           <div style="font-weight:700; margin-bottom:8px;">어휘력 진단 보고서</div>
