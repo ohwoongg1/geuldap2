@@ -2237,7 +2237,7 @@
 
 <script>
   // ===== 버전 정보 (콘솔에서 확인: APP_VERSION 또는 페이지 로드시 자동 출력) =====
-  const APP_VERSION = 'v7.92';
+  const APP_VERSION = 'v7.94';
   const APP_VERSION_LOG = [
     'v1.0 — 탭 구조 + UI 껍데기',
     'v1.1 — AI 문제 생성 + 개념 사다리',
@@ -2374,7 +2374,9 @@
     'v7.89 — [신규] AI 첨삭 기능 추가(사용자와 아이디어 미팅 후 "문장 1개 전/후 비교 + 다음 글 목표" 방식으로 결정) — AI 평가 프롬프트에 improvementExample({original,improved,reason})과 nextGoal 필드 추가: 원문에서 표현이 평이한 문장 1개를 그대로 인용해 더 나은 표현으로 다듬은 버전과 이유를 제시하고, 이 글에서 반복되는 패턴을 찾아 다음 글쓰기에서 신경 쓸 목표 한 가지를 제안. evalImprovementHTML 공용 렌더 함수로 원장 평가결과 화면·기록 상세보기·학생 포털(자녀 로그인) 세 곳 모두에 노출 — 점수·AI 코멘트는 빼고 담백하게 보여주는 학생 포털 방침(v7.27)에 맞춰, 첨삭도 비판이 아니라 "다음엔 이렇게" 톤으로 학생이 직접 보고 다음 글에 활용하도록 설계',
     'v7.90 — [버그 수정+개선] 사용자가 반영한 두 가지 — ①표준 시험지·AI 생성 시험지 모두에서 "정답이 항상 ①번에 몰리는" 편향이 실제로 확인되어, 문제마다 보기 순서를 무작위로 섞고 answerIndex를 재계산하는 shuffleVocabQuestionOptions 추가(저장된 표준 시험지도 불러올 때마다 다시 섞어 안전하게 처리, 문제 내용 자체는 그대로라 학생 간 비교에는 영향 없음) ②PNG 이미지 저장 시 지원 브라우저(Chrome·Edge 등)에서는 File System Access API(showSaveFilePicker)로 실제 "다른 이름으로 저장" 창이 뜨도록 downloadCanvasAsPng 공용 함수 추가, 미지원 브라우저에서는 기존 자동 다운로드 방식으로 자연스럽게 대체',
     'v7.91 — [개선] 사용자 요청으로 두 가지 — ①글쓰기 평가의 "AI 첨삭" 카드 제목을 "보완할 점"으로 변경, 원문/개선문 전체를 다시 읽지 않아도 어디가 바뀌었는지 한눈에 보이도록 실제로 고친 부분만 짧게 잘라 표시(originalHighlight/improvedHighlight 필드 추가, highlightChangedPhrase로 문장 안에서 그 부분만 색 배경으로 강조) — 문장 전체가 아니라 바뀐 낱말·구절 부분에만 시각적 강조가 들어감 ②어휘력 진단 시험지 프롬프트에 "같은 낱말을 시험지 안에서 두 번 이상 다루지 말 것"(예: 공연을 한자어조합 문제로 냈으면 다른 문제에서 또 공연을 다루지 않기) 지침 추가해 문제 유형이 달라도 낱말이 겹치지 않도록 함',
-    'v7.92 — [구조 변경] 사용자가 "한자어조합" 유형의 실제 문제 양상을 다시 지적 — "공연"이라는 낱말을 두고 같은 발음의 서로 다른 한자 표기 중 정답을 고르는 식이라, 이건 어휘력이 아니라 순수 한자 시험이라는 지적에 공감해 "한자어조합" 문제 유형 자체를 폐기. 이제 한자어로 된 낱말도 한자 표기를 고르게 하지 않고, 다른 낱말과 똑같이 뜻고르기·빈칸고르기·비슷한말고르기·반대말고르기 4가지 유형으로만 뜻 이해 여부를 확인하도록 프롬프트 변경(한자 표기·정확한 한자를 고르는 문제 금지를 명시)'
+    'v7.92 — [구조 변경] 사용자가 "한자어조합" 유형의 실제 문제 양상을 다시 지적 — "공연"이라는 낱말을 두고 같은 발음의 서로 다른 한자 표기 중 정답을 고르는 식이라, 이건 어휘력이 아니라 순수 한자 시험이라는 지적에 공감해 "한자어조합" 문제 유형 자체를 폐기. 이제 한자어로 된 낱말도 한자 표기를 고르게 하지 않고, 다른 낱말과 똑같이 뜻고르기·빈칸고르기·비슷한말고르기·반대말고르기 4가지 유형으로만 뜻 이해 여부를 확인하도록 프롬프트 변경(한자 표기·정확한 한자를 고르는 문제 금지를 명시)',
+    'v7.93 — [버그 수정] 사용자가 "성취도 현황" 대시보드를 열어둔 상태에서 오늘 새로 저장한 학생 결과가 표에 안 나타나는 문제 발견 — 원인은 시험 결과 저장(saveVocabResult, 재채점 포함)·기록 삭제(deleteVocabRecord) 뒤에 대시보드를 다시 그리는 호출이 빠져있어서, 대시보드를 미리 열어둔 채로 다른 학생 결과를 저장해도 표가 그 시점에 멈춰있던 것 → refreshVocabDashboardIfOpen() 헬퍼를 추가해 대시보드가 현재 화면에 열려있을 때만 자동으로 다시 그리도록 세 지점(재채점 저장·신규 결과 저장·기록 삭제)에 모두 연결',
+    'v7.94 — [개선] 사용자 요청으로 "성취도 현황" 대시보드(전체 학생 비교표 + 개별 성장 추이)에서 상담자(미등록 방문자) 기록을 제외 — 상담은 일회성이라 재원생 성취도 추이를 보는 이 대시보드의 목적과 맞지 않음. renderVocabDashboard의 완료 기록 필터에 !r.isGuest 조건 추가'
   ];
   console.log(`%c글답 학습기 ${APP_VERSION}`, 'font-weight:bold; font-size:14px; color:#0d1b4b;');
   console.groupCollapsed('%c버전 기록 (클릭해서 펼치기)', 'color:#888; font-size:11px;');
@@ -5668,9 +5670,18 @@ ${a.name}`;
     if (willShow) renderVocabDashboard();
   }
 
+  // 대시보드가 지금 화면에 열려있을 때만 다시 그린다 — 결과 저장·재채점·삭제처럼 대시보드 수치에
+  // 영향을 주는 동작 뒤에 호출한다. 대시보드를 열어둔 채로 다른 학생 결과를 저장해도 표가 그
+  // 시점에 멈춰있지 않고 바로 갱신되게 하기 위함(사용자가 실제로 겪은 문제).
+  function refreshVocabDashboardIfOpen() {
+    const card = document.getElementById('vocabDashboardCard');
+    if (card && card.style.display !== 'none') renderVocabDashboard();
+  }
+
   function renderVocabDashboard() {
-    // 완료된(채점 대기중 아닌) 기록만 학생별로 모은다.
-    const completed = _vocabRecords.filter(r=>r.status!=='pending');
+    // 완료된(채점 대기중 아닌) 기록만 학생별로 모은다 — 상담자(미등록 방문자)는 일회성 상담용이라
+    // 재원생 성취도 추이를 보는 이 대시보드에는 넣지 않는다(사용자 요청).
+    const completed = _vocabRecords.filter(r=>r.status!=='pending' && !r.isGuest);
     const byStudent = {};
     completed.forEach(r=>{
       if (!byStudent[r.studentId]) byStudent[r.studentId] = [];
@@ -5850,6 +5861,7 @@ ${a.name}`;
     }
     if (selectedVocabStudent) { renderVocabStatus(); renderVocabHistory(); }
     renderVocabTab();
+    refreshVocabDashboardIfOpen();
   }
 
   // 미등록 상담자용 즉석 입력 — 정식 학생 등록 없이 이름+학년만으로 바로 테스트를 진행한다.
@@ -6487,6 +6499,7 @@ ${levelDescText}${avoidText}
       renderVocabStatus();
       renderVocabHistory();
       renderVocabTab();
+      refreshVocabDashboardIfOpen();
       alert(`재채점 완료! ${rec.month} 기록이 수정됐어요 → 진단 급수: ${diagnosed}급 (기준 ${rec.oldLevel}급 대비 ${rec.resultLabel})`);
       return;
     }
@@ -6518,6 +6531,7 @@ ${levelDescText}${avoidText}
     renderVocabStatus();
     renderVocabHistory();
     renderVocabTab();
+    refreshVocabDashboardIfOpen();
     const topNote = toppedOut ? ' (범위 내 최고 급수까지 통과 — 다음엔 더 높은 범위로 재진단 권장)' : '';
     alert(`저장 완료! 진단 급수: ${diagnosed}급 (기준 ${oldLevel}급 대비 ${resultLabel})${topNote}`);
   }
