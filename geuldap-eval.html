@@ -6076,6 +6076,23 @@ ${a.name}`;
     w.print();
   }
 
+  // AI가 만들어준 문제의 정답 위치를 문제별로 무작위로 섞는다 — AI(Gemini)는 프롬프트 예시의
+  // answerIndex:0 형태를 따라 하거나 자체적인 위치 편향 때문에 정답을 ①번(인덱스 0)에 몰아서
+  // 만드는 경향이 있다(실제로 "정답이 전부 1번" 증상으로 확인됨). options 배열과 answerIndex를
+  // 그대로 쓰지 않고, 문제마다 보기 순서를 다시 섞고 answerIndex를 그에 맞게 재계산해서
+  // 정답 위치가 골고루 분산되도록 한다.
+  function shuffleVocabQuestionOptions(qs) {
+    return (qs || []).map(q => {
+      if (!q || !Array.isArray(q.options) || q.options.length < 2) return q;
+      const order = q.options.map((_, i) => i);
+      for (let i = order.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [order[i], order[j]] = [order[j], order[i]];
+      }
+      return { ...q, options: order.map(i => q.options[i]), answerIndex: order.indexOf(q.answerIndex) };
+    });
+  }
+
   // 진단 테스트(상담·월평가 공용) — 기준 급수 하나가 아니라, 기준 급수 위아래 VOCAB_TEST_SPAN 급수까지
   // 섞어서 출제한다. 학생의 실제 수준이 학년 표준보다 높거나 낮을 수 있으므로, 여러 급수에 걸친
   // 문제로 "어디까지 통과하는지" 진단해서 정확한 실제 급수를 찾아낸다.
@@ -6099,7 +6116,10 @@ ${a.name}`;
 
     if (existingStandard && existingStandard.questions) {
       box.innerHTML = '<div style="color:#888; font-size:13px;">저장된 표준 시험지를 불러오고 있어요...</div>';
-      const qs = JSON.parse(JSON.stringify(existingStandard.questions)); // 다른 학생 것과 서로 영향 안 주도록 복사
+      // 다른 학생 것과 서로 영향 안 주도록 복사한 뒤, 정답 위치를 다시 섞는다 — 예전에 저장된
+      // 표준 시험지가 정답 편중 문제(전부 1번 등)를 그대로 가지고 있을 수 있으므로, 불러올 때마다
+      // 다시 섞어서 안전하게 만든다(문제·보기 내용 자체는 그대로라 학생 간 비교에는 영향 없음).
+      const qs = shuffleVocabQuestionOptions(JSON.parse(JSON.stringify(existingStandard.questions)));
       selectedVocabStudent._vocabTestCache = qs;
       vocabInteractiveAnswers = {};
       await saveVocabPendingRecord(s, qs, baseLevel);
@@ -6137,7 +6157,7 @@ ${levelDescText}${avoidText}
     try {
       const text = await callGemini(prompt);
       const clean = text.replace(/```json|```/g,'').trim();
-      const qs = JSON.parse(clean);
+      const qs = shuffleVocabQuestionOptions(JSON.parse(clean));
       selectedVocabStudent._vocabTestCache = qs;
       vocabInteractiveAnswers = {};
       await saveVocabPendingRecord(s, qs, baseLevel);
