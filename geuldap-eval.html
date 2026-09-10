@@ -2237,7 +2237,7 @@
 
 <script>
   // ===== 버전 정보 (콘솔에서 확인: APP_VERSION 또는 페이지 로드시 자동 출력) =====
-  const APP_VERSION = 'v7.94';
+  const APP_VERSION = 'v7.95';
   const APP_VERSION_LOG = [
     'v1.0 — 탭 구조 + UI 껍데기',
     'v1.1 — AI 문제 생성 + 개념 사다리',
@@ -2376,7 +2376,8 @@
     'v7.91 — [개선] 사용자 요청으로 두 가지 — ①글쓰기 평가의 "AI 첨삭" 카드 제목을 "보완할 점"으로 변경, 원문/개선문 전체를 다시 읽지 않아도 어디가 바뀌었는지 한눈에 보이도록 실제로 고친 부분만 짧게 잘라 표시(originalHighlight/improvedHighlight 필드 추가, highlightChangedPhrase로 문장 안에서 그 부분만 색 배경으로 강조) — 문장 전체가 아니라 바뀐 낱말·구절 부분에만 시각적 강조가 들어감 ②어휘력 진단 시험지 프롬프트에 "같은 낱말을 시험지 안에서 두 번 이상 다루지 말 것"(예: 공연을 한자어조합 문제로 냈으면 다른 문제에서 또 공연을 다루지 않기) 지침 추가해 문제 유형이 달라도 낱말이 겹치지 않도록 함',
     'v7.92 — [구조 변경] 사용자가 "한자어조합" 유형의 실제 문제 양상을 다시 지적 — "공연"이라는 낱말을 두고 같은 발음의 서로 다른 한자 표기 중 정답을 고르는 식이라, 이건 어휘력이 아니라 순수 한자 시험이라는 지적에 공감해 "한자어조합" 문제 유형 자체를 폐기. 이제 한자어로 된 낱말도 한자 표기를 고르게 하지 않고, 다른 낱말과 똑같이 뜻고르기·빈칸고르기·비슷한말고르기·반대말고르기 4가지 유형으로만 뜻 이해 여부를 확인하도록 프롬프트 변경(한자 표기·정확한 한자를 고르는 문제 금지를 명시)',
     'v7.93 — [버그 수정] 사용자가 "성취도 현황" 대시보드를 열어둔 상태에서 오늘 새로 저장한 학생 결과가 표에 안 나타나는 문제 발견 — 원인은 시험 결과 저장(saveVocabResult, 재채점 포함)·기록 삭제(deleteVocabRecord) 뒤에 대시보드를 다시 그리는 호출이 빠져있어서, 대시보드를 미리 열어둔 채로 다른 학생 결과를 저장해도 표가 그 시점에 멈춰있던 것 → refreshVocabDashboardIfOpen() 헬퍼를 추가해 대시보드가 현재 화면에 열려있을 때만 자동으로 다시 그리도록 세 지점(재채점 저장·신규 결과 저장·기록 삭제)에 모두 연결',
-    'v7.94 — [개선] 사용자 요청으로 "성취도 현황" 대시보드(전체 학생 비교표 + 개별 성장 추이)에서 상담자(미등록 방문자) 기록을 제외 — 상담은 일회성이라 재원생 성취도 추이를 보는 이 대시보드의 목적과 맞지 않음. renderVocabDashboard의 완료 기록 필터에 !r.isGuest 조건 추가'
+    'v7.94 — [개선] 사용자 요청으로 "성취도 현황" 대시보드(전체 학생 비교표 + 개별 성장 추이)에서 상담자(미등록 방문자) 기록을 제외 — 상담은 일회성이라 재원생 성취도 추이를 보는 이 대시보드의 목적과 맞지 않음. renderVocabDashboard의 완료 기록 필터에 !r.isGuest 조건 추가',
+    'v7.95 — [버그 수정] 사용자가 집(다른 컴퓨터)에서 자료실을 열었을 때 "교육청자료"(파일 첨부) 항목이 목록에 아예 안 보이는 문제 발견 — 원인은 saveMaterial()이 Firestore 저장 여부를 window._fbReady(초기 데이터 전체 로딩 완료 플래그)로 판단하고 있어서, 앱을 켜자마자 빠르게 자료를 등록하면 아직 로딩이 안 끝나 이 플래그가 false인 상태로 저장이 되어 Firestore에는 전혀 저장되지 않고 그 컴퓨터의 로컬 저장소에만 남는 경우가 있었음(같은 컴퓨터에서는 정상으로 보이지만 다른 기기에서는 항목 자체가 없음) → window._fbReady 대신 Firebase SDK 자체가 준비됐는지(window._db/_col/_add 존재 여부)로 판단하도록 변경해 초기 로딩 중에도 정상 저장되게 하고, 그래도 저장 안 되는 극히 드문 경우엔 "이 컴퓨터에만 임시 저장됨" 안내를 명확히 띄우도록 함'
   ];
   console.log(`%c글답 학습기 ${APP_VERSION}`, 'font-weight:bold; font-size:14px; color:#0d1b4b;');
   console.groupCollapsed('%c버전 기록 (클릭해서 펼치기)', 'color:#888; font-size:11px;');
@@ -7304,9 +7305,15 @@ ${s.name} 학생의 이번 어휘력 진단 결과를 안내드립니다.
     const m = isEdit ? _materials.find(x=>x.id===editId) : { id: Date.now().toString(), createdAt: todayLocalDateStr() };
     if (!m) return;
     m.title = title; m.category = category; m.content = content;
+    // window._fbReady는 "초기 데이터 전체 로딩이 끝났는지"를 나타내는 플래그라 앱을 켜자마자
+    // 빠르게 자료를 등록하면 아직 false일 수 있다(그러면 아래에서 Firestore 저장이 통째로
+    // 건너뛰어져 이 컴퓨터에만 저장되고 다른 기기에서는 안 보이는 문제가 생긴다 — 실제로 발생한
+    // 버그). Firebase 자체는 그보다 훨씬 먼저 준비되므로, window._db/_col/_add가 있는지로
+    // 판단해서 초기 로딩 중이라도 정상적으로 저장되게 한다.
+    const fbOk = !!(window._db && window._col && window._add);
     // 전단지·이미지·PDF 같은 실제 파일은 선택 사항으로만 첨부 — 모든 자료를 파일로 강제하지 않는다.
     if (newFile) {
-      if (window._fbReady && window._uploadMaterialFile) {
+      if (fbOk && window._uploadMaterialFile) {
         try {
           if (m.file) await window._deleteMaterialFile(m.file.path); // 기존 첨부 있으면 교체 전 삭제
           const dataUrl = await readFileAsDataUrl(newFile);
@@ -7317,10 +7324,11 @@ ${s.name} 학생의 이번 어휘력 진단 결과를 안내드립니다.
       }
     }
     if (isEdit) {
-      if (window._fbReady) { try { await window._deleteByFieldId('geuldap_materials', editId); await window._add(window._col(window._db,'geuldap_materials'), m); } catch(e) { console.error('자료 수정 오류', e); } }
+      if (fbOk) { try { await window._deleteByFieldId('geuldap_materials', editId); await window._add(window._col(window._db,'geuldap_materials'), m); } catch(e) { console.error('자료 수정 오류', e); } }
     } else {
       _materials.push(m);
-      if (window._fbReady) { try { await window._add(window._col(window._db,'geuldap_materials'), m); } catch(e) { console.error('자료 저장 오류', e); } }
+      if (fbOk) { try { await window._add(window._col(window._db,'geuldap_materials'), m); } catch(e) { console.error('자료 저장 오류', e); } }
+      else { alert('서버 연결이 아직 준비되지 않아 이 컴퓨터에만 임시로 저장됐어요. 잠시 후 다시 저장을 눌러 다른 기기에서도 보이게 해주세요.'); }
     }
     localStorage.setItem('gml', JSON.stringify(_materials));
     closeMaterialForm();
