@@ -2263,7 +2263,7 @@
 
 <script>
   // ===== 버전 정보 (콘솔에서 확인: APP_VERSION 또는 페이지 로드시 자동 출력) =====
-  const APP_VERSION = 'v7.99';
+  const APP_VERSION = 'v8.00';
   const APP_VERSION_LOG = [
     'v1.0 — 탭 구조 + UI 껍데기',
     'v1.1 — AI 문제 생성 + 개념 사다리',
@@ -2407,7 +2407,8 @@
     'v7.96 — [버그 수정+복구] 같은 원인의 버그가 어휘력 기록에서도 재현됨(학원 컴퓨터에서 저장한 어휘력 테스트가 집에서는 안 보임) — window._fbReady로 저장 여부를 판단하던 어휘력 관련 11개 지점(시험 결과 저장·재채점·대기중 기록·표준 시험지·학습 단어 기록·학습지/커리큘럼 저장·삭제·보고서 저장) 전부를 새로 만든 공용 판정 함수 window._fbWriteReady()(Firebase SDK 준비 여부로 판단, _fbReady보다 훨씬 이른 시점에 true가 됨)로 교체. 추가로 초기 데이터 로딩 시 서버에 없는 로컬 전용 기록(과거 버그로 로컬에만 남았던 것들)을 자동으로 서버에 동기화하는 자동 복구 로직 추가 — 데이터가 남아있는 그 컴퓨터에서 앱을 다시 열기만 하면 서버로 자동 복구되어 다른 기기에서도 보이게 됨(어휘력 기록·자료실 대상)',
     'v7.97 — [개선] 사용자 요청으로 글쓰기 평가의 "학부모 보고서"에도 "보완할 점"(문장 전/후 비교 + 다음 글 목표)이 함께 담기도록 buildParentReportText 확장 — [보완할 점] 섹션으로 "이렇게 써봤어요/이렇게 써보면 더 좋아요"와 "다음 글 목표"를 본문·코멘트 사이에 추가. 복사·인쇄 모두 같은 텍스트를 쓰므로 자동으로 함께 반영됨',
     'v7.98 — [개선] 사용자 요청으로 "🤖 AI 평가 시작" 버튼이 평가 후 바로 기록 저장까지 자동으로 하도록 변경 — 예전엔 결과를 보고 나서 "💾 기록 저장"을 따로 눌러야 했음. 이미 재평가(reevaluateAndAutoSave)에서 쓰던 "평가 후 자동 저장" 패턴을 그대로 재사용한 evaluateAndAutoSave() 추가, 버튼 onclick을 여기로 연결. "💾 기록 저장" 버튼은 그대로 남겨둬서, 자동 저장 후 완성/미완성 상태나 학부모 코멘트 체크 등을 바꾸면 다시 눌러 반영할 수 있음',
-    'v7.99 — [버그 수정] v7.97에서 학부모 보고서에 "보완할 점" 섹션을 추가하면서 "글 부분만 복사"에도 그 내용이 같이 딸려 나가게 된 것을 사용자가 지적 — copyParentReportTop()이 텍스트 상자에서 위치로 잘라내던 방식을 버리고, 원본 데이터(correctedContent 또는 content)에서 순수 글 내용만 직접 가져오도록 변경. 이제 "글 부분만 복사"는 인사말·제목·보완할 점 없이 정말 글 내용만 복사됨(코멘트만 복사는 기존대로 영향 없음)'
+    'v7.99 — [버그 수정] v7.97에서 학부모 보고서에 "보완할 점" 섹션을 추가하면서 "글 부분만 복사"에도 그 내용이 같이 딸려 나가게 된 것을 사용자가 지적 — copyParentReportTop()이 텍스트 상자에서 위치로 잘라내던 방식을 버리고, 원본 데이터(correctedContent 또는 content)에서 순수 글 내용만 직접 가져오도록 변경. 이제 "글 부분만 복사"는 인사말·제목·보완할 점 없이 정말 글 내용만 복사됨(코멘트만 복사는 기존대로 영향 없음)',
+    'v8.00 — [개선] 사용자 지적·요청 두 가지 — ①4주 커리큘럼 "낱말" 칸이 너무 좁아 "갈등" 같은 두 글자 단어도 세로로 줄바꿈되던 문제 수정(white-space:nowrap 적용, 한 줄로 표시) ②"급수 향상 4주 커리큘럼"을 매번 새로 생성하지 말고, 이미 만든 게 있으면 재사용하도록 변경 — 학생별로 커리큘럼을 마지막으로 만들 당시의 완료 시험 횟수(testCount)를 함께 저장해두고, 다시 버튼을 누를 때 그 사이 새로 완료한 시험이 없으면(급수 변화 여부와 무관하게, 시험을 다시 본 적이 없으면) AI 재생성 없이 저장된 커리큘럼을 그대로 보여줌. 시험을 다시 봐서 완료 횟수가 늘어나면 그때만 새로 생성'
   ];
   console.log(`%c글답 학습기 ${APP_VERSION}`, 'font-weight:bold; font-size:14px; color:#0d1b4b;');
   console.groupCollapsed('%c버전 기록 (클릭해서 펼치기)', 'color:#888; font-size:11px;');
@@ -6042,9 +6043,21 @@ ${a.name}`;
     const s = selectedVocabStudent;
     const curLevel = currentVocabLevel(s);
     const targetLevel = Math.min(VOCAB_MAX_LEVEL, curLevel + 1);
+    const box = document.getElementById('vocabWorksheetResult');
+
+    // 이미 만들어둔 커리큘럼이 있고, 그 이후로 새로 완료한 시험이 없다면(=급수가 바뀌었든 안 바뀌었든
+    // 시험을 다시 보지 않았다면) AI를 새로 부르지 않고 저장된 걸 그대로 재사용한다(사용자 요청) —
+    // 매번 다른 단어로 다시 만들면 아이가 지난주에 배운 것과 헷갈릴 수 있고, 생성 시간도 아낀다.
+    const completedCount = vocabRecordsFor(s.id).filter(r=>r.status!=='pending').length;
+    const saved = s.vocabCurriculumSaved;
+    if (saved && saved.testCount === completedCount) {
+      selectedVocabStudent._vocabCurriculumCache = saved;
+      renderVocabCurriculumBox(saved);
+      return;
+    }
+
     const curDef = vocabLevelDef(curLevel);
     const targetDef = vocabLevelDef(targetLevel);
-    const box = document.getElementById('vocabWorksheetResult');
     box.innerHTML = '<div style="color:#888; font-size:13px;">AI가 4주치 커리큘럼을 만들고 있어요...</div>';
     const alreadyStudied = s.vocabStudiedWords || [];
     const avoidText = alreadyStudied.length ? `\n이미 이전에 학습한 낱말이라 이번엔 피해주세요: ${alreadyStudied.join(', ')}` : '';
@@ -6064,11 +6077,12 @@ ${a.name}`;
       const text = await callGemini(prompt);
       const clean = text.replace(/```json|```/g,'').trim();
       const weeksData = JSON.parse(clean);
-      selectedVocabStudent._vocabCurriculumCache = { curLevel, targetLevel, weeksData };
+      const cacheObj = { curLevel, targetLevel, weeksData, testCount: completedCount };
+      selectedVocabStudent._vocabCurriculumCache = cacheObj;
       const allWords = weeksData.flatMap(w=>(w.words||[]).map(x=>x.word));
       await recordVocabStudiedWords(s, allWords);
-      await persistVocabCurriculum(s, { curLevel, targetLevel, weeksData });
-      renderVocabCurriculumBox({ curLevel, targetLevel, weeksData });
+      await persistVocabCurriculum(s, cacheObj);
+      renderVocabCurriculumBox(cacheObj);
     } catch(e) {
       box.innerHTML = `<div style="color:#c00; font-size:13px;">커리큘럼 생성 실패: ${e.message}</div>`;
     }
@@ -6082,7 +6096,7 @@ ${a.name}`;
     const weekBlocksHtml = weeksData.map((w,wi)=>{
       const wordRows = (w.words||[]).map((word,i)=>`<tr>
         <td style="border:1px solid #ccc; padding:6px; width:26px; text-align:center;">${i+1}</td>
-        <td style="border:1px solid #ccc; padding:6px; font-weight:600;">${word.word}</td>
+        <td style="border:1px solid #ccc; padding:6px; font-weight:600; white-space:nowrap;">${word.word}</td>
         <td style="border:1px solid #ccc; padding:6px;">${word.meaning}</td>
         <td style="border:1px solid #ccc; padding:6px; color:#666;">${word.example}</td>
       </tr>`).join('');
