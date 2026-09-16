@@ -1115,6 +1115,7 @@
     <div style="font-size:12px; color:#888; margin-bottom:14px;">재원생을 선택하거나, 상담 방문자는 "＋ 상담자 즉석 테스트"로 이름·학년만 입력해 바로 진단 테스트를 진행할 수 있습니다.</div>
     <div style="margin-bottom:14px;">
       <button class="btn btn-secondary btn-sm" onclick="toggleVocabDashboard()">📊 성취도 현황 보기</button>
+      <button class="btn btn-secondary btn-sm" onclick="resetVocabStandardTests()">🔄 표준 시험지 초기화</button>
     </div>
     <div class="student-grid" id="vocabStudentGrid"></div>
   </div>
@@ -2264,7 +2265,7 @@
 
 <script>
   // ===== 버전 정보 (콘솔에서 확인: APP_VERSION 또는 페이지 로드시 자동 출력) =====
-  const APP_VERSION = 'v8.09';
+  const APP_VERSION = 'v8.10';
   const APP_VERSION_LOG = [
     'v1.0 — 탭 구조 + UI 껍데기',
     'v1.1 — AI 문제 생성 + 개념 사다리',
@@ -2418,7 +2419,8 @@
     'v8.06 — [개선] 사용자 요청으로 목표 급수 드롭다운 옆 "목표 급수" 글자 라벨 제거(드롭다운만 남김)',
     'v8.07 — [개선] 사용자 요청으로 "급수 향상 4주 커리큘럼" 인쇄물에서 매 주차 상단에 나오던 "현재 X급 → 목표 Y급" 줄 삭제(급수향상4주차 커리큘럼에서만 적용, 다른 화면에는 영향 없음)',
     'v8.08 — [개선] 사용자 요청으로 출석부 "🚪 등원 알림"·"🏠 하원 알림" 버튼의 복사 문구를 단순화 — 기존 "OOO 학생이 15:30에 등원하였습니다." 형식에서 시각·"학생이"를 빼고 "OOO 등원하였습니다."/"OOO 하원하였습니다." 형태로 변경(클릭 시 자동으로 클립보드에 복사되는 기존 동작은 그대로 유지, 카톡에 바로 붙여넣기 좋도록)',
-    'v8.09 — [개선] 사용자 요청으로 등원/하원 알림 문구를 성 빼고 이름만 쓰도록 변경(글쓰기 평가 코멘트에서 "구아라"→"아라"로 부르는 기존 관례와 동일하게 첫 글자 성 제외) — 그리고 이름 끝 글자에 받침이 있으면 자연스럽게 "이"를 붙임: "민규"(받침 없음)는 그대로, "다은"·"가율"(받침 있음)은 "다은이"·"가율이"로. 유니코드 종성 계산으로 받침 유무를 판단하는 hasKoreanBatchim 헬퍼 추가'
+    'v8.09 — [개선] 사용자 요청으로 등원/하원 알림 문구를 성 빼고 이름만 쓰도록 변경(글쓰기 평가 코멘트에서 "구아라"→"아라"로 부르는 기존 관례와 동일하게 첫 글자 성 제외) — 그리고 이름 끝 글자에 받침이 있으면 자연스럽게 "이"를 붙임: "민규"(받침 없음)는 그대로, "다은"·"가율"(받침 있음)은 "다은이"·"가율이"로. 유니코드 종성 계산으로 받침 유무를 판단하는 hasKoreanBatchim 헬퍼 추가',
+    'v8.10 — [개선] 사용자가 초등 5학년 표준 시험지의 정답이 전부 ①번에 몰린 것을 발견 — 셔플 로직(shuffleVocabQuestionOptions) 자체는 정상 동작 확인(시뮬레이션으로 검증)됐지만, 그 급수의 표준 시험지가 셔플 기능이 추가되기 전(v7.90 이전)에 이미 만들어져 저장된 것이라 옛 편중이 그대로 남아있었음 → "🔄 표준 시험지 초기화" 버튼 추가(resetVocabStandardTests) — 저장된 표준 시험지 전체를 한 번에 삭제해서, 학년(급수)별로 다음 첫 진단부터 새로 만들어지며 보기 순서도 새로 골고루 섞이게 함. 이미 시험을 본 학생 기록에는 영향 없음'
   ];
   console.log(`%c글답 학습기 ${APP_VERSION}`, 'font-weight:bold; font-size:14px; color:#0d1b4b;');
   console.groupCollapsed('%c버전 기록 (클릭해서 펼치기)', 'color:#888; font-size:11px;');
@@ -6282,6 +6284,22 @@ ${levelDescText}${avoidText}
     window._vocabStandardTests.push(rec);
     localStorage.setItem('gvst', JSON.stringify(_vocabStandardTests));
     if (window._fbWriteReady()) { try { await window._add(window._col(window._db,'geuldap_vocab_standard_tests'), rec); } catch(e) { console.error('표준 시험지 저장 오류', e); } }
+  }
+
+  // 저장된 표준 시험지를 전부 지운다 — 정답 편중 방지(보기 순서 섞기) 기능이 추가되기 전에
+  // 만들어진 표준 시험지는 그 편중을 그대로 가지고 있을 수 있어서(사용자가 초5에서 실제로 발견),
+  // 한 번에 초기화해서 다음 첫 진단부터 새로 만들어지며 골고루 섞이게 한다. 이미 학생들이 본
+  // 시험 "기록"에는 영향 없다 — 앞으로 새로 첫 진단을 볼 학생들의 기준 시험지만 초기화된다.
+  async function resetVocabStandardTests() {
+    if (_vocabStandardTests.length===0) { alert('저장된 표준 시험지가 없습니다.'); return; }
+    if (!confirm(`저장된 표준 시험지 ${_vocabStandardTests.length}개를 전부 초기화할까요?\n\n이미 시험을 본 학생들의 기록에는 영향이 없고, 앞으로 각 학년별로 처음 진단받는 학생의 시험지만 다음번에 새로 만들어져요(보기 순서도 새로 골고루 섞임).`)) return;
+    const ids = _vocabStandardTests.map(t=>t.id);
+    window._vocabStandardTests = [];
+    localStorage.setItem('gvst', '[]');
+    if (window._fbWriteReady()) {
+      for (const id of ids) { try { await window._deleteByFieldId('geuldap_vocab_standard_tests', id); } catch(e) { console.error('표준 시험지 삭제 오류', id, e); } }
+    }
+    alert('표준 시험지를 초기화했어요. 다음번 첫 진단부터 새로 만들어져요.');
   }
 
   // 학습지·커리큘럼으로 이미 나간 단어를 기록해둔다 — 나중에 진단 시험을 만들 때 이 단어들은
