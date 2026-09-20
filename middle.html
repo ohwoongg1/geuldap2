@@ -77,6 +77,10 @@
     .hero-logo-text { text-align: left; }
     .hero-logo-text .name { font-size: 26px; font-weight: 700; color: #fff; letter-spacing: -0.5px; line-height: 1.2; font-family: 'Noto Serif KR', serif; }
     .hero-logo-text .sub { font-size: 13px; color: rgba(255,255,255,0.55); letter-spacing: 0.5px; }
+    .hero-flex { display: flex; align-items: center; justify-content: center; gap: 48px; max-width: 1040px; margin: 0 auto; position: relative; z-index: 1; }
+    .hero-text { flex: 1 1 460px; text-align: center; }
+    .hero-visual { flex: 0 0 260px; display: flex; align-items: center; justify-content: center; }
+    .hero-visual svg { width: 100%; height: auto; max-width: 260px; }
     .hero-badge { display: inline-block; background: rgba(197,161,73,0.18); color: #e8c96a; font-size: 12px; letter-spacing: 2px; padding: 5px 14px; border-radius: 20px; border: 1px solid rgba(197,161,73,0.35); margin-bottom: 18px; position: relative; z-index: 1; }
     .hero h1 { font-size: 52px; font-weight: 700; color: #fff; line-height: 1.4; margin-bottom: 16px; letter-spacing: -0.5px; font-family: 'Noto Serif KR', serif; position: relative; z-index: 1; }
     .hero h1 span { color: #e8c96a; }
@@ -174,6 +178,10 @@
       .lp { padding-top: 56px; }
 
       .hero { padding: 28px 18px 36px; }
+      .hero-flex { flex-direction: column; gap: 20px; }
+      .hero-visual { order: 2; flex: 0 0 auto; width: 100%; }
+      .hero-visual svg { max-width: 170px; }
+      .hero-text { order: 1; flex: 1 1 auto; width: 100%; min-width: 0; }
       .hero h1 { font-size: 28px; }
       .hero p { font-size: 15px; }
       .hero-logo-text .name { font-size: 16px; }
@@ -270,20 +278,49 @@
 
   <!-- 히어로 -->
   <div class="hero">
-    <div class="hero-logo">
-      <img src="logo.png" alt="글답국어독서논술 로고">
-      <div class="hero-logo-text">
-        <div class="name">글답국어독서논술</div>
-        <div class="sub">geuldap Reading &amp; Essay Academy</div>
+    <div class="hero-flex">
+      <div class="hero-text">
+        <div class="hero-logo">
+          <img src="logo.png" alt="글답국어독서논술 로고">
+          <div class="hero-logo-text">
+            <div class="name">글답국어독서논술</div>
+            <div class="sub">geuldap Reading &amp; Essay Academy</div>
+          </div>
+        </div>
+        <h1>모든 과목의 성적은<br><span>결국 문해력이 좌우합니다</span></h1>
+        <p>내신 서술형도, 수행평가도, 비문학 독해도<br>중학교 국어 교사 22년 경력 그대로 지도합니다</p>
+        <div class="hero-cta">
+          <a class="btn-gold" href="tel:07043247175">📞 상담 전화하기</a>
+          <a class="btn-outline" href="https://blog.naver.com/guldap-edu" target="_blank">네이버 블로그 보기</a>
+        </div>
+        <p style="margin-top:14px;"><a href="geuldap-eval.html?student=1" style="font-size:13px; color:rgba(255,255,255,0.75); text-decoration:underline;">📚 재원생 AI 학습기 바로가기</a></p>
+      </div>
+      <div class="hero-visual" aria-hidden="true">
+        <svg viewBox="0 0 320 320" xmlns="http://www.w3.org/2000/svg" fill="none">
+          <path d="M160 228 C 158 190, 172 175, 160 150 C 150 128, 166 112, 160 88 C 155 68, 168 55, 163 36"
+                stroke="#e8c96a" stroke-width="3.2" stroke-linecap="round"/>
+          <g stroke="#e8c96a" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M160 202 C 142 195, 133 178, 146 165 C 160 172, 166 191, 160 202 Z" fill="#0d1b4b"/>
+            <path d="M162 164 C 182 159, 194 141, 183 127 C 168 132, 156 152, 162 164 Z" fill="#0d1b4b"/>
+            <path d="M158 118 C 138 113, 125 95, 137 80 C 152 85, 165 105, 158 118 Z" fill="#0d1b4b"/>
+          </g>
+          <path d="M163 34 l4.5 11 l11 4.5 l-11 4.5 l-4.5 11 l-4.5 -11 l-11 -4.5 l11 -4.5 z" fill="#e8c96a"/>
+          <circle cx="204" cy="70" r="2.4" fill="#e8c96a" opacity="0.8"/>
+          <circle cx="118" cy="60" r="1.8" fill="#e8c96a" opacity="0.6"/>
+          <g>
+            <ellipse cx="160" cy="278" rx="132" ry="10" fill="#000" opacity="0.18"/>
+            <path d="M38 250 C 90 232, 132 232, 160 246 L160 270 C 132 256, 90 256, 38 274 Z" fill="#111f57" stroke="#e8c96a" stroke-width="2.6" stroke-linejoin="round"/>
+            <path d="M282 250 C 230 232, 188 232, 160 246 L160 270 C 188 256, 230 256, 282 274 Z" fill="#111f57" stroke="#e8c96a" stroke-width="2.6" stroke-linejoin="round"/>
+            <g stroke="#e8c96a" stroke-width="1.6" stroke-linecap="round" opacity="0.75">
+              <path d="M53 247 C 84 236, 112 236, 149 247"/>
+              <path d="M50 258 C 83 247, 114 247, 151 258"/>
+              <path d="M171 247 C 208 236, 236 236, 267 247"/>
+              <path d="M169 258 C 206 247, 237 247, 270 258"/>
+            </g>
+          </g>
+        </svg>
       </div>
     </div>
-    <h1>모든 과목의 성적은<br><span>결국 문해력이 좌우합니다</span></h1>
-    <p>내신 서술형도, 수행평가도, 비문학 독해도<br>중학교 국어 교사 22년 경력 그대로 지도합니다</p>
-    <div class="hero-cta">
-      <a class="btn-gold" href="tel:07043247175">📞 상담 전화하기</a>
-      <a class="btn-outline" href="https://blog.naver.com/guldap-edu" target="_blank">네이버 블로그 보기</a>
-    </div>
-    <p style="margin-top:14px;"><a href="geuldap-eval.html?student=1" style="font-size:13px; color:rgba(255,255,255,0.75); text-decoration:underline;">📚 재원생 AI 학습기 바로가기</a></p>
   </div>
 
   <div class="gold-line"></div>
@@ -583,8 +620,9 @@
   });
 </script>
 <script>
-  console.log('%c글답 홈페이지 (중학생 페이지) v1.0', 'font-weight:bold; font-size:14px; color:#0d1b4b;');
+  console.log('%c글답 홈페이지 (중학생 페이지) v1.1', 'font-weight:bold; font-size:14px; color:#0d1b4b;');
   console.log('v1.0 — 중학생 전용 페이지 신설: 학년선택 배너, "결국 문해력이 좌우합니다" 히어로, 평상시/시험기간 학습 사이클, 22년 경력·고등대비·AI학습기·소수정예 카드');
+  console.log('v1.1 — [디자인 개선] index.html과 동일하게 히어로를 텍스트+일러스트 2단 구성으로 변경, 책에서 자라나는 나무 커스텀 SVG 일러스트 추가, 모바일 반응형 스택 처리(index.html v1.2와 함께 적용)');
 </script>
 </body>
 </html>
