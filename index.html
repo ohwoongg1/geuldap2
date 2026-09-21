@@ -273,8 +273,8 @@
 
   <!-- 학년 선택 -->
   <div style="display:flex; justify-content:center; gap:0; background:#0d1b4b; padding:14px 16px;">
-    <a href="index.html" style="flex:1; max-width:220px; text-align:center; padding:12px 10px; border-radius:10px 0 0 10px; font-weight:700; font-size:14px; text-decoration:none; background:#e8c96a; color:#0d1b4b;">🎒 초등학생</a>
-    <a href="middle.html" style="flex:1; max-width:220px; text-align:center; padding:12px 10px; border-radius:0 10px 10px 0; font-weight:700; font-size:14px; text-decoration:none; background:rgba(255,255,255,0.08); color:rgba(255,255,255,0.7);">🎓 중학생</a>
+    <a href="index.html" id="tabElem" style="flex:1; max-width:220px; text-align:center; padding:12px 10px; border-radius:10px 0 0 10px; font-weight:700; font-size:14px; text-decoration:none; background:#e8c96a; color:#0d1b4b; transition: background 0.5s, color 0.5s;">🎒 초등학생</a>
+    <a href="middle.html" id="tabMiddle" style="flex:1; max-width:220px; text-align:center; padding:12px 10px; border-radius:0 10px 10px 0; font-weight:700; font-size:14px; text-decoration:none; background:rgba(255,255,255,0.08); color:rgba(255,255,255,0.7); transition: background 0.5s, color 0.5s;">🎓 중학생</a>
   </div>
 
   <!-- 히어로 -->
@@ -288,8 +288,10 @@
             <div class="sub">geuldap Reading &amp; Essay Academy</div>
           </div>
         </div>
-        <h1>읽고, 쓰고, 생각하는 힘<br><span>평생 흔들리지 않습니다</span></h1>
-        <p>22년 공교육 경력의 국어 전문가가<br>초등학생부터 중학생까지 함께합니다</p>
+        <div id="heroTextSwap" style="transition: opacity 0.5s;">
+          <h1>읽고, 쓰고, 생각하는 힘<br><span>평생 흔들리지 않습니다</span></h1>
+          <p>22년 공교육 경력의 국어 전문가가<br>초등학생부터 중학생까지 함께합니다</p>
+        </div>
         <div class="hero-cta">
           <a class="btn-outline" href="https://blog.naver.com/guldap-edu" target="_blank">네이버 블로그 보기</a>
         </div>
@@ -661,6 +663,38 @@
   console.log('v1.0 — 학년 선택 배너 추가(🎒 초등학생 / 🎓 중학생), 중학생 전용 페이지(middle.html) 신설 및 상호 링크');
   console.log('v1.1 — "글답 이야기" 학습 칼럼 게시판(geuldap-story.html) 신설, 네비게이션·CTA에 링크 추가');
   console.log('v1.2 — [디자인 개선] 히어로가 텍스트만 있어 밋밋하다는 지적(경쟁 학원 홈페이지와 비교) — 히어로를 텍스트+일러스트 2단 구성으로 변경, 책에서 자라나는 나무(펼쳐진 책 → 자라는 줄기·잎 → 꼭대기 별) 커스텀 SVG 일러스트 추가(범용 인물 일러스트 대신 "읽고 쓰고 생각하는 힘, 평생 흔들리지 않습니다" 문구와 맞닿는 학원 고유 시각 요소로 구성). 데스크탑은 텍스트 좌/일러스트 우, 모바일은 CTA 버튼까지 먼저 보이고 일러스트가 그 아래로 자연스럽게 쌓이도록 반응형 처리');
+  console.log('v1.3 — [신규] 사용자 요청으로 히어로 헤드라인이 초등/중학 버전을 자동으로 번갈아 보여주도록 함(타 학원 사이트 참고) — 페이지 이동 없이 4.5초마다 부드럽게 전환(HeroCycle), 상단 학년 탭 배경색도 같이 움직여서 지금 보여주는 게 어느 학년 버전인지 표시. 실제로 그 학년 상세 페이지로 가고 싶으면 탭을 눌러 이동 가능(기존 링크 그대로 유지)');
+</script>
+<script>
+  // 히어로 헤드라인을 초등/중학 버전으로 자동 순환시킨다(사용자 요청) — 페이지는 그대로 두고
+  // 텍스트와 상단 탭 색상만 부드럽게 번갈아 바꿔서, 가만히 있어도 두 학년 메시지를 다 보여준다.
+  (function () {
+    const variants = [
+      { tab: 0, html: '<h1>읽고, 쓰고, 생각하는 힘<br><span>평생 흔들리지 않습니다</span></h1><p>22년 공교육 경력의 국어 전문가가<br>초등학생부터 중학생까지 함께합니다</p>' },
+      { tab: 1, html: '<h1>모든 과목의 성적은<br><span>결국 문해력이 좌우합니다</span></h1><p>22년 공교육 경력의 국어 전문가가<br>초등학생부터 중학생까지 함께합니다</p>' }
+    ];
+    let i = 0;
+    const swap = document.getElementById('heroTextSwap');
+    const tabElem = document.getElementById('tabElem');
+    const tabMiddle = document.getElementById('tabMiddle');
+    if (!swap || !tabElem || !tabMiddle) return;
+    const ACTIVE = { bg: '#e8c96a', color: '#0d1b4b' };
+    const INACTIVE = { bg: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.7)' };
+    function applyTab(idx) {
+      const [a, b] = idx === 0 ? [tabElem, tabMiddle] : [tabMiddle, tabElem];
+      a.style.background = ACTIVE.bg; a.style.color = ACTIVE.color;
+      b.style.background = INACTIVE.bg; b.style.color = INACTIVE.color;
+    }
+    setInterval(function () {
+      i = (i + 1) % variants.length;
+      swap.style.opacity = '0';
+      setTimeout(function () {
+        swap.innerHTML = variants[i].html;
+        applyTab(variants[i].tab);
+        swap.style.opacity = '1';
+      }, 500);
+    }, 4500);
+  })();
 </script>
 </body>
 </html>

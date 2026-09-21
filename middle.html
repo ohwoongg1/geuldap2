@@ -268,8 +268,8 @@
 
   <!-- 학년 선택 -->
   <div style="display:flex; justify-content:center; gap:0; background:#0d1b4b; padding:14px 16px;">
-    <a href="index.html" style="flex:1; max-width:220px; text-align:center; padding:12px 10px; border-radius:10px 0 0 10px; font-weight:700; font-size:14px; text-decoration:none; background:rgba(255,255,255,0.08); color:rgba(255,255,255,0.7);">🎒 초등학생</a>
-    <a href="middle.html" style="flex:1; max-width:220px; text-align:center; padding:12px 10px; border-radius:0 10px 10px 0; font-weight:700; font-size:14px; text-decoration:none; background:#e8c96a; color:#0d1b4b;">🎓 중학생</a>
+    <a href="index.html" id="tabElem" style="flex:1; max-width:220px; text-align:center; padding:12px 10px; border-radius:10px 0 0 10px; font-weight:700; font-size:14px; text-decoration:none; background:rgba(255,255,255,0.08); color:rgba(255,255,255,0.7); transition: background 0.5s, color 0.5s;">🎒 초등학생</a>
+    <a href="middle.html" id="tabMiddle" style="flex:1; max-width:220px; text-align:center; padding:12px 10px; border-radius:0 10px 10px 0; font-weight:700; font-size:14px; text-decoration:none; background:#e8c96a; color:#0d1b4b; transition: background 0.5s, color 0.5s;">🎓 중학생</a>
   </div>
 
   <!-- 히어로 -->
@@ -283,8 +283,10 @@
             <div class="sub">geuldap Reading &amp; Essay Academy</div>
           </div>
         </div>
-        <h1>모든 과목의 성적은<br><span>결국 문해력이 좌우합니다</span></h1>
-        <p>22년 공교육 경력의 국어 전문가가<br>초등학생부터 중학생까지 함께합니다</p>
+        <div id="heroTextSwap" style="transition: opacity 0.5s;">
+          <h1>모든 과목의 성적은<br><span>결국 문해력이 좌우합니다</span></h1>
+          <p>22년 공교육 경력의 국어 전문가가<br>초등학생부터 중학생까지 함께합니다</p>
+        </div>
         <div class="hero-cta">
           <a class="btn-outline" href="https://blog.naver.com/guldap-edu" target="_blank">네이버 블로그 보기</a>
         </div>
@@ -618,6 +620,38 @@
   console.log('%c글답 홈페이지 (중학생 페이지) v1.1', 'font-weight:bold; font-size:14px; color:#0d1b4b;');
   console.log('v1.0 — 중학생 전용 페이지 신설: 학년선택 배너, "결국 문해력이 좌우합니다" 히어로, 평상시/시험기간 학습 사이클, 22년 경력·고등대비·AI학습기·소수정예 카드');
   console.log('v1.1 — [디자인 개선] index.html과 동일하게 히어로를 텍스트+일러스트 2단 구성으로 변경, 책에서 자라나는 나무 커스텀 SVG 일러스트 추가, 모바일 반응형 스택 처리(index.html v1.2와 함께 적용)');
+  console.log('v1.2 — [신규] index.html과 동일하게 히어로 헤드라인이 초등/중학 버전을 자동으로 번갈아 보여주도록 함(사용자 요청, 타 학원 사이트 참고) — 4.5초마다 부드럽게 전환, 이 페이지는 중학생 버전에서 시작');
+</script>
+<script>
+  // 히어로 헤드라인을 초등/중학 버전으로 자동 순환시킨다(index.html과 동일 로직) — 이 페이지는
+  // 중학생 버전이 먼저 보이는 상태에서 시작한다.
+  (function () {
+    const variants = [
+      { tab: 0, html: '<h1>읽고, 쓰고, 생각하는 힘<br><span>평생 흔들리지 않습니다</span></h1><p>22년 공교육 경력의 국어 전문가가<br>초등학생부터 중학생까지 함께합니다</p>' },
+      { tab: 1, html: '<h1>모든 과목의 성적은<br><span>결국 문해력이 좌우합니다</span></h1><p>22년 공교육 경력의 국어 전문가가<br>초등학생부터 중학생까지 함께합니다</p>' }
+    ];
+    let i = 1;
+    const swap = document.getElementById('heroTextSwap');
+    const tabElem = document.getElementById('tabElem');
+    const tabMiddle = document.getElementById('tabMiddle');
+    if (!swap || !tabElem || !tabMiddle) return;
+    const ACTIVE = { bg: '#e8c96a', color: '#0d1b4b' };
+    const INACTIVE = { bg: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.7)' };
+    function applyTab(idx) {
+      const [a, b] = idx === 0 ? [tabElem, tabMiddle] : [tabMiddle, tabElem];
+      a.style.background = ACTIVE.bg; a.style.color = ACTIVE.color;
+      b.style.background = INACTIVE.bg; b.style.color = INACTIVE.color;
+    }
+    setInterval(function () {
+      i = (i + 1) % variants.length;
+      swap.style.opacity = '0';
+      setTimeout(function () {
+        swap.innerHTML = variants[i].html;
+        applyTab(variants[i].tab);
+        swap.style.opacity = '1';
+      }, 500);
+    }, 4500);
+  })();
 </script>
 </body>
 </html>
