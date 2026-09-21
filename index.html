@@ -393,28 +393,30 @@
     <div class="section-title">학년별 커리큘럼</div>
     <div class="section-sub">초등학생부터 중학생까지, 단계적으로 실력을 쌓습니다</div>
     <div class="grade-tabs">
-      <div class="grade-tab active" onclick="switchCurr(0,this)">초등 3~4학년</div>
-      <div class="grade-tab" onclick="switchCurr(1,this)">초등 5~6학년</div>
-      <div class="grade-tab" onclick="switchCurr(2,this)">중학교 1~3학년</div>
+      <div class="grade-tab active" onclick="switchCurr(0,this)">초등 1~2학년</div>
+      <div class="grade-tab" onclick="switchCurr(1,this)">초등 3~4학년</div>
+      <div class="grade-tab" onclick="switchCurr(2,this)">초등 5~6학년</div>
+      <div class="grade-tab" onclick="switchCurr(3,this)">중학교 1~3학년</div>
     </div>
     <div class="curriculum-box" id="currBox">
-      <h3>📚 초등 3~4학년 — 기초 다지기</h3>
-      <div class="curr-item"><div class="curr-dot"></div>소리 내어 읽기 → 묵독으로 전환 훈련</div>
-      <div class="curr-item"><div class="curr-dot"></div>짧은 문단 쓰기 / 문장 구조 이해</div>
-      <div class="curr-item"><div class="curr-dot"></div>자주 틀리는 맞춤법 집중 교정</div>
-      <div class="curr-item"><div class="curr-dot"></div>독서 일지 작성 습관 형성</div>
-      <div class="curr-item"><div class="curr-dot"></div>어휘력 확장 — 반의어·유의어·속담</div>
+      <h3>🌱 초등 1~2학년 — 즐거운 첫걸음</h3>
+      <div class="curr-item"><div class="curr-dot"></div>즐거운 글쓰기 습관 만들기</div>
+      <div class="curr-item"><div class="curr-dot"></div>글씨 교정</div>
+      <div class="curr-item"><div class="curr-dot"></div>자주 틀리는 맞춤법 지도</div>
+      <div class="curr-item"><div class="curr-dot"></div>문해력·어휘력 향상</div>
+      <div class="curr-item"><div class="curr-dot"></div>올바른 독서 습관 형성</div>
+      <div class="curr-item"><div class="curr-dot"></div>자기주도 학습 습관 만들기</div>
     </div>
-    <div class="class-type-grid">
+    <div class="class-type-grid" id="classTypeGrid">
       <div class="class-type">
-        <div class="tag">주중 수업</div>
-        <h4>독서·글쓰기·논술 통합</h4>
-        <p>읽기-쓰기-고치기 3단계 완성 수업</p>
+        <div class="tag">저학년반 시간표</div>
+        <h4>자유롭게 선택하는 요일·시간</h4>
+        <p>월·화·목·금 중 주 2~3회 조합 선택, 오후 1:00~2:30 사이 자유 선택(회당 1시간)</p>
       </div>
       <div class="class-type">
-        <div class="tag">토요 수업</div>
-        <h4>창의 글쓰기 심화</h4>
-        <p>서울대 국문과 · 서강대 경영학과 강사의 테마 글쓰기 수업</p>
+        <div class="tag">지도 방식</div>
+        <h4>22년 경력 원장 직강</h4>
+        <p>전직 국어교사 원장 선생님이 저학년반을 직접 지도합니다</p>
       </div>
     </div>
   </div>
@@ -614,9 +616,14 @@
 
   // 커리큘럼 탭
   const currData = {
-    0: { title: '📚 초등 3~4학년 — 기초 다지기', items: ['소리 내어 읽기 → 묵독으로 전환 훈련','짧은 문단 쓰기 / 문장 구조 이해','자주 틀리는 맞춤법 집중 교정','독서 일지 작성 습관 형성','어휘력 확장 — 반의어·유의어·속담'] },
-    1: { title: '📚 초등 5~6학년 — 중학 대비 심화', items: ['장문 독해 및 핵심 주제 파악','논술형 글쓰기 — 주장·근거·예시 구조','중학 교과 어휘·문법 선행 학습','스스로 고쳐쓰기 심화 — 논리적 일관성 점검','서술형 답안 작성 훈련'] },
-    2: { title: '📘 중학교 1~3학년 — 내신·수행평가 완성', items: ['학교 내신 대비 — 단원별 핵심 정리 및 서술형 집중 훈련','수행평가 글쓰기 지도 — 주제별 완성도 높은 글쓰기','비문학 지문 독해 — 설명문·논설문·보고서 등 다양한 지문','논술·서술형 답안 작성 — 채점 기준에 맞는 답안 구성법','긴글쓰기 심화 — 문단 구성·근거 제시·논리적 마무리','맞춤법·어휘·문법 — 중학 국어 교과 핵심 개념 정리'] }
+    0: { title: '🌱 초등 1~2학년 — 즐거운 첫걸음', items: ['즐거운 글쓰기 습관 만들기','글씨 교정','자주 틀리는 맞춤법 지도','문해력·어휘력 향상','올바른 독서 습관 형성','자기주도 학습 습관 만들기'],
+         classTypes: [ { tag: '저학년반 시간표', h4: '자유롭게 선택하는 요일·시간', p: '월·화·목·금 중 주 2~3회 조합 선택, 오후 1:00~2:30 사이 자유 선택(회당 1시간)' }, { tag: '지도 방식', h4: '22년 경력 원장 직강', p: '전직 국어교사 원장 선생님이 저학년반을 직접 지도합니다' } ] },
+    1: { title: '📚 초등 3~4학년 — 기초 다지기', items: ['소리 내어 읽기 → 묵독으로 전환 훈련','짧은 문단 쓰기 / 문장 구조 이해','자주 틀리는 맞춤법 집중 교정','독서 일지 작성 습관 형성','어휘력 확장 — 반의어·유의어·속담'],
+         classTypes: [ { tag: '주중 수업', h4: '독서·글쓰기·논술 통합', p: '읽기-쓰기-고치기 3단계 완성 수업' }, { tag: '토요 수업', h4: '창의 글쓰기 심화', p: '서울대 국문과 · 서강대 경영학과 강사의 테마 글쓰기 수업' } ] },
+    2: { title: '📚 초등 5~6학년 — 중학 대비 심화', items: ['장문 독해 및 핵심 주제 파악','논술형 글쓰기 — 주장·근거·예시 구조','중학 교과 어휘·문법 선행 학습','스스로 고쳐쓰기 심화 — 논리적 일관성 점검','서술형 답안 작성 훈련'],
+         classTypes: [ { tag: '주중 수업', h4: '독서·글쓰기·논술 통합', p: '읽기-쓰기-고치기 3단계 완성 수업' }, { tag: '토요 수업', h4: '창의 글쓰기 심화', p: '서울대 국문과 · 서강대 경영학과 강사의 테마 글쓰기 수업' } ] },
+    3: { title: '📘 중학교 1~3학년 — 내신·수행평가 완성', items: ['학교 내신 대비 — 단원별 핵심 정리 및 서술형 집중 훈련','수행평가 글쓰기 지도 — 주제별 완성도 높은 글쓰기','비문학 지문 독해 — 설명문·논설문·보고서 등 다양한 지문','논술·서술형 답안 작성 — 채점 기준에 맞는 답안 구성법','긴글쓰기 심화 — 문단 구성·근거 제시·논리적 마무리','맞춤법·어휘·문법 — 중학 국어 교과 핵심 개념 정리'],
+         classTypes: [ { tag: '주중 수업', h4: '독서·글쓰기·논술 통합', p: '읽기-쓰기-고치기 3단계 완성 수업' }, { tag: '토요 수업', h4: '창의 글쓰기 심화', p: '서울대 국문과 · 서강대 경영학과 강사의 테마 글쓰기 수업' } ] }
   };
   function switchCurr(idx, el) {
     document.querySelectorAll('.grade-tab').forEach(t => t.classList.remove('active'));
@@ -624,6 +631,10 @@
     const d = currData[idx];
     const box = document.getElementById('currBox');
     box.innerHTML = '<h3>' + d.title + '</h3>' + d.items.map(t => '<div class="curr-item"><div class="curr-dot"></div>' + t + '</div>').join('');
+    const grid = document.getElementById('classTypeGrid');
+    if (grid && d.classTypes) {
+      grid.innerHTML = d.classTypes.map(c => '<div class="class-type"><div class="tag">' + c.tag + '</div><h4>' + c.h4 + '</h4><p>' + c.p + '</p></div>').join('');
+    }
   }
 
   // 카카오맵
