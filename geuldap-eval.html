@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
@@ -2214,16 +2214,23 @@
     // 목록에 없는 로컬 항목은 이 컴퓨터에서 만들어졌지만 서버엔 없다는 뜻이므로, 원장님이 따로
     // 뭘 누르지 않아도 지금 자동으로 서버에 올려서 다른 기기에서도 보이게 한다.
     if (window._fbWriteReady()) {
-      const healTargets = [['geuldap_vocab_records', window._vocabRecords], ['geuldap_materials', window._materials]];
+      // 표준 시험지도 대상에 포함: 예전엔 빠져 있어서, 서버 저장이 조용히 실패한 시험지가 이 컴퓨터
+      // 로컬에만 남아 있으면 free-test.html(서버만 조회)에서 "진단 문항 준비 중"이 뜨는 문제가 있었다.
+      const healTargets = [['geuldap_vocab_records', window._vocabRecords], ['geuldap_materials', window._materials], ['geuldap_vocab_standard_tests', window._vocabStandardTests]];
+      window._healFailures = [];
       for (const [collName, arr] of healTargets) {
         const serverIds = serverIdSets[collName];
         if (!serverIds) continue; // 그 컬렉션 로드 자체가 실패했으면 건드리지 않음(오판 방지)
         for (const item of arr) {
           if (item && item.id && !serverIds.has(item.id)) {
             try { await window._add(window._col(window._db, collName), item); console.log(`로컬 전용 기록 자동 복구: ${collName}/${item.id}`); }
-            catch(e4) { console.error('자동 복구 실패:', collName, item.id, e4); }
+            catch(e4) { console.error('자동 복구 실패:', collName, item.id, e4); window._healFailures.push(collName + '/' + item.id + ' (' + (e4 && e4.code || e4 && e4.message || '오류') + ')'); }
           }
         }
+      }
+      // 서버 저장이 실패했으면(대개 Firestore 보안 규칙 누락) 조용히 넘기지 않고 한 번 알려준다.
+      if (window._healFailures.length) {
+        setTimeout(() => alert('⚠️ 서버에 올라가지 못한 데이터가 있어요:\n' + window._healFailures.slice(0,8).join('\n') + '\n\nFirestore 보안 규칙(permission-denied)을 확인해주세요.'), 500);
       }
     }
     try {
@@ -6297,7 +6304,16 @@ ${levelDescText}${avoidText}
     const rec = { id: 'std_' + level, level, questions: qs, createdAt: todayLocalDateStr() };
     window._vocabStandardTests.push(rec);
     localStorage.setItem('gvst', JSON.stringify(_vocabStandardTests));
-    if (window._fbWriteReady()) { try { await window._add(window._col(window._db,'geuldap_vocab_standard_tests'), rec); } catch(e) { console.error('표준 시험지 저장 오류', e); } }
+    if (window._fbWriteReady()) {
+      try { await window._add(window._col(window._db,'geuldap_vocab_standard_tests'), rec); }
+      catch(e) {
+        console.error('표준 시험지 저장 오류', e);
+        // 조용히 넘어가면 이 컴퓨터에서는 만들어진 것처럼 보이지만 서버엔 없어서 무료 진단(free-test)에서 "준비 중"이 뜬다.
+        alert(`⚠️ ${level}급 표준 시험지를 서버에 저장하지 못했어요.\n(이 컴퓨터에는 저장됨 — 무료 진단 페이지에서는 아직 못 씀)\n\n원인: ${e && (e.code || e.message) || e}\n\nFirestore 보안 규칙에 geuldap_vocab_standard_tests가 있는지 확인해주세요.`);
+      }
+    } else {
+      alert(`⚠️ 서버에 연결되지 않아 ${level}급 표준 시험지가 이 컴퓨터에만 저장됐어요.\n연결된 뒤 관리자 화면을 새로고침하면 자동으로 서버에 올라가요.`);
+    }
   }
 
   // 저장된 표준 시험지를 전부 지운다 — 정답 편중 방지(보기 순서 섞기) 기능이 추가되기 전에
