@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>무료 어휘력 진단 테스트 | 글답국어독서논술</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;700&family=Pretendard:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: 'Pretendard', -apple-system, sans-serif; background: #0d1b4b; color: #fff; min-height: 100vh; }
+  .wrap { max-width: 480px; margin: 0 auto; padding: 32px 20px 60px; }
+  .logo-row { text-align: center; margin-bottom: 24px; }
+  .logo-row .name { font-family: 'Noto Serif KR', serif; font-weight: 700; font-size: 18px; color: #e8c96a; }
+  .card { background: rgba(255,255,255,0.06); border: 1px solid rgba(197,161,73,0.3); border-radius: 16px; padding: 28px 22px; margin-bottom: 16px; }
+  h1 { font-family: 'Noto Serif KR', serif; font-size: 26px; line-height: 1.5; text-align: center; margin: 0 0 12px; }
+  h1 span { color: #e8c96a; }
+  .sub { text-align: center; font-size: 14px; color: rgba(255,255,255,0.7); line-height: 1.7; margin-bottom: 24px; }
+  .step-badge { display: inline-block; background: rgba(197,161,73,0.18); color: #e8c96a; font-size: 12px; letter-spacing: 1px; padding: 4px 12px; border-radius: 20px; margin-bottom: 14px; }
+  .btn { display: block; width: 100%; text-align: center; padding: 15px; border-radius: 10px; font-weight: 700; font-size: 16px; text-decoration: none; border: none; cursor: pointer; margin-top: 10px; }
+  .btn-gold { background: linear-gradient(135deg, #c5a149, #e8c96a); color: #0d1b4b; }
+  .btn-outline { background: transparent; border: 1.5px solid rgba(197,161,73,0.6); color: #e8c96a; }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  label { display: block; font-size: 13px; color: rgba(255,255,255,0.8); margin: 14px 0 6px; }
+  input, select { width: 100%; padding: 12px 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.08); color: #fff; font-size: 15px; }
+  input::placeholder { color: rgba(255,255,255,0.4); }
+  .q-box { background: rgba(255,255,255,0.05); border-radius: 12px; padding: 16px; margin-bottom: 12px; }
+  .q-num { font-size: 12px; color: #e8c96a; margin-bottom: 6px; }
+  .q-text { font-size: 15px; line-height: 1.6; margin-bottom: 12px; }
+  .opt { display: block; width: 100%; text-align: left; padding: 10px 14px; margin-bottom: 8px; border-radius: 8px; border: 1.5px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.03); color: #fff; font-size: 14px; cursor: pointer; }
+  .opt.selected { border-color: #e8c96a; background: rgba(232,201,106,0.15); }
+  .progress { font-size: 13px; color: rgba(255,255,255,0.6); text-align: center; margin-bottom: 16px; }
+  .result-level { font-size: 44px; font-weight: 700; color: #e8c96a; text-align: center; font-family: 'Noto Serif KR', serif; }
+  .result-band { text-align: center; font-size: 15px; color: rgba(255,255,255,0.85); margin-bottom: 6px; }
+  .result-desc { text-align: center; font-size: 13px; color: rgba(255,255,255,0.6); line-height: 1.7; margin-bottom: 20px; }
+  .hint { font-size: 12px; color: rgba(255,255,255,0.4); text-align: center; margin-top: 14px; line-height: 1.6; }
+  .loading { text-align: center; padding: 40px 0; color: rgba(255,255,255,0.6); font-size: 14px; }
+  .hidden { display: none; }
+  .illust { display: block; margin: 0 auto 16px; width: 90px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="logo-row">
+    <img src="logo.png" alt="글답국어독서논술" style="width:40px; height:40px; border-radius:8px; border:1.5px solid #c5a149; background:#fff; vertical-align:middle; margin-right:8px;">
+    <span class="name">글답국어독서논술</span>
+  </div>
+
+  <!-- STEP 1: 인트로 -->
+  <div id="stepIntro" class="card">
+    <svg class="illust" viewBox="0 0 320 320" xmlns="http://www.w3.org/2000/svg" fill="none">
+      <path d="M160 228 C 158 190, 172 175, 160 150 C 150 128, 166 112, 160 88 C 155 68, 168 55, 163 36" stroke="#e8c96a" stroke-width="3.2" stroke-linecap="round"/>
+      <g stroke="#e8c96a" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M160 202 C 142 195, 133 178, 146 165 C 160 172, 166 191, 160 202 Z" fill="#0d1b4b"/>
+        <path d="M162 164 C 182 159, 194 141, 183 127 C 168 132, 156 152, 162 164 Z" fill="#0d1b4b"/>
+        <path d="M158 118 C 138 113, 125 95, 137 80 C 152 85, 165 105, 158 118 Z" fill="#0d1b4b"/>
+      </g>
+      <path d="M163 34 l4.5 11 l11 4.5 l-11 4.5 l-4.5 11 l-4.5 -11 l-11 -4.5 l11 -4.5 z" fill="#e8c96a"/>
+      <g><ellipse cx="160" cy="278" rx="132" ry="10" fill="#000" opacity="0.18"/>
+        <path d="M38 250 C 90 232, 132 232, 160 246 L160 270 C 132 256, 90 256, 38 274 Z" fill="#111f57" stroke="#e8c96a" stroke-width="2.6" stroke-linejoin="round"/>
+        <path d="M282 250 C 230 232, 188 232, 160 246 L160 270 C 188 256, 230 256, 282 274 Z" fill="#111f57" stroke="#e8c96a" stroke-width="2.6" stroke-linejoin="round"/>
+      </g>
+    </svg>
+    <h1>우리 아이 어휘력<br><span>지금 무료로 확인해보세요</span></h1>
+    <div class="sub">22년 국어 교사 출신 원장이 만든 18단계 어휘력 진단<br>딱 1분이면 우리 아이 수준을 정확히 알 수 있어요</div>
+    <div class="step-badge">STEP 1 · 소식 받기</div>
+    <a class="btn btn-gold" id="naverBtn" href="https://blog.naver.com/guldap-edu" target="_blank" rel="noopener">🔔 네이버 블로그 알림받기</a>
+    <button class="btn btn-outline" onclick="goToForm()">완료했어요, 다음으로 →</button>
+    <div class="hint">알림받기 후 버튼을 누르시면 진단으로 넘어가요.<br>1인 1회만 참여 가능합니다.</div>
+  </div>
+
+  <!-- STEP 2: 정보 입력 -->
+  <div id="stepForm" class="card hidden">
+    <div class="step-badge">STEP 2 · 학생 정보</div>
+    <label>학생 이름</label>
+    <input type="text" id="fName" placeholder="예: 김민준">
+    <label>학년</label>
+    <select id="fGrade">
+      <option value="">선택해주세요</option>
+      <option value="초등 1학년">초등 1학년</option>
+      <option value="초등 2학년">초등 2학년</option>
+      <option value="초등 3학년">초등 3학년</option>
+      <option value="초등 4학년">초등 4학년</option>
+      <option value="초등 5학년">초등 5학년</option>
+      <option value="초등 6학년">초등 6학년</option>
+      <option value="중학교 1학년">중학교 1학년</option>
+      <option value="중학교 2학년">중학교 2학년</option>
+      <option value="중학교 3학년">중학교 3학년</option>
+    </select>
+    <label>학부모님 연락처</label>
+    <input type="tel" id="fPhone" placeholder="010-0000-0000">
+    <button class="btn btn-gold" onclick="submitForm()" id="submitBtn">📝 무료 진단 시작하기</button>
+    <div class="hint">연락처는 결과 확인 및 1인 1회 제한 용도로만 사용되며,<br>학습 상담 목적 외에는 사용되지 않습니다.</div>
+  </div>
+
+  <!-- STEP 3: 시험 -->
+  <div id="stepTest" class="card hidden">
+    <div class="step-badge">STEP 3 · 진단 테스트</div>
+    <div class="progress" id="testProgress"></div>
+    <div id="testQuestions"></div>
+    <button class="btn btn-gold" onclick="submitTest()" id="testSubmitBtn" disabled>채점하기</button>
+  </div>
+
+  <!-- STEP 4: 결과 -->
+  <div id="stepResult" class="card hidden">
+    <div class="step-badge">STEP 4 · 진단 결과</div>
+    <div class="result-level" id="resultLevel"></div>
+    <div class="result-band" id="resultBand"></div>
+    <div class="result-desc" id="resultDesc"></div>
+    <div id="resultMessage" style="font-size:14px; line-height:1.8; color:rgba(255,255,255,0.85); margin-bottom:16px;"></div>
+    <a class="btn btn-gold" href="tel:07043247175">📞 학원에 무료 상담 전화하기</a>
+    <a class="btn btn-outline" href="index.html">글답국어독서논술 홈페이지 보기</a>
+  </div>
+
+  <!-- 로딩/안내 -->
+  <div id="stepLoading" class="card hidden">
+    <div class="loading" id="loadingText">불러오는 중...</div>
+  </div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getFirestore, collection, addDoc, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+  const app = initializeApp({
+    apiKey: "AIzaSyC5nf84GbQQ_5vIDwhIvTZ5zPqf7nrnSxU",
+    authDomain: "starspoon-120d7.firebaseapp.com",
+    projectId: "starspoon-120d7",
+    storageBucket: "starspoon-120d7.firebasestorage.app",
+    messagingSenderId: "672370227821",
+    appId: "1:672370227821:web:aea1d9c6ca8587842a5d64"
+  });
+  const db = getFirestore(app);
+  const auth = getAuth(app);
+  try { await signInAnonymously(auth); } catch(e) { console.log('익명 인증 실패(규칙이 열려있으면 그래도 동작함):', e); }
+
+  // ===== 어휘력 급수 체계 (geuldap-eval.html과 동일한 기준을 그대로 씀) =====
+  const VOCAB_LEVEL_DEFS = [
+    {level:1,  band:'초1', sub:'기초', desc:'받침 없는 쉬운 낱말, 그림과 함께 익히는 생활 어휘(가족, 색깔, 숫자 등)'},
+    {level:2,  band:'초1', sub:'심화', desc:'받침 있는 낱말, 짧은 문장 속 낱말 이해(동작·감정을 나타내는 기본 낱말)'},
+    {level:3,  band:'초2', sub:'기초', desc:'교과서에 자주 나오는 생활 어휘, 흉내 내는 말(의성어·의태어) 도입'},
+    {level:4,  band:'초2', sub:'심화', desc:'조금 더 긴 문장 속 낱말, 뜻이 비슷한 낱말·반대되는 낱말 구분 시작'},
+    {level:5,  band:'초3', sub:'기초', desc:'교과서 사회·과학에 처음 나오는 낱말, 이어주는 말(그래서·그러나 등) 이해'},
+    {level:6,  band:'초3', sub:'심화', desc:'쉬운 속담·관용구 도입, 문단 속에서 낱말의 뜻 짐작하기'},
+    {level:7,  band:'초4', sub:'기초', desc:'교과서에 자주 나오는 기본 어휘, 일상생활에서 흔히 쓰는 낱말 위주'},
+    {level:8,  band:'초4', sub:'심화', desc:'초4 교과서 어휘 중 다소 어려운 낱말, 뜻이 여러 개인 낱말 포함'},
+    {level:9,  band:'초5', sub:'기초', desc:'속담·관용구 도입, 두 글자 한자어 어휘 시작'},
+    {level:10, band:'초5', sub:'심화', desc:'관용구 확장, 한자어 어휘 비중 증가'},
+    {level:11, band:'초6', sub:'기초', desc:'사회·과학 교과서에 나오는 개념어 도입'},
+    {level:12, band:'초6', sub:'심화', desc:'교과 개념어 확장, 다의어·동음이의어 구분 포함'},
+    {level:13, band:'중1', sub:'기초', desc:'추상적 한자어 도입, 사자성어·관용구 초급'},
+    {level:14, band:'중1', sub:'심화', desc:'추상적 한자어 확장, 사자성어 초중급'},
+    {level:15, band:'중2', sub:'기초', desc:'시사·논설문에 자주 나오는 어휘, 사자성어 중급'},
+    {level:16, band:'중2', sub:'심화', desc:'논설문·설명문 핵심 어휘, 사자성어 중고급'},
+    {level:17, band:'중3', sub:'기초', desc:'비문학 독해 핵심어, 고난도 한자어'},
+    {level:18, band:'중3', sub:'심화', desc:'고난도 한자어·사자성어, 고교 국어 대비 기초 어휘'}
+  ];
+  const VOCAB_MAX_LEVEL = 18;
+  const VOCAB_GRADE_START_LEVEL = {'초등 1학년':1,'초등 2학년':3,'초등 3학년':5,'초등 4학년':7,'초등 5학년':9,'초등 6학년':11,'중학교 1학년':13,'중학교 2학년':15,'중학교 3학년':17};
+  function vocabLevelDef(level) {
+    level = Math.max(1, Math.min(VOCAB_MAX_LEVEL, level));
+    return VOCAB_LEVEL_DEFS.find(d=>d.level===level) || VOCAB_LEVEL_DEFS[0];
+  }
+  function diagnoseVocabLevel(breakdown) {
+    const sorted = breakdown.slice().sort((a,b)=>a.level-b.level);
+    let diagnosed = sorted.length ? sorted[0].level - 1 : 1;
+    for (const b of sorted) {
+      if (b.total>0 && (b.correct/b.total) >= 0.7) diagnosed = b.level;
+      else break;
+    }
+    if (diagnosed < 1) diagnosed = 1;
+    return diagnosed;
+  }
+
+  let currentQuestions = null;
+  let currentAnswers = {};
+  let currentGrade = '', currentName = '', currentPhone = '';
+
+  window.goToForm = function() {
+    try {
+      if (localStorage.getItem('geuldap_free_test_completed')) {
+        alert('이 기기에서는 이미 무료 진단에 참여하셨어요.\n\n다른 자녀가 참여하시려면 그 학생의 휴대폰으로 접속해주세요.\n결과가 궁금하시면 학원으로 전화 주세요 (070-4324-7175)');
+        return;
+      }
+    } catch(e) { /* 시크릿 모드 등에서 localStorage 접근 실패 시 그냥 진행 */ }
+    document.getElementById('stepIntro').classList.add('hidden');
+    document.getElementById('stepForm').classList.remove('hidden');
+  };
+
+  function showLoading(text) {
+    document.getElementById('stepForm').classList.add('hidden');
+    document.getElementById('stepTest').classList.add('hidden');
+    document.getElementById('stepLoading').classList.remove('hidden');
+    document.getElementById('loadingText').textContent = text;
+  }
+
+  window.submitForm = async function() {
+    const name = document.getElementById('fName').value.trim();
+    const grade = document.getElementById('fGrade').value;
+    const phone = document.getElementById('fPhone').value.trim().replace(/[^0-9]/g, '');
+    if (!name) { alert('학생 이름을 입력해주세요.'); return; }
+    if (!grade) { alert('학년을 선택해주세요.'); return; }
+    if (phone.length < 9) { alert('연락처를 정확히 입력해주세요.'); return; }
+
+    // 이 기기에서 이미 한 번 완료했다면(전화번호를 바꿔가며 다시 시도하는 것 포함) 막는다.
+    // 같은 집 형제자매가 각자 자기 폰으로 참여하는 건 기기가 다르므로 영향 없다.
+    try {
+      if (localStorage.getItem('geuldap_free_test_completed')) {
+        alert('이 기기에서는 이미 무료 진단에 참여하셨어요.\n\n다른 자녀가 참여하시려면 그 학생의 휴대폰으로 접속해주세요.\n결과가 궁금하시면 학원으로 전화 주세요 (070-4324-7175)');
+        return;
+      }
+    } catch(e) { /* 시크릿 모드 등에서 localStorage 접근 실패 시 그냥 진행 */ }
+
+    document.getElementById('submitBtn').disabled = true;
+    showLoading('참여 가능 여부를 확인하고 있어요...');
+
+    try {
+      // 연락처 기준 1인 1회 제한 확인
+      const q = query(collection(db, 'geuldap_free_test_leads'), where('phone', '==', phone));
+      const snap = await getDocs(q);
+      if (!snap.empty) {
+        document.getElementById('stepLoading').classList.add('hidden');
+        document.getElementById('stepForm').classList.remove('hidden');
+        document.getElementById('submitBtn').disabled = false;
+        alert('이미 참여하신 연락처예요. 무료 진단은 1인 1회만 가능해요.\n\n결과가 궁금하시면 학원으로 전화 주세요 (070-4324-7175)');
+        return;
+      }
+
+      currentName = name; currentGrade = grade; currentPhone = phone;
+
+      // 그 학년의 "표준 시험지"를 그대로 불러와서 쓴다(관리자 화면과 동일한 시험, AI 재호출 없이 재사용)
+      const baseLevel = VOCAB_GRADE_START_LEVEL[grade] || 1;
+      showLoading('진단 시험지를 준비하고 있어요...');
+      const stdQ = query(collection(db, 'geuldap_vocab_standard_tests'), where('level', '==', baseLevel));
+      const stdSnap = await getDocs(stdQ);
+      if (stdSnap.empty) {
+        document.getElementById('stepLoading').classList.add('hidden');
+        document.getElementById('stepForm').classList.remove('hidden');
+        document.getElementById('submitBtn').disabled = false;
+        alert('죄송해요, 이 학년의 진단 문항이 아직 준비 중이에요.\n학원으로 전화 주시면 바로 진단해드릴게요! (070-4324-7175)');
+        return;
+      }
+      const stdDoc = stdSnap.docs[0].data();
+      currentQuestions = stdDoc.questions;
+      currentAnswers = {};
+      renderTest();
+      document.getElementById('stepLoading').classList.add('hidden');
+      document.getElementById('stepTest').classList.remove('hidden');
+    } catch(e) {
+      document.getElementById('stepLoading').classList.add('hidden');
+      document.getElementById('stepForm').classList.remove('hidden');
+      document.getElementById('submitBtn').disabled = false;
+      alert('오류가 발생했어요. 잠시 후 다시 시도해주세요.\n' + e.message);
+    }
+  };
+
+  function renderTest() {
+    const box = document.getElementById('testQuestions');
+    box.innerHTML = currentQuestions.map((q, i) => `
+      <div class="q-box">
+        <div class="q-num">${i+1} / ${currentQuestions.length}</div>
+        <div class="q-text">${(q.question||'').replace(/__(.+?)__/g, '<u>$1</u>')}</div>
+        ${(q.options||[]).map((op, oi) => `<button type="button" class="opt" id="opt-${i}-${oi}" onclick="selectOpt(${i},${oi})">${['①','②','③','④'][oi]} ${op}</button>`).join('')}
+      </div>
+    `).join('');
+    updateProgress();
+  }
+
+  window.selectOpt = function(qi, oi) {
+    currentAnswers[qi] = oi;
+    document.querySelectorAll(`[id^="opt-${qi}-"]`).forEach(el => el.classList.remove('selected'));
+    document.getElementById(`opt-${qi}-${oi}`).classList.add('selected');
+    updateProgress();
+  };
+
+  function updateProgress() {
+    const answered = Object.keys(currentAnswers).length;
+    const total = currentQuestions.length;
+    document.getElementById('testProgress').textContent = `${answered} / ${total}문제 응답 완료`;
+    document.getElementById('testSubmitBtn').disabled = answered < total;
+  }
+
+  window.submitTest = async function() {
+    showLoading('채점하고 있어요...');
+    const breakdownMap = {};
+    currentQuestions.forEach((q, i) => {
+      const lvl = q.level;
+      if (!breakdownMap[lvl]) breakdownMap[lvl] = { level: lvl, total: 0, correct: 0 };
+      breakdownMap[lvl].total++;
+      if (currentAnswers[i] === q.answerIndex) breakdownMap[lvl].correct++;
+    });
+    const breakdown = Object.values(breakdownMap);
+    const diagnosed = diagnoseVocabLevel(breakdown);
+    const def = vocabLevelDef(diagnosed);
+    const totalQ = currentQuestions.length;
+    const totalCorrect = breakdown.reduce((a,b)=>a+b.correct,0);
+
+    try {
+      await addDoc(collection(db, 'geuldap_free_test_leads'), {
+        name: currentName, grade: currentGrade, phone: currentPhone,
+        diagnosedLevel: diagnosed, score: Math.round(totalCorrect/totalQ*100),
+        breakdown, questions: currentQuestions, answers: currentAnswers,
+        createdAt: new Date().toISOString().slice(0,10), source: 'free-test-landing'
+      });
+    } catch(e) { console.error('리드 저장 오류', e); }
+    try { localStorage.setItem('geuldap_free_test_completed', '1'); } catch(e) { /* 무시 */ }
+
+    document.getElementById('resultLevel').textContent = diagnosed + '급';
+    document.getElementById('resultBand').textContent = `${def.band} ${def.sub} 수준`;
+    document.getElementById('resultDesc').textContent = def.desc;
+    document.getElementById('resultMessage').innerHTML =
+      `<strong>${currentName}</strong> 학생은 ${totalQ}문항 중 <strong>${totalCorrect}문항</strong>을 맞혀 <strong>${diagnosed}급</strong>으로 진단되었습니다.<br><br>` +
+      `글답국어독서논술은 22년 국어 교사 출신 원장이 매달 정기적으로 어휘력을 재진단하며, 부족한 부분은 4주 맞춤 커리큘럼으로 채워드립니다.<br><br>` +
+      `더 자세한 결과와 학습 방향은 전화 상담으로 안내해드릴게요.`;
+
+    document.getElementById('stepLoading').classList.add('hidden');
+    document.getElementById('stepResult').classList.remove('hidden');
+  };
+</script>
+</body>
+</html>
