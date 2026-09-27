@@ -174,13 +174,15 @@
   let currentAnswers = {};
   let currentGrade = '', currentName = '', currentPhone = '';
 
+  // 원장님 요청으로 이 이름은 1인 1회 제한(기기·연락처)을 받지 않고 언제든 다시 테스트할 수 있게 한다
+  // (데모·시연용). 이름은 실제 입력값과 정확히 같아야 하며, 필요하면 이 배열에 이름을 더 추가하면 된다.
+  const UNLIMITED_TEST_NAMES = ['오희웅'];
+  function isUnlimitedTester(name) { return UNLIMITED_TEST_NAMES.includes((name||'').trim()); }
+
+  // 1인 1회 제한 체크는 이름을 입력받는 STEP 1(학생 정보) 화면 이후, submitForm()에서 이름을 알고 난
+  // 뒤에 한 번만 한다 — 여기(인트로 화면)에서 미리 막아버리면 무제한 테스터도 이름을 입력하기 전에
+  // 걸려서 들어가 보지도 못하기 때문.
   window.goToForm = function() {
-    try {
-      if (localStorage.getItem('geuldap_free_test_completed')) {
-        alert('이 기기에서는 이미 무료 진단에 참여하셨어요.\n\n다른 자녀가 참여하시려면 그 학생의 휴대폰으로 접속해주세요.\n결과가 궁금하시면 학원으로 전화 주세요 (070-4324-7175)');
-        return;
-      }
-    } catch(e) { /* 시크릿 모드 등에서 localStorage 접근 실패 시 그냥 진행 */ }
     document.getElementById('stepIntro').classList.add('hidden');
     document.getElementById('stepForm').classList.remove('hidden');
   };
@@ -200,28 +202,35 @@
     if (!grade) { alert('학년을 선택해주세요.'); return; }
     if (phone.length < 9) { alert('연락처를 정확히 입력해주세요.'); return; }
 
+    const unlimited = isUnlimitedTester(name);
+
     // 이 기기에서 이미 한 번 완료했다면(전화번호를 바꿔가며 다시 시도하는 것 포함) 막는다.
     // 같은 집 형제자매가 각자 자기 폰으로 참여하는 건 기기가 다르므로 영향 없다.
-    try {
-      if (localStorage.getItem('geuldap_free_test_completed')) {
-        alert('이 기기에서는 이미 무료 진단에 참여하셨어요.\n\n다른 자녀가 참여하시려면 그 학생의 휴대폰으로 접속해주세요.\n결과가 궁금하시면 학원으로 전화 주세요 (070-4324-7175)');
-        return;
-      }
-    } catch(e) { /* 시크릿 모드 등에서 localStorage 접근 실패 시 그냥 진행 */ }
+    // (예외: UNLIMITED_TEST_NAMES에 등록된 이름은 언제든 다시 테스트할 수 있어야 하므로 건너뜀)
+    if (!unlimited) {
+      try {
+        if (localStorage.getItem('geuldap_free_test_completed')) {
+          alert('이 기기에서는 이미 무료 진단에 참여하셨어요.\n\n다른 자녀가 참여하시려면 그 학생의 휴대폰으로 접속해주세요.\n결과가 궁금하시면 학원으로 전화 주세요 (070-4324-7175)');
+          return;
+        }
+      } catch(e) { /* 시크릿 모드 등에서 localStorage 접근 실패 시 그냥 진행 */ }
+    }
 
     document.getElementById('submitBtn').disabled = true;
     showLoading('참여 가능 여부를 확인하고 있어요...');
 
     try {
-      // 연락처 기준 1인 1회 제한 확인
-      const q = query(collection(db, 'geuldap_free_test_leads'), where('phone', '==', phone));
-      const snap = await getDocs(q);
-      if (!snap.empty) {
-        document.getElementById('stepLoading').classList.add('hidden');
-        document.getElementById('stepForm').classList.remove('hidden');
-        document.getElementById('submitBtn').disabled = false;
-        alert('이미 참여하신 연락처예요. 무료 진단은 1인 1회만 가능해요.\n\n결과가 궁금하시면 학원으로 전화 주세요 (070-4324-7175)');
-        return;
+      // 연락처 기준 1인 1회 제한 확인 (무제한 테스터는 건너뜀)
+      if (!unlimited) {
+        const q = query(collection(db, 'geuldap_free_test_leads'), where('phone', '==', phone));
+        const snap = await getDocs(q);
+        if (!snap.empty) {
+          document.getElementById('stepLoading').classList.add('hidden');
+          document.getElementById('stepForm').classList.remove('hidden');
+          document.getElementById('submitBtn').disabled = false;
+          alert('이미 참여하신 연락처예요. 무료 진단은 1인 1회만 가능해요.\n\n결과가 궁금하시면 학원으로 전화 주세요 (070-4324-7175)');
+          return;
+        }
       }
 
       currentName = name; currentGrade = grade; currentPhone = phone;
@@ -301,7 +310,10 @@
         createdAt: new Date().toISOString().slice(0,10), source: 'free-test-landing'
       });
     } catch(e) { console.error('리드 저장 오류', e); }
-    try { localStorage.setItem('geuldap_free_test_completed', '1'); } catch(e) { /* 무시 */ }
+    // 무제한 테스터는 이 기기에서도 계속 다시 테스트할 수 있어야 하므로 "완료" 표시를 남기지 않는다.
+    if (!isUnlimitedTester(currentName)) {
+      try { localStorage.setItem('geuldap_free_test_completed', '1'); } catch(e) { /* 무시 */ }
+    }
 
     document.getElementById('resultLevel').textContent = diagnosed + '급';
     document.getElementById('resultBand').textContent = `${def.band} ${def.sub} 수준`;
