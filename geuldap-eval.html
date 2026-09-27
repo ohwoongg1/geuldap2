@@ -866,6 +866,9 @@
       <div id="freeTestLeadsBox" style="margin:0 0 18px; padding:12px; background:#f4f8ff; border:1px solid #d5e3f7; border-radius:8px;">
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
           <span style="font-size:13px; font-weight:600;">🎁 무료 진단 신청자 <span id="freeTestLeadsCount" style="color:#888; font-weight:400;"></span></span>
+          <!-- "등록 + 자세히 보기"를 누르면 상담일지에 올라가는 동시에, 어휘력 탭 > 상담 기록(미등록 방문자)에
+               문제·답·급수별 정답 현황까지 통째로 들어가서 재원생과 똑같이 AI 진단 보고서를 만들 수 있다. -->
+          <span style="font-size:11px; color:#aaa;">"등록 + 자세히 보기"를 누르면 어휘력 탭에서 문제·답·AI 분석까지 볼 수 있어요</span>
           <button class="btn btn-secondary btn-sm" onclick="loadFreeTestLeads()">🔄 새로고침</button>
         </div>
         <div id="freeTestLeadsList" style="font-size:13px; color:#888;">불러오는 중...</div>
@@ -2920,13 +2923,17 @@
           ${isPhoneRegisteredStudent(x.phone) ? '<span style="font-size:12px; color:#fff; background:#2e7d32; padding:2px 8px; border-radius:10px;">✓ 등록완료(전화번호 일치)</span>' : ''}
           ${x.converted
             ? '<span style="font-size:12px; color:#2e7d32;">✅ 상담일지 등록됨</span>'
-            : `<button class="btn btn-primary btn-sm" onclick="convertFreeTestLead('${x._docId}')">상담일지에 등록</button>`}
+            : `<button class="btn btn-primary btn-sm" onclick="convertFreeTestLead('${x._docId}')">상담일지 등록 + 자세히 보기</button>`}
           <button class="btn btn-secondary btn-sm" onclick="deleteFreeTestLead('${x._docId}')">삭제</button>
         </span>
       </div>`).join('');
   }
 
   // 무료 진단 신청자를 정식 상담일지(geuldap_leads) 항목으로 옮긴다
+  // 상담일지에 등록하면서, 동시에 어휘력 탭의 "상담 기록(미등록 방문자)"에도 완전한 진단 기록으로
+  // 저장한다 — 그래야 원장님이 급수별 정답 현황·문제와 답까지 그대로 보고, 재원생과 똑같이
+  // "진단 보고서 생성"(AI 맞춤 분석)·"평가서 인쇄"·"학부모 공유" 기능을 바로 쓸 수 있다.
+  // (원장님 요청: 무료 진단 홈페이지 화면은 그대로 두고, 상담 단계에서만 원장님이 자세히 볼 수 있게)
   async function convertFreeTestLead(docId) {
     const x = window._freeTestLeads.find(v => v._docId === docId);
     if (!x || x.converted) return;
@@ -2935,12 +2942,26 @@
       id: Date.now().toString(),
       name: x.name || '', phone: x.phone || '', grade: x.grade || '', source: '블로그/SNS',
       status: 'new',
-      consultations: [{ date: today, method: '기타', memo: `무료 어휘력 진단 신청 (${x.createdAt||''}) — ${x.diagnosedLevel}급, ${x.score}점`, tags: [], nextDate: null }]
+      consultations: [{ date: today, method: '기타', memo: `무료 어휘력 진단 신청 (${x.createdAt||''}) — ${x.diagnosedLevel}급, ${x.score}점. 어휘력 탭 > 상담 기록(미등록 방문자)에서 자세히 볼 수 있어요.`, tags: [], nextDate: null }]
+    };
+    const oldLevel = VOCAB_GRADE_START_LEVEL[x.grade] || 1;
+    const newLevel = x.diagnosedLevel;
+    const total = (x.breakdown||[]).reduce((a,b)=>a+(b.total||0),0) || (x.questions||[]).length;
+    const correct = (x.breakdown||[]).reduce((a,b)=>a+(b.correct||0),0);
+    const vocabRec = {
+      id: 'ft_' + docId, studentId: 'freetest_' + docId, studentName: x.name || '', grade: x.grade || '', isGuest: true,
+      month: (x.createdAt||today).slice(0,7), date: x.createdAt || today, total, correct, score: x.score,
+      oldLevel, newLevel, resultLabel: newLevel>oldLevel?'상승':newLevel<oldLevel?'하락':'유지',
+      breakdown: x.breakdown || [], toppedOut: false,
+      questions: x.questions || null, answers: x.answers || null
     };
     window._leads.push(lead);
+    window._vocabRecords.push(vocabRec);
     localStorage.setItem('gl', JSON.stringify(window._leads));
+    localStorage.setItem('gvr', JSON.stringify(window._vocabRecords));
     try {
       await window._add(window._col(window._db,'geuldap_leads'), lead);
+      await window._add(window._col(window._db,'geuldap_vocab_records'), vocabRec);
       await window._update(window._doc(window._db,'geuldap_free_test_leads', docId), { converted: true });
       x.converted = true;
     } catch(e) { console.error(e); alert('서버 저장 실패: ' + (e.code || e.message)); }
