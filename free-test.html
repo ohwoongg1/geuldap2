@@ -22,6 +22,12 @@
   .btn:disabled { opacity: 0.4; cursor: not-allowed; }
   label { display: block; font-size: 13px; color: rgba(255,255,255,0.8); margin: 14px 0 6px; }
   input, select { width: 100%; padding: 12px 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.08); color: #fff; font-size: 15px; }
+  /* select 박스 자체는 반투명 배경에 흰 글씨라 안 보이지 않지만, 펼쳐지는 옵션 목록(<option>)은
+     브라우저가 항상 자체 팝업(보통 흰 배경)으로 따로 그리면서 색은 부모(select)의 흰 글씨를
+     그대로 물려받아 "흰 배경에 흰 글씨"가 되어 학년 목록이 안 보이는 문제가 있었다(사용자 신고
+     스크린샷 — 학년 선택 드롭다운을 펼쳤을 때 선택된 항목 말고는 다 안 보임). 옵션에는 어두운
+     글씨·흰 배경을 따로 지정해서 펼쳤을 때도 항상 읽히게 고정한다. */
+  select option { color: #1a1a2e; background: #fff; }
   input::placeholder { color: rgba(255,255,255,0.4); }
   .q-box { background: rgba(255,255,255,0.05); border-radius: 12px; padding: 16px; margin-bottom: 12px; }
   .q-num { font-size: 12px; color: #e8c96a; margin-bottom: 6px; }

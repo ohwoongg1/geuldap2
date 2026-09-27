@@ -1135,7 +1135,17 @@
     <div style="font-size:12px; color:#888; margin-bottom:14px;">재원생을 선택하거나, 상담 방문자는 "＋ 상담자 즉석 테스트"로 이름·학년만 입력해 바로 진단 테스트를 진행할 수 있습니다.</div>
     <div style="margin-bottom:14px;">
       <button class="btn btn-secondary btn-sm" onclick="toggleVocabDashboard()">📊 성취도 현황 보기</button>
-      <button class="btn btn-secondary btn-sm" onclick="resetVocabStandardTests()">🔄 표준 시험지 초기화</button>
+      <button class="btn btn-secondary btn-sm" onclick="toggleVocabStandardTestPanel()">🔄 표준 시험지 초기화</button>
+    </div>
+    <!-- 급수별로 따로따로 초기화할 수 있는 패널 — 예전엔 prompt() 창에 급수 번호를 직접 타이핑해야 했는데,
+         사용자 요청으로 급수마다 버튼을 눌러 그 급수 하나만 바로 초기화할 수 있게 바꿨다. -->
+    <div id="vocabStandardTestPanel" class="card" style="display:none; background:#faf8f3; margin-bottom:14px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+        <div style="font-size:13px; font-weight:600;">🔄 표준 시험지 초기화 (급수별로 따로 초기화)</div>
+        <button class="btn btn-secondary btn-sm" onclick="toggleVocabStandardTestPanel()">닫기</button>
+      </div>
+      <div style="font-size:12px; color:#888; margin-bottom:10px;">급수마다 저장된 표준 시험지를 하나씩 따로 초기화할 수 있어요. 이미 시험을 본 학생들의 기록에는 영향이 없고, 그 급수로 다음번에 처음 진단받는 학생의 시험지만 새로 만들어져요(보기 순서도 새로 골고루 섞임).</div>
+      <div id="vocabStandardTestList"></div>
     </div>
     <div class="student-grid" id="vocabStudentGrid"></div>
   </div>
@@ -6412,35 +6422,61 @@ ${levelDescText}${avoidText}
     }
   }
 
-  // 저장된 표준 시험지를 전부 지운다 — 정답 편중 방지(보기 순서 섞기) 기능이 추가되기 전에
-  // 만들어진 표준 시험지는 그 편중을 그대로 가지고 있을 수 있어서(사용자가 초5에서 실제로 발견),
-  // 한 번에 초기화해서 다음 첫 진단부터 새로 만들어지며 골고루 섞이게 한다. 이미 학생들이 본
-  // 시험 "기록"에는 영향 없다 — 앞으로 새로 첫 진단을 볼 학생들의 기준 시험지만 초기화된다.
-  // 급수를 하나 골라서 그 표준 시험지만 초기화하거나, "전체"를 입력해 다 초기화할 수 있게 한다
-  // (사용자 요청 — 문제가 생긴 급수 하나만 고치고 싶은데 매번 전부 지워야 했던 것을 개선).
-  async function resetVocabStandardTests() {
+  // 저장된 표준 시험지를 급수별로 따로따로 초기화한다 — 정답 편중 방지(보기 순서 섞기) 기능이
+  // 추가되기 전에 만들어진 표준 시험지는 그 편중을 그대로 가지고 있을 수 있어서(사용자가 초5에서
+  // 실제로 발견), 초기화하면 다음 첫 진단부터 새로 만들어지며 골고루 섞이게 한다. 이미 학생들이
+  // 본 시험 "기록"에는 영향 없다 — 앞으로 새로 첫 진단을 볼 학생들의 기준 시험지만 초기화된다.
+  // 예전엔 prompt() 창에 급수 번호를 직접 타이핑해야 했는데, 사용자 요청으로 급수마다 버튼을 눌러
+  // 그 급수 하나만 바로 초기화할 수 있게 바꿨다(각 단계를 따로 초기화).
+  function toggleVocabStandardTestPanel() {
+    const panel = document.getElementById('vocabStandardTestPanel');
+    const opening = panel.style.display === 'none';
+    panel.style.display = opening ? 'block' : 'none';
+    if (opening) renderVocabStandardTestList();
+  }
+
+  function renderVocabStandardTestList() {
+    const box = document.getElementById('vocabStandardTestList');
+    if (_vocabStandardTests.length === 0) { box.innerHTML = '<div style="font-size:13px; color:#888;">저장된 표준 시험지가 없습니다.</div>'; return; }
+    const sorted = _vocabStandardTests.slice().sort((a,b)=>a.level-b.level);
+    box.innerHTML = `
+      <div style="display:flex; justify-content:flex-end; margin-bottom:8px;">
+        <button class="btn btn-secondary btn-sm" style="color:#b3261e;" onclick="resetAllVocabStandardTests()">🗑 전체 한번에 초기화</button>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:6px;">
+        ${sorted.map(t => `
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; padding:8px 12px; background:#fff; border:1px solid #e8e0cc; border-radius:8px;">
+            <span style="font-size:14px; font-weight:600;">${t.level}급 <span style="font-size:12px; font-weight:400; color:#999;">(${vocabLevelDef(t.level).band} ${vocabLevelDef(t.level).sub} · 저장일 ${t.createdAt||''})</span></span>
+            <button class="btn btn-secondary btn-sm" onclick="resetOneVocabStandardTest(${t.level})">이 급수만 초기화</button>
+          </div>
+        `).join('')}
+      </div>`;
+  }
+
+  async function resetOneVocabStandardTest(level) {
+    const targets = _vocabStandardTests.filter(t=>t.level===level);
+    if (!targets.length) return;
+    if (!confirm(`${level}급 표준 시험지만 초기화할까요?\n\n이미 시험을 본 학생들의 기록에는 영향이 없고, 다음번에 ${level}급으로 처음 진단받는 학생의 시험지만 새로 만들어져요.`)) return;
+    await deleteVocabStandardTests(targets);
+    alert(`${level}급 표준 시험지를 초기화했어요. 다음번 첫 진단부터 새로 만들어져요.`);
+    renderVocabStandardTestList();
+  }
+
+  async function resetAllVocabStandardTests() {
     if (_vocabStandardTests.length===0) { alert('저장된 표준 시험지가 없습니다.'); return; }
-    const sortedLevels = _vocabStandardTests.map(t=>t.level).sort((a,b)=>a-b);
-    const input = prompt(`현재 저장된 표준 시험지 급수: ${sortedLevels.join(', ')}급\n\n초기화할 급수 번호를 입력해주세요(예: 9).\n전부 초기화하려면 "전체"라고 입력해주세요.`);
-    if (input === null) return; // 취소
-    const trimmed = input.trim();
-    let targets;
-    if (trimmed === '전체' || trimmed === '전부') {
-      if (!confirm(`저장된 표준 시험지 ${_vocabStandardTests.length}개를 전부 초기화할까요?\n\n이미 시험을 본 학생들의 기록에는 영향이 없고, 앞으로 각 학년별로 처음 진단받는 학생의 시험지만 다음번에 새로 만들어져요(보기 순서도 새로 골고루 섞임).`)) return;
-      targets = _vocabStandardTests.slice();
-    } else {
-      const level = parseInt(trimmed);
-      if (!level || !sortedLevels.includes(level)) { alert(`${trimmed}급은 저장된 표준 시험지 목록에 없어요. (저장된 급수: ${sortedLevels.join(', ')}급)`); return; }
-      if (!confirm(`${level}급 표준 시험지만 초기화할까요?\n\n이미 시험을 본 학생들의 기록에는 영향이 없고, 다음번에 ${level}급으로 처음 진단받는 학생의 시험지만 새로 만들어져요.`)) return;
-      targets = _vocabStandardTests.filter(t=>t.level===level);
-    }
+    if (!confirm(`저장된 표준 시험지 ${_vocabStandardTests.length}개를 전부 초기화할까요?\n\n이미 시험을 본 학생들의 기록에는 영향이 없고, 앞으로 각 학년별로 처음 진단받는 학생의 시험지만 다음번에 새로 만들어져요(보기 순서도 새로 골고루 섞임).`)) return;
+    await deleteVocabStandardTests(_vocabStandardTests.slice());
+    alert('표준 시험지를 전부 초기화했어요. 다음번 첫 진단부터 새로 만들어져요.');
+    renderVocabStandardTestList();
+  }
+
+  async function deleteVocabStandardTests(targets) {
     const targetIds = new Set(targets.map(t=>t.id));
     window._vocabStandardTests = _vocabStandardTests.filter(t=>!targetIds.has(t.id));
     localStorage.setItem('gvst', JSON.stringify(window._vocabStandardTests));
     if (window._fbWriteReady()) {
       for (const t of targets) { try { await window._deleteByFieldId('geuldap_vocab_standard_tests', t.id); } catch(e) { console.error('표준 시험지 삭제 오류', t.id, e); } }
     }
-    alert(`${targets.map(t=>t.level+'급').join(', ')} 표준 시험지를 초기화했어요. 다음번 첫 진단부터 새로 만들어져요.`);
   }
 
   // 학습지·커리큘럼으로 이미 나간 단어를 기록해둔다 — 나중에 진단 시험을 만들 때 이 단어들은
