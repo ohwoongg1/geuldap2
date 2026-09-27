@@ -859,6 +859,13 @@
         </div>
       </div>
       <div id="leadsUpcoming"></div>
+      <div id="freeTestLeadsBox" style="margin:0 0 18px; padding:12px; background:#f4f8ff; border:1px solid #d5e3f7; border-radius:8px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
+          <span style="font-size:13px; font-weight:600;">🎁 무료 진단 신청자 <span id="freeTestLeadsCount" style="color:#888; font-weight:400;"></span></span>
+          <button class="btn btn-secondary btn-sm" onclick="loadFreeTestLeads()">🔄 새로고침</button>
+        </div>
+        <div id="freeTestLeadsList" style="font-size:13px; color:#888;">불러오는 중...</div>
+      </div>
       <div id="leadsList"></div>
     </div>
   </div>
@@ -2860,6 +2867,78 @@
     if (window._fbReady) window._add(window._col(window._db,'geuldap_leads'), lead).catch(console.error);
     closeLeadModal();
     renderLeads();
+  }
+
+  // ===== 무료 진단 신청자 (free-test.html에서 학부모가 입력한 정보, 컬렉션 geuldap_free_test_leads) =====
+  window._freeTestLeads = [];
+  async function loadFreeTestLeads() {
+    const list = document.getElementById('freeTestLeadsList');
+    if (!list) return;
+    if (!window._fbWriteReady() || !window._get) { list.textContent = '서버에 연결되지 않았어요. 잠시 후 새로고침을 눌러주세요.'; return; }
+    list.textContent = '불러오는 중...';
+    try {
+      const snap = await window._get(window._col(window._db, 'geuldap_free_test_leads'));
+      window._freeTestLeads = snap.docs.map(d => ({ _docId: d.id, ...d.data() }));
+      renderFreeTestLeads();
+    } catch(e) {
+      console.error('무료 진단 신청자 로드 실패', e);
+      list.innerHTML = `<span style="color:#c00;">불러오지 못했어요: ${escapeHtml(e.code || e.message)}</span>`;
+    }
+  }
+
+  function renderFreeTestLeads() {
+    const list = document.getElementById('freeTestLeadsList');
+    const arr = window._freeTestLeads.slice().sort((a,b) => String(b.createdAt||'').localeCompare(String(a.createdAt||'')));
+    const pending = arr.filter(x => !x.converted).length;
+    document.getElementById('freeTestLeadsCount').textContent = arr.length ? `(전체 ${arr.length}명 · 미등록 ${pending}명)` : '';
+    if (!arr.length) { list.textContent = '아직 무료 진단 신청자가 없어요.'; return; }
+    const fmtPhone = p => { const s = String(p||'').replace(/[^0-9]/g,''); return s.length===11 ? `${s.slice(0,3)}-${s.slice(3,7)}-${s.slice(7)}` : (s.length===10 ? `${s.slice(0,3)}-${s.slice(3,6)}-${s.slice(6)}` : s); };
+    list.innerHTML = arr.map(x => `
+      <div style="padding:8px 0; border-bottom:1px solid #e6eef9; display:flex; align-items:center; gap:8px; flex-wrap:wrap; color:#333;">
+        <span style="font-weight:600;">${escapeHtml(x.name)}</span>
+        <span style="font-size:12px; color:#888;">${escapeHtml(x.grade)}</span>
+        <a href="tel:${escapeHtml(String(x.phone||'').replace(/[^0-9]/g,''))}" style="font-size:13px; color:#1a5fb4; text-decoration:none;">📞 ${escapeHtml(fmtPhone(x.phone))}</a>
+        <span style="font-size:12px; background:#0d1b4b; color:#e8c96a; padding:2px 8px; border-radius:10px;">${escapeHtml(x.diagnosedLevel)}급 · ${escapeHtml(x.score)}점</span>
+        <span style="font-size:12px; color:#999;">${escapeHtml(x.createdAt)}</span>
+        <span style="margin-left:auto; display:flex; gap:6px;">
+          ${x.converted
+            ? '<span style="font-size:12px; color:#2e7d32;">✅ 상담일지 등록됨</span>'
+            : `<button class="btn btn-primary btn-sm" onclick="convertFreeTestLead('${x._docId}')">상담일지에 등록</button>`}
+          <button class="btn btn-secondary btn-sm" onclick="deleteFreeTestLead('${x._docId}')">삭제</button>
+        </span>
+      </div>`).join('');
+  }
+
+  // 무료 진단 신청자를 정식 상담일지(geuldap_leads) 항목으로 옮긴다
+  async function convertFreeTestLead(docId) {
+    const x = window._freeTestLeads.find(v => v._docId === docId);
+    if (!x || x.converted) return;
+    const today = todayLocalDateStr();
+    const lead = {
+      id: Date.now().toString(),
+      name: x.name || '', phone: x.phone || '', grade: x.grade || '', source: '블로그/SNS',
+      status: 'new',
+      consultations: [{ date: today, method: '기타', memo: `무료 어휘력 진단 신청 (${x.createdAt||''}) — ${x.diagnosedLevel}급, ${x.score}점`, tags: [], nextDate: null }]
+    };
+    window._leads.push(lead);
+    localStorage.setItem('gl', JSON.stringify(window._leads));
+    try {
+      await window._add(window._col(window._db,'geuldap_leads'), lead);
+      await window._update(window._doc(window._db,'geuldap_free_test_leads', docId), { converted: true });
+      x.converted = true;
+    } catch(e) { console.error(e); alert('서버 저장 실패: ' + (e.code || e.message)); }
+    renderLeads();
+    renderFreeTestLeads();
+  }
+
+  async function deleteFreeTestLead(docId) {
+    const x = window._freeTestLeads.find(v => v._docId === docId);
+    if (!x || !confirm(`${x.name} 학생의 무료 진단 신청 정보를 삭제할까요?`)) return;
+    try {
+      await window._del(window._doc(window._db,'geuldap_free_test_leads', docId));
+      window._freeTestLeads = window._freeTestLeads.filter(v => v._docId !== docId);
+    } catch(e) { alert('삭제 실패: ' + (e.code || e.message)); }
+    renderFreeTestLeads();
   }
 
   function leadLatestEntry(lead) {
@@ -5055,7 +5134,7 @@ ${a.name}`;
     if (tab==='records') renderRecordStudents();
     if (tab==='reading') renderReadingStudents();
     if (tab==='attendance') loadAttendanceForDate(document.getElementById('attDate').value || todayLocalDateStr());
-    if (tab==='leads') renderLeads();
+    if (tab==='leads') { renderLeads(); loadFreeTestLeads(); }
     if (tab==='timetable') renderTimetable();
     if (tab==='payments') { const m = document.getElementById('payMonth'); if (!m.value) m.value = todayLocalDateStr().slice(0,7); loadPayments(m.value); }
     if (tab==='learner') renderLearnerTab();
