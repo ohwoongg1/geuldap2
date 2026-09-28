@@ -66,11 +66,7 @@
     .form-group { display: flex; flex-direction: column; gap: 6px; }
     .form-group.full { grid-column: 1/-1; }
     label { font-size: 13px; font-weight: 600; color: #555; }
-    /* 학년 선택 등 select가 어두운 색(기기 다크모드)에서 흰 글씨가 흰 배경에 그대로 나와
-       안 보이던 문제 — 배경·글자색을 명시해서 다크모드 여부와 상관없이 항상 밝은 배경에
-       어두운 글씨로 보이게 고정한다(사용자 신고: 상담자 어휘력 테스트 학년 선택칸). */
-    input, select, textarea { padding: 10px 14px; border: 1.5px solid #e0e0e0; border-radius: 8px; font-size: 14px; font-family: 'Noto Sans KR', sans-serif; transition: border 0.2s; outline: none; background: #fff; color: #1a1a2e; color-scheme: light; }
-    select option { background: #fff; color: #1a1a2e; }
+    input, select, textarea { padding: 10px 14px; border: 1.5px solid #e0e0e0; border-radius: 8px; font-size: 14px; font-family: 'Noto Sans KR', sans-serif; transition: border 0.2s; outline: none; color: #222; background-color: #fff; }
     input:focus, select:focus, textarea:focus { border-color: #c5a149; }
     textarea { resize: vertical; min-height: 80px; }
     .btn { padding: 11px 24px; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; border: none; transition: all 0.2s; font-family: 'Noto Sans KR', sans-serif; }
@@ -866,9 +862,6 @@
       <div id="freeTestLeadsBox" style="margin:0 0 18px; padding:12px; background:#f4f8ff; border:1px solid #d5e3f7; border-radius:8px;">
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
           <span style="font-size:13px; font-weight:600;">🎁 무료 진단 신청자 <span id="freeTestLeadsCount" style="color:#888; font-weight:400;"></span></span>
-          <!-- "등록 + 자세히 보기"를 누르면 상담일지에 올라가는 동시에, 어휘력 탭 > 상담 기록(미등록 방문자)에
-               문제·답·급수별 정답 현황까지 통째로 들어가서 재원생과 똑같이 AI 진단 보고서를 만들 수 있다. -->
-          <span style="font-size:11px; color:#aaa;">"등록 + 자세히 보기"를 누르면 어휘력 탭에서 문제·답·AI 분석까지 볼 수 있어요</span>
           <button class="btn btn-secondary btn-sm" onclick="loadFreeTestLeads()">🔄 새로고침</button>
         </div>
         <div id="freeTestLeadsList" style="font-size:13px; color:#888;">불러오는 중...</div>
@@ -1138,17 +1131,7 @@
     <div style="font-size:12px; color:#888; margin-bottom:14px;">재원생을 선택하거나, 상담 방문자는 "＋ 상담자 즉석 테스트"로 이름·학년만 입력해 바로 진단 테스트를 진행할 수 있습니다.</div>
     <div style="margin-bottom:14px;">
       <button class="btn btn-secondary btn-sm" onclick="toggleVocabDashboard()">📊 성취도 현황 보기</button>
-      <button class="btn btn-secondary btn-sm" onclick="toggleVocabStandardTestPanel()">🔄 표준 시험지 초기화</button>
-    </div>
-    <!-- 급수별로 따로따로 초기화할 수 있는 패널 — 예전엔 prompt() 창에 급수 번호를 직접 타이핑해야 했는데,
-         사용자 요청으로 급수마다 버튼을 눌러 그 급수 하나만 바로 초기화할 수 있게 바꿨다. -->
-    <div id="vocabStandardTestPanel" class="card" style="display:none; background:#faf8f3; margin-bottom:14px;">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-        <div style="font-size:13px; font-weight:600;">🔄 표준 시험지 초기화 (급수별로 따로 초기화)</div>
-        <button class="btn btn-secondary btn-sm" onclick="toggleVocabStandardTestPanel()">닫기</button>
-      </div>
-      <div style="font-size:12px; color:#888; margin-bottom:10px;">급수마다 저장된 표준 시험지를 하나씩 따로 초기화할 수 있어요. 이미 시험을 본 학생들의 기록에는 영향이 없고, 그 급수로 다음번에 처음 진단받는 학생의 시험지만 새로 만들어져요(보기 순서도 새로 골고루 섞임).</div>
-      <div id="vocabStandardTestList"></div>
+      <button class="btn btn-secondary btn-sm" onclick="resetVocabStandardTests()">🔄 표준 시험지 초기화</button>
     </div>
     <div class="student-grid" id="vocabStudentGrid"></div>
   </div>
@@ -2305,7 +2288,7 @@
 
 <script>
   // ===== 버전 정보 (콘솔에서 확인: APP_VERSION 또는 페이지 로드시 자동 출력) =====
-  const APP_VERSION = 'v8.13';
+  const APP_VERSION = 'v8.14';
   const APP_VERSION_LOG = [
     'v1.0 — 탭 구조 + UI 껍데기',
     'v1.1 — AI 문제 생성 + 개념 사다리',
@@ -2461,7 +2444,8 @@
     'v8.10 — [버그 수정] 표준 시험지가 정답 편중 방지 기능(v7.90) 추가 전에 이미 저장돼 옛 편중이 남아있던 문제 — "🔄 표준 시험지 초기화" 버튼 추가(resetVocabStandardTests), 전체 삭제 후 다음 첫 진단부터 새로 골고루 섞여 생성',
     'v8.11 — [신규] 모바일에서 탭 14개가 너무 많아 찾기 불편하다는 지적 — 모바일 화면(768px 이하)에서는 "학생 관리 · 글 업로드·평가 · 어휘력" 3개만 크게 보이고, 나머지는 "⋯ 더보기"를 눌러야 펼쳐지게 함(mobile-keep 클래스, toggleMobileTabs). PC는 기존과 동일. ※ 이 버전은 사용자가 재업로드한 파일이 v8.00 기준이었던 것을 뒤늦게 발견해, v8.01~v8.10의 모든 수정사항을 이 파일 위에 처음부터 다시 재적용하고 v8.11(모바일 탭 정리)까지 추가한 것 — 사자성어 데이터·docx도 함께 재생성',
     'v8.12 — [버그 수정] 모바일(네이버 인앱브라우저로 추정)에서 "상담자 즉석 테스트" +카드를 눌러도 아무 반응이 없는 문제 — 원인은 코드 안에 최신 JS 문법(옵셔널 체이닝 ?., 널리시 코얼레싱 ??)이 몇 군데 쓰여있었는데, 오래된 웹뷰 엔진이 이 문법을 못 읽으면 그 문법이 포함된 거대한 <script> 블록 전체가 파싱 실패로 무효화되어 그 안의 모든 함수(openVocabGuestForm 포함)가 정의조차 안 되고, 그래서 그 어떤 버튼도 눌리지 않는 것으로 추정됨 → reconstructText·extractWithGoogleVision·학생목록 렌더링·greetingIndex 등 6곳의 ?.와 2곳의 ??를 전부 구형 브라우저도 읽을 수 있는 방식(&&, 삼항연산자)으로 교체',
-    'v8.13 — [개선] 사용자 요청 세 가지 — ①상담일지·무료진단 신청자 목록에 연락처를 학생관리 연락처와 대조해서 일치하면 "✓ 등록완료(전화번호 일치)" 배지를 자동으로 표시(normalizePhone/isPhoneRegisteredStudent 추가, 수동으로 "학생 전환" 안 거쳐도 잡아냄) ②어휘력 진단 시험의 "뜻고르기" 유형을 낱말 하나만 딱 던지던 방식에서, 그 낱말이 자연스럽게 쓰인 완전한 문장을 주고 문맥 속에서 밑줄 친 낱말의 뜻을 추론하게 하는 방식으로 프롬프트 변경 ③"표준 시험지 초기화"가 항상 전체를 지우던 것을 급수 하나만 선택해서 초기화하거나 "전체"를 입력해 다 지울 수 있도록 변경(현재 저장된 급수 목록을 보여주고 입력받음)'
+    'v8.13 — [개선] 사용자 요청 세 가지 — ①상담일지·무료진단 신청자 목록에 연락처를 학생관리 연락처와 대조해서 일치하면 "✓ 등록완료(전화번호 일치)" 배지를 자동으로 표시(normalizePhone/isPhoneRegisteredStudent 추가, 수동으로 "학생 전환" 안 거쳐도 잡아냄) ②어휘력 진단 시험의 "뜻고르기" 유형을 낱말 하나만 딱 던지던 방식에서, 그 낱말이 자연스럽게 쓰인 완전한 문장을 주고 문맥 속에서 밑줄 친 낱말의 뜻을 추론하게 하는 방식으로 프롬프트 변경 ③"표준 시험지 초기화"가 항상 전체를 지우던 것을 급수 하나만 선택해서 초기화하거나 "전체"를 입력해 다 지울 수 있도록 변경(현재 저장된 급수 목록을 보여주고 입력받음)',
+    'v8.14 — [개선] 사용자 요청으로 "📌 재상담 예정" 목록에서도 전화번호가 학생관리와 일치하면 "✓ 등록완료(전화번호 일치)" 배지를 옆에 표시(기존엔 메인 상담 목록에만 표시됐음)'
   ];
   console.log(`%c글답 학습기 ${APP_VERSION}`, 'font-weight:bold; font-size:14px; color:#0d1b4b;');
   console.groupCollapsed('%c버전 기록 (클릭해서 펼치기)', 'color:#888; font-size:11px;');
@@ -2923,17 +2907,13 @@
           ${isPhoneRegisteredStudent(x.phone) ? '<span style="font-size:12px; color:#fff; background:#2e7d32; padding:2px 8px; border-radius:10px;">✓ 등록완료(전화번호 일치)</span>' : ''}
           ${x.converted
             ? '<span style="font-size:12px; color:#2e7d32;">✅ 상담일지 등록됨</span>'
-            : `<button class="btn btn-primary btn-sm" onclick="convertFreeTestLead('${x._docId}')">상담일지 등록 + 자세히 보기</button>`}
+            : `<button class="btn btn-primary btn-sm" onclick="convertFreeTestLead('${x._docId}')">상담일지에 등록</button>`}
           <button class="btn btn-secondary btn-sm" onclick="deleteFreeTestLead('${x._docId}')">삭제</button>
         </span>
       </div>`).join('');
   }
 
   // 무료 진단 신청자를 정식 상담일지(geuldap_leads) 항목으로 옮긴다
-  // 상담일지에 등록하면서, 동시에 어휘력 탭의 "상담 기록(미등록 방문자)"에도 완전한 진단 기록으로
-  // 저장한다 — 그래야 원장님이 급수별 정답 현황·문제와 답까지 그대로 보고, 재원생과 똑같이
-  // "진단 보고서 생성"(AI 맞춤 분석)·"평가서 인쇄"·"학부모 공유" 기능을 바로 쓸 수 있다.
-  // (원장님 요청: 무료 진단 홈페이지 화면은 그대로 두고, 상담 단계에서만 원장님이 자세히 볼 수 있게)
   async function convertFreeTestLead(docId) {
     const x = window._freeTestLeads.find(v => v._docId === docId);
     if (!x || x.converted) return;
@@ -2942,26 +2922,12 @@
       id: Date.now().toString(),
       name: x.name || '', phone: x.phone || '', grade: x.grade || '', source: '블로그/SNS',
       status: 'new',
-      consultations: [{ date: today, method: '기타', memo: `무료 어휘력 진단 신청 (${x.createdAt||''}) — ${x.diagnosedLevel}급, ${x.score}점. 어휘력 탭 > 상담 기록(미등록 방문자)에서 자세히 볼 수 있어요.`, tags: [], nextDate: null }]
-    };
-    const oldLevel = VOCAB_GRADE_START_LEVEL[x.grade] || 1;
-    const newLevel = x.diagnosedLevel;
-    const total = (x.breakdown||[]).reduce((a,b)=>a+(b.total||0),0) || (x.questions||[]).length;
-    const correct = (x.breakdown||[]).reduce((a,b)=>a+(b.correct||0),0);
-    const vocabRec = {
-      id: 'ft_' + docId, studentId: 'freetest_' + docId, studentName: x.name || '', grade: x.grade || '', isGuest: true,
-      month: (x.createdAt||today).slice(0,7), date: x.createdAt || today, total, correct, score: x.score,
-      oldLevel, newLevel, resultLabel: newLevel>oldLevel?'상승':newLevel<oldLevel?'하락':'유지',
-      breakdown: x.breakdown || [], toppedOut: false,
-      questions: x.questions || null, answers: x.answers || null
+      consultations: [{ date: today, method: '기타', memo: `무료 어휘력 진단 신청 (${x.createdAt||''}) — ${x.diagnosedLevel}급, ${x.score}점`, tags: [], nextDate: null }]
     };
     window._leads.push(lead);
-    window._vocabRecords.push(vocabRec);
     localStorage.setItem('gl', JSON.stringify(window._leads));
-    localStorage.setItem('gvr', JSON.stringify(window._vocabRecords));
     try {
       await window._add(window._col(window._db,'geuldap_leads'), lead);
-      await window._add(window._col(window._db,'geuldap_vocab_records'), vocabRec);
       await window._update(window._doc(window._db,'geuldap_free_test_leads', docId), { converted: true });
       x.converted = true;
     } catch(e) { console.error(e); alert('서버 저장 실패: ' + (e.code || e.message)); }
@@ -3032,6 +2998,7 @@
             <span style="font-weight:600;">${l.name}</span>
             <span style="font-size:12px; color:#888;">${l.grade}</span>
             <span style="font-size:12px; ${overdue?'color:#c0392b; font-weight:600;':'color:#888;'}">${overdue?'지남 · ':''}${nd} 예정</span>
+            ${isPhoneRegisteredStudent(l.phone) ? '<span style="font-size:11px; color:#fff; background:#2e7d32; padding:2px 8px; border-radius:10px;">✓ 등록완료(전화번호 일치)</span>' : ''}
           </div>`;
         }).join('')}</div>
       `;
@@ -6443,61 +6410,35 @@ ${levelDescText}${avoidText}
     }
   }
 
-  // 저장된 표준 시험지를 급수별로 따로따로 초기화한다 — 정답 편중 방지(보기 순서 섞기) 기능이
-  // 추가되기 전에 만들어진 표준 시험지는 그 편중을 그대로 가지고 있을 수 있어서(사용자가 초5에서
-  // 실제로 발견), 초기화하면 다음 첫 진단부터 새로 만들어지며 골고루 섞이게 한다. 이미 학생들이
-  // 본 시험 "기록"에는 영향 없다 — 앞으로 새로 첫 진단을 볼 학생들의 기준 시험지만 초기화된다.
-  // 예전엔 prompt() 창에 급수 번호를 직접 타이핑해야 했는데, 사용자 요청으로 급수마다 버튼을 눌러
-  // 그 급수 하나만 바로 초기화할 수 있게 바꿨다(각 단계를 따로 초기화).
-  function toggleVocabStandardTestPanel() {
-    const panel = document.getElementById('vocabStandardTestPanel');
-    const opening = panel.style.display === 'none';
-    panel.style.display = opening ? 'block' : 'none';
-    if (opening) renderVocabStandardTestList();
-  }
-
-  function renderVocabStandardTestList() {
-    const box = document.getElementById('vocabStandardTestList');
-    if (_vocabStandardTests.length === 0) { box.innerHTML = '<div style="font-size:13px; color:#888;">저장된 표준 시험지가 없습니다.</div>'; return; }
-    const sorted = _vocabStandardTests.slice().sort((a,b)=>a.level-b.level);
-    box.innerHTML = `
-      <div style="display:flex; justify-content:flex-end; margin-bottom:8px;">
-        <button class="btn btn-secondary btn-sm" style="color:#b3261e;" onclick="resetAllVocabStandardTests()">🗑 전체 한번에 초기화</button>
-      </div>
-      <div style="display:flex; flex-direction:column; gap:6px;">
-        ${sorted.map(t => `
-          <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; padding:8px 12px; background:#fff; border:1px solid #e8e0cc; border-radius:8px;">
-            <span style="font-size:14px; font-weight:600;">${t.level}급 <span style="font-size:12px; font-weight:400; color:#999;">(${vocabLevelDef(t.level).band} ${vocabLevelDef(t.level).sub} · 저장일 ${t.createdAt||''})</span></span>
-            <button class="btn btn-secondary btn-sm" onclick="resetOneVocabStandardTest(${t.level})">이 급수만 초기화</button>
-          </div>
-        `).join('')}
-      </div>`;
-  }
-
-  async function resetOneVocabStandardTest(level) {
-    const targets = _vocabStandardTests.filter(t=>t.level===level);
-    if (!targets.length) return;
-    if (!confirm(`${level}급 표준 시험지만 초기화할까요?\n\n이미 시험을 본 학생들의 기록에는 영향이 없고, 다음번에 ${level}급으로 처음 진단받는 학생의 시험지만 새로 만들어져요.`)) return;
-    await deleteVocabStandardTests(targets);
-    alert(`${level}급 표준 시험지를 초기화했어요. 다음번 첫 진단부터 새로 만들어져요.`);
-    renderVocabStandardTestList();
-  }
-
-  async function resetAllVocabStandardTests() {
+  // 저장된 표준 시험지를 전부 지운다 — 정답 편중 방지(보기 순서 섞기) 기능이 추가되기 전에
+  // 만들어진 표준 시험지는 그 편중을 그대로 가지고 있을 수 있어서(사용자가 초5에서 실제로 발견),
+  // 한 번에 초기화해서 다음 첫 진단부터 새로 만들어지며 골고루 섞이게 한다. 이미 학생들이 본
+  // 시험 "기록"에는 영향 없다 — 앞으로 새로 첫 진단을 볼 학생들의 기준 시험지만 초기화된다.
+  // 급수를 하나 골라서 그 표준 시험지만 초기화하거나, "전체"를 입력해 다 초기화할 수 있게 한다
+  // (사용자 요청 — 문제가 생긴 급수 하나만 고치고 싶은데 매번 전부 지워야 했던 것을 개선).
+  async function resetVocabStandardTests() {
     if (_vocabStandardTests.length===0) { alert('저장된 표준 시험지가 없습니다.'); return; }
-    if (!confirm(`저장된 표준 시험지 ${_vocabStandardTests.length}개를 전부 초기화할까요?\n\n이미 시험을 본 학생들의 기록에는 영향이 없고, 앞으로 각 학년별로 처음 진단받는 학생의 시험지만 다음번에 새로 만들어져요(보기 순서도 새로 골고루 섞임).`)) return;
-    await deleteVocabStandardTests(_vocabStandardTests.slice());
-    alert('표준 시험지를 전부 초기화했어요. 다음번 첫 진단부터 새로 만들어져요.');
-    renderVocabStandardTestList();
-  }
-
-  async function deleteVocabStandardTests(targets) {
+    const sortedLevels = _vocabStandardTests.map(t=>t.level).sort((a,b)=>a-b);
+    const input = prompt(`현재 저장된 표준 시험지 급수: ${sortedLevels.join(', ')}급\n\n초기화할 급수 번호를 입력해주세요(예: 9).\n전부 초기화하려면 "전체"라고 입력해주세요.`);
+    if (input === null) return; // 취소
+    const trimmed = input.trim();
+    let targets;
+    if (trimmed === '전체' || trimmed === '전부') {
+      if (!confirm(`저장된 표준 시험지 ${_vocabStandardTests.length}개를 전부 초기화할까요?\n\n이미 시험을 본 학생들의 기록에는 영향이 없고, 앞으로 각 학년별로 처음 진단받는 학생의 시험지만 다음번에 새로 만들어져요(보기 순서도 새로 골고루 섞임).`)) return;
+      targets = _vocabStandardTests.slice();
+    } else {
+      const level = parseInt(trimmed);
+      if (!level || !sortedLevels.includes(level)) { alert(`${trimmed}급은 저장된 표준 시험지 목록에 없어요. (저장된 급수: ${sortedLevels.join(', ')}급)`); return; }
+      if (!confirm(`${level}급 표준 시험지만 초기화할까요?\n\n이미 시험을 본 학생들의 기록에는 영향이 없고, 다음번에 ${level}급으로 처음 진단받는 학생의 시험지만 새로 만들어져요.`)) return;
+      targets = _vocabStandardTests.filter(t=>t.level===level);
+    }
     const targetIds = new Set(targets.map(t=>t.id));
     window._vocabStandardTests = _vocabStandardTests.filter(t=>!targetIds.has(t.id));
     localStorage.setItem('gvst', JSON.stringify(window._vocabStandardTests));
     if (window._fbWriteReady()) {
       for (const t of targets) { try { await window._deleteByFieldId('geuldap_vocab_standard_tests', t.id); } catch(e) { console.error('표준 시험지 삭제 오류', t.id, e); } }
     }
+    alert(`${targets.map(t=>t.level+'급').join(', ')} 표준 시험지를 초기화했어요. 다음번 첫 진단부터 새로 만들어져요.`);
   }
 
   // 학습지·커리큘럼으로 이미 나간 단어를 기록해둔다 — 나중에 진단 시험을 만들 때 이 단어들은
