@@ -2288,7 +2288,7 @@
 
 <script>
   // ===== 버전 정보 (콘솔에서 확인: APP_VERSION 또는 페이지 로드시 자동 출력) =====
-  const APP_VERSION = 'v8.14';
+  const APP_VERSION = 'v8.15';
   const APP_VERSION_LOG = [
     'v1.0 — 탭 구조 + UI 껍데기',
     'v1.1 — AI 문제 생성 + 개념 사다리',
@@ -2445,7 +2445,8 @@
     'v8.11 — [신규] 모바일에서 탭 14개가 너무 많아 찾기 불편하다는 지적 — 모바일 화면(768px 이하)에서는 "학생 관리 · 글 업로드·평가 · 어휘력" 3개만 크게 보이고, 나머지는 "⋯ 더보기"를 눌러야 펼쳐지게 함(mobile-keep 클래스, toggleMobileTabs). PC는 기존과 동일. ※ 이 버전은 사용자가 재업로드한 파일이 v8.00 기준이었던 것을 뒤늦게 발견해, v8.01~v8.10의 모든 수정사항을 이 파일 위에 처음부터 다시 재적용하고 v8.11(모바일 탭 정리)까지 추가한 것 — 사자성어 데이터·docx도 함께 재생성',
     'v8.12 — [버그 수정] 모바일(네이버 인앱브라우저로 추정)에서 "상담자 즉석 테스트" +카드를 눌러도 아무 반응이 없는 문제 — 원인은 코드 안에 최신 JS 문법(옵셔널 체이닝 ?., 널리시 코얼레싱 ??)이 몇 군데 쓰여있었는데, 오래된 웹뷰 엔진이 이 문법을 못 읽으면 그 문법이 포함된 거대한 <script> 블록 전체가 파싱 실패로 무효화되어 그 안의 모든 함수(openVocabGuestForm 포함)가 정의조차 안 되고, 그래서 그 어떤 버튼도 눌리지 않는 것으로 추정됨 → reconstructText·extractWithGoogleVision·학생목록 렌더링·greetingIndex 등 6곳의 ?.와 2곳의 ??를 전부 구형 브라우저도 읽을 수 있는 방식(&&, 삼항연산자)으로 교체',
     'v8.13 — [개선] 사용자 요청 세 가지 — ①상담일지·무료진단 신청자 목록에 연락처를 학생관리 연락처와 대조해서 일치하면 "✓ 등록완료(전화번호 일치)" 배지를 자동으로 표시(normalizePhone/isPhoneRegisteredStudent 추가, 수동으로 "학생 전환" 안 거쳐도 잡아냄) ②어휘력 진단 시험의 "뜻고르기" 유형을 낱말 하나만 딱 던지던 방식에서, 그 낱말이 자연스럽게 쓰인 완전한 문장을 주고 문맥 속에서 밑줄 친 낱말의 뜻을 추론하게 하는 방식으로 프롬프트 변경 ③"표준 시험지 초기화"가 항상 전체를 지우던 것을 급수 하나만 선택해서 초기화하거나 "전체"를 입력해 다 지울 수 있도록 변경(현재 저장된 급수 목록을 보여주고 입력받음)',
-    'v8.14 — [개선] 사용자 요청으로 "📌 재상담 예정" 목록에서도 전화번호가 학생관리와 일치하면 "✓ 등록완료(전화번호 일치)" 배지를 옆에 표시(기존엔 메인 상담 목록에만 표시됐음)'
+    'v8.14 — [개선] 사용자 요청으로 "📌 재상담 예정" 목록에서도 전화번호가 학생관리와 일치하면 "✓ 등록완료(전화번호 일치)" 배지를 옆에 표시(기존엔 메인 상담 목록에만 표시됐음)',
+    'v8.15 — [개선] 사용자 지적 — 전화번호가 학생관리와 같은데도 상담 건이 "신규 문의"로 남아있던 문제 → 상담일지를 열 때마다 학생관리와 전화번호가 일치하는 상담 건은 상태를 자동으로 "등록 완료"로 바꿔 저장(syncLeadsRegisteredByPhone). 재상담 예정 목록·상태 필터에서도 자동으로 빠지게 됨'
   ];
   console.log(`%c글답 학습기 ${APP_VERSION}`, 'font-weight:bold; font-size:14px; color:#0d1b4b;');
   console.groupCollapsed('%c버전 기록 (클릭해서 펼치기)', 'color:#888; font-size:11px;');
@@ -2958,7 +2959,24 @@
     return window._students.some(s => normalizePhone(s.phone) === norm);
   }
 
+  // 학생관리에 같은 전화번호의 학생이 있으면 그 상담 건의 상태를 자동으로 "등록 완료"로 바꿔 저장한다
+  // (사용자 지적 — 번호가 같은데 "신규 문의"로 남아있으면 재상담 목록·필터에도 계속 섞여 나옴).
+  function syncLeadsRegisteredByPhone() {
+    let changed = false;
+    window._leads.forEach(l => {
+      if (l.status !== 'registered' && isPhoneRegisteredStudent(l.phone)) {
+        l.status = 'registered';
+        changed = true;
+        if (window._fbWriteReady && window._fbWriteReady()) {
+          window._updateByFieldId('geuldap_leads', l.id, { status: 'registered' }).catch(console.error);
+        }
+      }
+    });
+    if (changed) localStorage.setItem('gl', JSON.stringify(window._leads));
+  }
+
   function renderLeads() {
+    syncLeadsRegisteredByPhone();
     const search = (document.getElementById('leadSearch').value || '').trim().toLowerCase();
     const tagFilter = document.getElementById('leadTagFilter').value;
     const statusFilter = document.getElementById('leadStatusFilter').value;
