@@ -2288,7 +2288,7 @@
 
 <script>
   // ===== 버전 정보 (콘솔에서 확인: APP_VERSION 또는 페이지 로드시 자동 출력) =====
-  const APP_VERSION = 'v8.15';
+  const APP_VERSION = 'v8.17';
   const APP_VERSION_LOG = [
     'v1.0 — 탭 구조 + UI 껍데기',
     'v1.1 — AI 문제 생성 + 개념 사다리',
@@ -2446,7 +2446,10 @@
     'v8.12 — [버그 수정] 모바일(네이버 인앱브라우저로 추정)에서 "상담자 즉석 테스트" +카드를 눌러도 아무 반응이 없는 문제 — 원인은 코드 안에 최신 JS 문법(옵셔널 체이닝 ?., 널리시 코얼레싱 ??)이 몇 군데 쓰여있었는데, 오래된 웹뷰 엔진이 이 문법을 못 읽으면 그 문법이 포함된 거대한 <script> 블록 전체가 파싱 실패로 무효화되어 그 안의 모든 함수(openVocabGuestForm 포함)가 정의조차 안 되고, 그래서 그 어떤 버튼도 눌리지 않는 것으로 추정됨 → reconstructText·extractWithGoogleVision·학생목록 렌더링·greetingIndex 등 6곳의 ?.와 2곳의 ??를 전부 구형 브라우저도 읽을 수 있는 방식(&&, 삼항연산자)으로 교체',
     'v8.13 — [개선] 사용자 요청 세 가지 — ①상담일지·무료진단 신청자 목록에 연락처를 학생관리 연락처와 대조해서 일치하면 "✓ 등록완료(전화번호 일치)" 배지를 자동으로 표시(normalizePhone/isPhoneRegisteredStudent 추가, 수동으로 "학생 전환" 안 거쳐도 잡아냄) ②어휘력 진단 시험의 "뜻고르기" 유형을 낱말 하나만 딱 던지던 방식에서, 그 낱말이 자연스럽게 쓰인 완전한 문장을 주고 문맥 속에서 밑줄 친 낱말의 뜻을 추론하게 하는 방식으로 프롬프트 변경 ③"표준 시험지 초기화"가 항상 전체를 지우던 것을 급수 하나만 선택해서 초기화하거나 "전체"를 입력해 다 지울 수 있도록 변경(현재 저장된 급수 목록을 보여주고 입력받음)',
     'v8.14 — [개선] 사용자 요청으로 "📌 재상담 예정" 목록에서도 전화번호가 학생관리와 일치하면 "✓ 등록완료(전화번호 일치)" 배지를 옆에 표시(기존엔 메인 상담 목록에만 표시됐음)',
-    'v8.15 — [개선] 사용자 지적 — 전화번호가 학생관리와 같은데도 상담 건이 "신규 문의"로 남아있던 문제 → 상담일지를 열 때마다 학생관리와 전화번호가 일치하는 상담 건은 상태를 자동으로 "등록 완료"로 바꿔 저장(syncLeadsRegisteredByPhone). 재상담 예정 목록·상태 필터에서도 자동으로 빠지게 됨'
+    'v8.15 — [개선] 사용자 지적 — 전화번호가 학생관리와 같은데도 상담 건이 "신규 문의"로 남아있던 문제 → 상담일지를 열 때마다 학생관리와 전화번호가 일치하는 상담 건은 상태를 자동으로 "등록 완료"로 바꿔 저장(syncLeadsRegisteredByPhone). 재상담 예정 목록·상태 필터에서도 자동으로 빠지게 됨',
+    'v8.16 — [버그 수정] 사용자 지적 — 상단 "무료 진단 신청자" 박스에서 학생관리(예: 초등 정다은)와 전화번호가 일치하는 신청자가 "미등록 N명" 집계에 그대로 잡히고 "상담일지에 등록" 버튼도 남아있던 문제 → 전화번호가 일치하면 미등록 집계에서 제외하고 등록 버튼도 숨김(✓ 등록완료 배지만 표시)'
+,
+    'v8.17 — [개선] 사용자 지적 — 상담 목록의 "홍길동+2"(01089640178)가 학생관리(초등 정다은)와 같은 번호인데 등록완료로 안 잡힘 → 전화번호 비교를 더 너그럽게 변경(phoneKeys): 번호마다 뒤 8자리만 비교하고, 한 칸에 번호가 여러 개 적혀 있어도, +82·앞자리 0 누락·공백/점 구분이 달라도 일치로 인식'
   ];
   console.log(`%c글답 학습기 ${APP_VERSION}`, 'font-weight:bold; font-size:14px; color:#0d1b4b;');
   console.groupCollapsed('%c버전 기록 (클릭해서 펼치기)', 'color:#888; font-size:11px;');
@@ -2893,7 +2896,7 @@
   function renderFreeTestLeads() {
     const list = document.getElementById('freeTestLeadsList');
     const arr = window._freeTestLeads.slice().sort((a,b) => String(b.createdAt||'').localeCompare(String(a.createdAt||'')));
-    const pending = arr.filter(x => !x.converted).length;
+    const pending = arr.filter(x => !x.converted && !isPhoneRegisteredStudent(x.phone)).length;
     document.getElementById('freeTestLeadsCount').textContent = arr.length ? `(전체 ${arr.length}명 · 미등록 ${pending}명)` : '';
     if (!arr.length) { list.textContent = '아직 무료 진단 신청자가 없어요.'; return; }
     const fmtPhone = p => { const s = String(p||'').replace(/[^0-9]/g,''); return s.length===11 ? `${s.slice(0,3)}-${s.slice(3,7)}-${s.slice(7)}` : (s.length===10 ? `${s.slice(0,3)}-${s.slice(3,6)}-${s.slice(6)}` : s); };
@@ -2908,7 +2911,7 @@
           ${isPhoneRegisteredStudent(x.phone) ? '<span style="font-size:12px; color:#fff; background:#2e7d32; padding:2px 8px; border-radius:10px;">✓ 등록완료(전화번호 일치)</span>' : ''}
           ${x.converted
             ? '<span style="font-size:12px; color:#2e7d32;">✅ 상담일지 등록됨</span>'
-            : `<button class="btn btn-primary btn-sm" onclick="convertFreeTestLead('${x._docId}')">상담일지에 등록</button>`}
+            : (isPhoneRegisteredStudent(x.phone) ? '' : `<button class="btn btn-primary btn-sm" onclick="convertFreeTestLead('${x._docId}')">상담일지에 등록</button>`)}
           <button class="btn btn-secondary btn-sm" onclick="deleteFreeTestLead('${x._docId}')">삭제</button>
         </span>
       </div>`).join('');
@@ -2953,10 +2956,22 @@
   // 전화번호 뒷자리 비교용 정규화(하이픈·공백 등 제거) — 상담일지·무료진단 신청자의 연락처를
   // 학생관리에 등록된 연락처와 대조해서, 이미 등록된 학생이면 "등록완료"로 표시해준다(사용자 요청).
   function normalizePhone(p) { return (p || '').replace(/[^0-9]/g, ''); }
+  // 전화번호 비교 키: 한 칸에 번호가 두 개 적혀 있거나(예: "010-1111-2222 / 010-3333-4444"), +82·앞자리 0 누락,
+  // 공백·점 구분 등 표기가 달라도 맞도록 번호마다 뒤 8자리만 뽑아서 비교한다.
+  function phoneKeys(p) {
+    const s = String(p || '');
+    const found = s.match(/(?:\+?82[-\s.]?)?0?1[016789][-\s.]?\d{3,4}[-\s.]?\d{4}/g) || [];
+    let keys = found.map(x => x.replace(/[^0-9]/g, '').slice(-8));
+    if (!keys.length) {
+      const d = normalizePhone(s);
+      if (d.length >= 8) keys = [d.slice(-8)];
+    }
+    return keys;
+  }
   function isPhoneRegisteredStudent(phone) {
-    const norm = normalizePhone(phone);
-    if (!norm) return false;
-    return window._students.some(s => normalizePhone(s.phone) === norm);
+    const keys = phoneKeys(phone);
+    if (!keys.length) return false;
+    return window._students.some(s => phoneKeys(s.phone).some(k => keys.indexOf(k) !== -1));
   }
 
   // 학생관리에 같은 전화번호의 학생이 있으면 그 상담 건의 상태를 자동으로 "등록 완료"로 바꿔 저장한다
