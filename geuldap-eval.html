@@ -804,6 +804,18 @@
           <button class="btn btn-secondary btn-sm" onclick="addExtraAttendanceStudent()">추가</button>
           <button class="btn btn-primary" style="margin-left:auto;" onclick="saveAttendance()">💾 출석 저장</button>
         </div>
+        <div style="margin-top:6px; font-size:12px; color:#aaa;">※ 평일은 따로 저장 안 해도 자동으로 출석 처리되고, 공휴일은 자동으로 비출석 처리돼요.</div>
+        <details style="margin-top:14px;">
+          <summary style="cursor:pointer; font-size:13px; color:#888;">📅 공휴일(자동 비출석 처리일) 관리</summary>
+          <div style="margin-top:10px;">
+            <div id="holidayManagerList" style="margin-bottom:10px;"></div>
+            <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+              <input type="date" id="newHolidayDate" style="width:auto;">
+              <input type="text" id="newHolidayLabel" placeholder="예: 재량휴업일" style="width:auto; min-width:140px;">
+              <button class="btn btn-secondary btn-sm" onclick="addHolidayDate()">+ 추가</button>
+            </div>
+          </div>
+        </details>
       </div>
 
       <div id="attMonthView" style="display:none;">
@@ -2273,6 +2285,7 @@
   }
   renderStudents();
   window._fbReady = true;
+  autoBackfillAttendance();
   // 학원에서 여러 학생이 같은 컴퓨터를 같이 쓸 수 있어서, 새로고침해도 로그인이 유지되면
   // 다음 학생이 로그아웃을 깜빡했을 때 이전 학생 화면을 그대로 보게 되는 위험이 있다.
   // 그래서 이제 새로고침하면 항상 로그인 화면부터 다시 보여주도록, 자동 로그인 복원은 하지 않는다.
@@ -2288,7 +2301,7 @@
 
 <script>
   // ===== 버전 정보 (콘솔에서 확인: APP_VERSION 또는 페이지 로드시 자동 출력) =====
-  const APP_VERSION = 'v8.17';
+  const APP_VERSION = 'v8.19';
   const APP_VERSION_LOG = [
     'v1.0 — 탭 구조 + UI 껍데기',
     'v1.1 — AI 문제 생성 + 개념 사다리',
@@ -2449,7 +2462,9 @@
     'v8.15 — [개선] 사용자 지적 — 전화번호가 학생관리와 같은데도 상담 건이 "신규 문의"로 남아있던 문제 → 상담일지를 열 때마다 학생관리와 전화번호가 일치하는 상담 건은 상태를 자동으로 "등록 완료"로 바꿔 저장(syncLeadsRegisteredByPhone). 재상담 예정 목록·상태 필터에서도 자동으로 빠지게 됨',
     'v8.16 — [버그 수정] 사용자 지적 — 상단 "무료 진단 신청자" 박스에서 학생관리(예: 초등 정다은)와 전화번호가 일치하는 신청자가 "미등록 N명" 집계에 그대로 잡히고 "상담일지에 등록" 버튼도 남아있던 문제 → 전화번호가 일치하면 미등록 집계에서 제외하고 등록 버튼도 숨김(✓ 등록완료 배지만 표시)'
 ,
-    'v8.17 — [개선] 사용자 지적 — 상담 목록의 "홍길동+2"(01089640178)가 학생관리(초등 정다은)와 같은 번호인데 등록완료로 안 잡힘 → 전화번호 비교를 더 너그럽게 변경(phoneKeys): 번호마다 뒤 8자리만 비교하고, 한 칸에 번호가 여러 개 적혀 있어도, +82·앞자리 0 누락·공백/점 구분이 달라도 일치로 인식'
+    'v8.17 — [개선] 사용자 지적 — 상담 목록의 "홍길동+2"(01089640178)가 학생관리(초등 정다은)와 같은 번호인데 등록완료로 안 잡힘 → 전화번호 비교를 더 너그럽게 변경(phoneKeys): 번호마다 뒤 8자리만 비교하고, 한 칸에 번호가 여러 개 적혀 있어도, +82·앞자리 0 누락·공백/점 구분이 달라도 일치로 인식',
+    'v8.18 — [신규] 사용자 요청으로 출석부 자동 저장 도입 — 앱을 열 때마다 지난 최대 60일 중 아직 기록이 없는 날짜를 찾아, 예정된 수업일은 원장님이 따로 저장 안 해도 전원 출석으로, 공휴일은 전원 비출석으로 자동 저장(autoBackfillAttendance). 2026년 확정 공휴일을 기본 내장했고(제헌절 포함, 최근 재지정 확인), 출석부 탭에 "공휴일 관리" 아코디언을 추가해 학원 자체 휴무일(재량휴업 등) 추가·삭제 가능. 자동 저장된 항목은 출석부 화면에 🤖 자동 배지로 표시되고, 원장님이 직접 확인 후 저장하면 그 표시는 사라짐',
+    'v8.19 — [수정] 사용자 지적 — 출석부 자동 저장이 어제까지만 처리하고 오늘은 다음날이 돼야 처리되던 것을, 오늘 날짜도 앱을 여는 즉시 바로 자동 처리되도록 변경(예: 오늘이 12/5면 12/5까지 바로 처리, 12/6은 그날이 돼야 처리됨). 루프 시작을 어제(i=1)에서 오늘(i=0)로 변경'
   ];
   console.log(`%c글답 학습기 ${APP_VERSION}`, 'font-weight:bold; font-size:14px; color:#0d1b4b;');
   console.groupCollapsed('%c버전 기록 (클릭해서 펼치기)', 'color:#888; font-size:11px;');
@@ -2541,6 +2556,100 @@
     return WEEKDAY_KOR[d.getDay()];
   }
 
+  // ===== 출석부 자동 저장(사용자 요청) =====
+  // 평일(수업 예정일)은 원장님이 따로 저장 안 해도 "출석"으로, 공휴일은 "비출석"으로 자동 저장된다.
+  // 2026년 기준 확정된 공휴일 — 법정공휴일 지정 논의 중인 날짜는 제외했고, 토요 수업이 있어서
+  // 토·일요일 공휴일도 포함해뒀다. 학원 자체 휴무일(재량휴업 등)은 아래 관리 UI에서 추가/삭제 가능.
+  const DEFAULT_HOLIDAYS_2026 = [
+    ['2026-01-01','신정'], ['2026-02-16','설날연휴'], ['2026-02-17','설날'], ['2026-02-18','설날연휴'],
+    ['2026-03-01','삼일절'], ['2026-03-02','대체공휴일(삼일절)'], ['2026-05-05','어린이날'],
+    ['2026-05-24','부처님오신날'], ['2026-05-25','대체공휴일(부처님오신날)'], ['2026-06-03','지방선거일'],
+    ['2026-06-06','현충일'], ['2026-07-17','제헌절'], ['2026-08-15','광복절'],
+    ['2026-08-17','대체공휴일(광복절)'], ['2026-09-24','추석연휴'], ['2026-09-25','추석'],
+    ['2026-09-26','추석연휴'], ['2026-10-03','개천절'], ['2026-10-05','대체공휴일(개천절)'],
+    ['2026-10-09','한글날'], ['2026-12-25','크리스마스']
+  ];
+  function getHolidayList() {
+    const as = window._academySettings || {};
+    if (Array.isArray(as.holidays) && as.holidays.length) return as.holidays;
+    return DEFAULT_HOLIDAYS_2026.map(([date,label])=>({date,label}));
+  }
+  async function saveHolidayList(list) {
+    if (!window._academySettings) window._academySettings = {};
+    window._academySettings.holidays = list;
+    localStorage.setItem('gas', JSON.stringify(window._academySettings));
+    if (window._fbWriteReady && window._fbWriteReady()) {
+      try { await window._setDoc(window._doc(window._db, 'geuldap_settings', 'academy'), window._academySettings); }
+      catch(e) { console.error('공휴일 목록 저장 오류', e); }
+    }
+  }
+  function isHolidayDate(dateStr) {
+    return getHolidayList().some(h => h.date === dateStr);
+  }
+  function scheduledStudentsForDate(dateStr) {
+    const wk = weekdayKorFromDateStr(dateStr);
+    return _students.filter(s => s.active !== false && studentScheduleEntries(s).some(e=>e.day===wk));
+  }
+  function addHolidayDate() {
+    const date = document.getElementById('newHolidayDate').value;
+    const label = document.getElementById('newHolidayLabel').value.trim() || '학원 자체 휴무일';
+    if (!date) { alert('날짜를 선택해주세요.'); return; }
+    const list = getHolidayList().slice();
+    if (list.some(h=>h.date===date)) { alert('이미 등록된 날짜예요.'); return; }
+    list.push({ date, label });
+    list.sort((a,b)=>a.date.localeCompare(b.date));
+    saveHolidayList(list);
+    renderHolidayManager();
+  }
+  function removeHolidayDate(date) {
+    saveHolidayList(getHolidayList().filter(h=>h.date!==date));
+    renderHolidayManager();
+  }
+  function renderHolidayManager() {
+    const box = document.getElementById('holidayManagerList');
+    if (!box) return;
+    const list = getHolidayList();
+    box.innerHTML = list.map(h => `
+      <span style="display:inline-flex; align-items:center; gap:4px; background:#fbeaea; color:#a66; font-size:12px; padding:3px 8px; border-radius:10px; margin:2px;">
+        ${h.date} ${h.label} <span style="cursor:pointer; font-weight:700;" onclick="removeHolidayDate('${h.date}')">✕</span>
+      </span>`).join('') || '<span style="color:#aaa; font-size:13px;">등록된 공휴일이 없습니다.</span>';
+  }
+
+  // 아직 저장 안 된 날짜(오늘 포함, 최대 60일 전까지)를 찾아서, 평일은 전원 출석·공휴일은 전원 비출석으로
+  // 자동 저장한다(사용자 요청 — 예: 오늘이 12/5면 12/5까지 자동 처리, 12/6은 그날이 돼야 처리됨).
+  // 앱을 열 때마다 한 번씩 실행되며, 이미 기록이 있는 날짜(수동 저장 포함)는 건드리지 않는다.
+  async function autoBackfillAttendance() {
+    try {
+      const today = new Date();
+      today.setHours(0,0,0,0);
+      const existingDates = new Set(window._attendance.map(a=>a.date));
+      const newRecords = [];
+      for (let i = 0; i <= 60; i++) {
+        const d = new Date(today);
+        d.setDate(d.getDate() - i);
+        const dateStr = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+        if (existingDates.has(dateStr)) continue; // 이미 수동/자동으로 처리된 날은 건드리지 않음
+        const scheduled = scheduledStudentsForDate(dateStr);
+        if (!scheduled.length) continue; // 그 요일에 예정된 학생이 없으면 만들 것도 없음
+        const holiday = isHolidayDate(dateStr);
+        scheduled.forEach(s => {
+          newRecords.push({
+            date: dateStr, studentId: s.id, studentName: s.name, grade: s.grade,
+            present: !holiday, checkInTime: null, checkOutTime: null,
+            autoFilled: true, autoNote: holiday ? '공휴일 자동 처리' : '자동 저장(미확인)'
+          });
+        });
+      }
+      if (!newRecords.length) return;
+      window._attendance.push(...newRecords);
+      localStorage.setItem('ga', JSON.stringify(window._attendance));
+      if (window._fbWriteReady && window._fbWriteReady()) {
+        await Promise.all(newRecords.map(r => window._add(window._col(window._db,'geuldap_attendance'), r).catch(e=>console.error('출석 자동저장 오류', e))));
+      }
+      console.log(`출석부 자동 저장: ${newRecords.length}건(공휴일 비출석 포함)`);
+    } catch(e) { console.error('출석부 자동 백필 오류', e); }
+  }
+
   function loadAttendanceForDate(dateStr) {
     attCurrentDate = dateStr;
     document.getElementById('attDate').value = dateStr;
@@ -2557,14 +2666,14 @@
       const ex = existingMap[s.id];
       const entry = studentScheduleEntries(s).find(e => e.day === wk);
       const timeRange = entry && entry.time ? `${entry.time}~${addMinutesToTime(entry.time, entry.duration)}` : '';
-      rows.push({ studentId: s.id, studentName: s.name, grade: s.grade, scheduled: true, timeRange, startTime: entry ? entry.time : '', present: ex ? ex.present : true, checkInTime: ex?ex.checkInTime:null, checkOutTime: ex?ex.checkOutTime:null });
+      rows.push({ studentId: s.id, studentName: s.name, grade: s.grade, scheduled: true, timeRange, startTime: entry ? entry.time : '', present: ex ? ex.present : true, checkInTime: ex?ex.checkInTime:null, checkOutTime: ex?ex.checkOutTime:null, autoFilled: ex?!!ex.autoFilled:false, autoNote: ex?ex.autoNote:'' });
       seen.add(s.id);
     });
     // 예정에는 없지만 이 날짜에 이미 저장된 기록(예: 추가 등원)이 있는 학생도 이어서 보여준다.
     existing.forEach(a => {
       if (!seen.has(a.studentId)) {
         const s = _students.find(x=>x.id===a.studentId);
-        rows.push({ studentId: a.studentId, studentName: a.studentName, grade: s?s.grade:(a.grade||''), scheduled: false, timeRange: '', startTime: '', present: a.present, checkInTime: a.checkInTime||null, checkOutTime: a.checkOutTime||null });
+        rows.push({ studentId: a.studentId, studentName: a.studentName, grade: s?s.grade:(a.grade||''), scheduled: false, timeRange: '', startTime: '', present: a.present, checkInTime: a.checkInTime||null, checkOutTime: a.checkOutTime||null, autoFilled: !!a.autoFilled, autoNote: a.autoNote||'' });
         seen.add(a.studentId);
       }
     });
@@ -2594,6 +2703,7 @@
               <span style="${r.present?'':'color:#bbb; text-decoration:line-through;'}">${r.studentName} · ${r.grade}${r.timeRange ? ` <span style="color:#999; font-weight:400;">(예정 ${r.timeRange})</span>` : ''}</span>
             </label>
             ${r.scheduled ? '<span style="font-size:11px; color:#4a7c59; background:#eaf3ec; padding:2px 6px; border-radius:6px;">정규</span>' : '<span style="font-size:11px; color:#a66; background:#fbeaea; padding:2px 6px; border-radius:6px;">추가</span>'}
+            ${r.autoFilled ? `<span style="font-size:11px; color:#8a6d00; background:#fff6d9; padding:2px 6px; border-radius:6px;" title="${r.autoNote||''}">🤖 자동</span>` : ''}
             ${!r.scheduled ? `<button class="thumb-remove" style="position:static;" onclick="removeAttendanceRow(${i})">✕</button>` : ''}
           </div>
           <div style="display:flex; align-items:center; gap:6px; margin:6px 0 0 32px; flex-wrap:wrap;">
@@ -5181,7 +5291,7 @@ ${a.name}`;
     if (tab==='quiz') renderQuizStudents();
     if (tab==='records') renderRecordStudents();
     if (tab==='reading') renderReadingStudents();
-    if (tab==='attendance') loadAttendanceForDate(document.getElementById('attDate').value || todayLocalDateStr());
+    if (tab==='attendance') { loadAttendanceForDate(document.getElementById('attDate').value || todayLocalDateStr()); renderHolidayManager(); }
     if (tab==='leads') { renderLeads(); loadFreeTestLeads(); }
     if (tab==='timetable') renderTimetable();
     if (tab==='payments') { const m = document.getElementById('payMonth'); if (!m.value) m.value = todayLocalDateStr().slice(0,7); loadPayments(m.value); }
