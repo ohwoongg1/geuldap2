@@ -2235,7 +2235,7 @@
     if (window._fbWriteReady()) {
       // 표준 시험지도 대상에 포함: 예전엔 빠져 있어서, 서버 저장이 조용히 실패한 시험지가 이 컴퓨터
       // 로컬에만 남아 있으면 free-test.html(서버만 조회)에서 "진단 문항 준비 중"이 뜨는 문제가 있었다.
-      const healTargets = [['geuldap_vocab_records', window._vocabRecords], ['geuldap_materials', window._materials], ['geuldap_vocab_standard_tests', window._vocabStandardTests]];
+      const healTargets = [['geuldap_students', window._students], ['geuldap_vocab_records', window._vocabRecords], ['geuldap_materials', window._materials], ['geuldap_vocab_standard_tests', window._vocabStandardTests]];
       window._healFailures = [];
       for (const [collName, arr] of healTargets) {
         const serverIds = serverIdSets[collName];
@@ -2301,7 +2301,7 @@
 
 <script>
   // ===== 버전 정보 (콘솔에서 확인: APP_VERSION 또는 페이지 로드시 자동 출력) =====
-  const APP_VERSION = 'v8.19';
+  const APP_VERSION = 'v8.20';
   const APP_VERSION_LOG = [
     'v1.0 — 탭 구조 + UI 껍데기',
     'v1.1 — AI 문제 생성 + 개념 사다리',
@@ -2464,7 +2464,8 @@
 ,
     'v8.17 — [개선] 사용자 지적 — 상담 목록의 "홍길동+2"(01089640178)가 학생관리(초등 정다은)와 같은 번호인데 등록완료로 안 잡힘 → 전화번호 비교를 더 너그럽게 변경(phoneKeys): 번호마다 뒤 8자리만 비교하고, 한 칸에 번호가 여러 개 적혀 있어도, +82·앞자리 0 누락·공백/점 구분이 달라도 일치로 인식',
     'v8.18 — [신규] 사용자 요청으로 출석부 자동 저장 도입 — 앱을 열 때마다 지난 최대 60일 중 아직 기록이 없는 날짜를 찾아, 예정된 수업일은 원장님이 따로 저장 안 해도 전원 출석으로, 공휴일은 전원 비출석으로 자동 저장(autoBackfillAttendance). 2026년 확정 공휴일을 기본 내장했고(제헌절 포함, 최근 재지정 확인), 출석부 탭에 "공휴일 관리" 아코디언을 추가해 학원 자체 휴무일(재량휴업 등) 추가·삭제 가능. 자동 저장된 항목은 출석부 화면에 🤖 자동 배지로 표시되고, 원장님이 직접 확인 후 저장하면 그 표시는 사라짐',
-    'v8.19 — [수정] 사용자 지적 — 출석부 자동 저장이 어제까지만 처리하고 오늘은 다음날이 돼야 처리되던 것을, 오늘 날짜도 앱을 여는 즉시 바로 자동 처리되도록 변경(예: 오늘이 12/5면 12/5까지 바로 처리, 12/6은 그날이 돼야 처리됨). 루프 시작을 어제(i=1)에서 오늘(i=0)로 변경'
+    'v8.19 — [수정] 사용자 지적 — 출석부 자동 저장이 어제까지만 처리하고 오늘은 다음날이 돼야 처리되던 것을, 오늘 날짜도 앱을 여는 즉시 바로 자동 처리되도록 변경(예: 오늘이 12/5면 12/5까지 바로 처리, 12/6은 그날이 돼야 처리됨). 루프 시작을 어제(i=1)에서 오늘(i=0)로 변경',
+    'v8.20 — [버그 수정] 사용자 사례(김지유 학생 — PC엔 있는데 모바일엔 안 보임)로 발견 — 학생 신규 등록 저장이 예전 window._fbReady(느리게 true되는 플래그) 기준으로 되어 있어서, 앱을 켜자마자 빠르게 학생을 등록하면 로컬에만 저장되고 서버(Firestore)엔 안 올라가는 버그가 학생관리에만 남아있었음(어휘력·자료실은 예전에 이미 고쳤었음) → window._fbWriteReady()로 교체. 이미 로컬에만 남아있는 학생도 다음 로그인 시 자동 복구되도록 healTargets에 geuldap_students 추가'
   ];
   console.log(`%c글답 학습기 ${APP_VERSION}`, 'font-weight:bold; font-size:14px; color:#0d1b4b;');
   console.groupCollapsed('%c버전 기록 (클릭해서 펼치기)', 'color:#888; font-size:11px;');
@@ -5638,7 +5639,7 @@ ${a.name}`;
       const s = { id: Date.now().toString(), ...fields };
       _students.push(s);
       localStorage.setItem('gs', JSON.stringify(_students));
-      if (window._fbReady) window._add(window._col(window._db,'geuldap_students'), s).catch(console.error);
+      if (window._fbWriteReady && window._fbWriteReady()) window._add(window._col(window._db,'geuldap_students'), s).catch(console.error);
     }
     closeModal();
     renderStudents();
