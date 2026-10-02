@@ -649,6 +649,11 @@
         <div style="font-size:12px; color:#888; margin-bottom:10px;">학생이 직접 보는 내용이에요(학생 포털에도 노출됩니다). 전체를 고치는 대신, 이번 글에서 딱 한 문장만 골라 더 나은 표현을 보여주고, 다음 글에서 신경 쓸 목표 하나를 제안해요.</div>
         <div id="evalImprovementBody"></div>
       </div>
+      <div class="card" id="evalParagraphGuideCard" style="display:none;">
+        <div class="card-title">🧭 단락 보완 가이드 (선생님 전용)</div>
+        <div style="font-size:12px; color:#888; margin-bottom:10px;">선생님만 보는 지도 참고용이에요(학생 포털·학부모 보고서에는 노출되지 않습니다). 완성된 문장이 아니라, 조금이라도 보완하면 좋을 자리에 어떤 내용을 써보면 좋을지 안내만 들어있어요(《 》 표시 부분, 없으면 안 보임). 그대로 베껴 쓰게 하지 말고, 그 자리에서 학생과 대화하며 직접 채우도록 지도해주세요.</div>
+        <div id="evalParagraphGuideBody" style="line-height:1.9;"></div>
+      </div>
       <div class="card">
         <div class="card-title">학부모 보고서에 포함할 코멘트 선택</div>
         <div style="font-size:12px; color:#888; margin-bottom:10px;">체크한 것만 학부모 보고서에 들어가요. 체크 안 하면 다듬어진 글 내용만 전달돼요. 체크한 문구는 아래에서 자유롭게 고칠 수 있어요.</div>
@@ -663,11 +668,13 @@
       </div>
       <div style="display:flex;gap:10px;justify-content:flex-end;margin-bottom:20px;">
         <button class="btn btn-secondary" onclick="resetUpload()">새 글 평가</button>
+        <button class="btn btn-secondary" onclick="printEvalResult()">🖨️ 평가 결과 인쇄</button>
         <button class="btn btn-secondary" onclick="openParentReport(currentEval)">👪 학부모 보고서</button>
         <button class="btn btn-primary" onclick="saveRecord()">💾 기록 저장</button>
       </div>
     </div>
   </div>
+  <div id="evalPrintArea" style="display:none;"></div>
 
   <!-- 문제 채점 -->
   <div class="page" id="page-quiz">
@@ -1900,6 +1907,10 @@
       <div class="card-title">✏️ 보완할 점</div>
       <div id="recordDetailImprovementBody"></div>
     </div>
+    <div class="card" id="recordDetailParagraphGuideCard" style="display:none;">
+      <div class="card-title">🧭 단락 보완 가이드 (선생님 전용)</div>
+      <div id="recordDetailParagraphGuideBody" style="line-height:1.9;"></div>
+    </div>
     <div class="card"><div class="card-title">원본 글</div><div id="recordDetailContent" style="white-space:pre-wrap; font-size:14px; line-height:1.7;"></div></div>
     <div class="modal-actions">
       <button class="btn btn-danger" onclick="deleteRecordFromDetail()">삭제</button>
@@ -2301,7 +2312,7 @@
 
 <script>
   // ===== 버전 정보 (콘솔에서 확인: APP_VERSION 또는 페이지 로드시 자동 출력) =====
-  const APP_VERSION = 'v8.20';
+  const APP_VERSION = 'v8.23';
   const APP_VERSION_LOG = [
     'v1.0 — 탭 구조 + UI 껍데기',
     'v1.1 — AI 문제 생성 + 개념 사다리',
@@ -2465,7 +2476,10 @@
     'v8.17 — [개선] 사용자 지적 — 상담 목록의 "홍길동+2"(01089640178)가 학생관리(초등 정다은)와 같은 번호인데 등록완료로 안 잡힘 → 전화번호 비교를 더 너그럽게 변경(phoneKeys): 번호마다 뒤 8자리만 비교하고, 한 칸에 번호가 여러 개 적혀 있어도, +82·앞자리 0 누락·공백/점 구분이 달라도 일치로 인식',
     'v8.18 — [신규] 사용자 요청으로 출석부 자동 저장 도입 — 앱을 열 때마다 지난 최대 60일 중 아직 기록이 없는 날짜를 찾아, 예정된 수업일은 원장님이 따로 저장 안 해도 전원 출석으로, 공휴일은 전원 비출석으로 자동 저장(autoBackfillAttendance). 2026년 확정 공휴일을 기본 내장했고(제헌절 포함, 최근 재지정 확인), 출석부 탭에 "공휴일 관리" 아코디언을 추가해 학원 자체 휴무일(재량휴업 등) 추가·삭제 가능. 자동 저장된 항목은 출석부 화면에 🤖 자동 배지로 표시되고, 원장님이 직접 확인 후 저장하면 그 표시는 사라짐',
     'v8.19 — [수정] 사용자 지적 — 출석부 자동 저장이 어제까지만 처리하고 오늘은 다음날이 돼야 처리되던 것을, 오늘 날짜도 앱을 여는 즉시 바로 자동 처리되도록 변경(예: 오늘이 12/5면 12/5까지 바로 처리, 12/6은 그날이 돼야 처리됨). 루프 시작을 어제(i=1)에서 오늘(i=0)로 변경',
-    'v8.20 — [버그 수정] 사용자 사례(김지유 학생 — PC엔 있는데 모바일엔 안 보임)로 발견 — 학생 신규 등록 저장이 예전 window._fbReady(느리게 true되는 플래그) 기준으로 되어 있어서, 앱을 켜자마자 빠르게 학생을 등록하면 로컬에만 저장되고 서버(Firestore)엔 안 올라가는 버그가 학생관리에만 남아있었음(어휘력·자료실은 예전에 이미 고쳤었음) → window._fbWriteReady()로 교체. 이미 로컬에만 남아있는 학생도 다음 로그인 시 자동 복구되도록 healTargets에 geuldap_students 추가'
+    'v8.20 — [버그 수정] 사용자 사례(김지유 학생 — PC엔 있는데 모바일엔 안 보임)로 발견 — 학생 신규 등록 저장이 예전 window._fbReady(느리게 true되는 플래그) 기준으로 되어 있어서, 앱을 켜자마자 빠르게 학생을 등록하면 로컬에만 저장되고 서버(Firestore)엔 안 올라가는 버그가 학생관리에만 남아있었음(어휘력·자료실은 예전에 이미 고쳤었음) → window._fbWriteReady()로 교체. 이미 로컬에만 남아있는 학생도 다음 로그인 시 자동 복구되도록 healTargets에 geuldap_students 추가',
+    'v8.21 — [신규] 사용자 요청으로 "단락 보완 가이드"(교사 전용) 기능 추가 — AI 평가 시 teacherParagraphGuide 필드를 새로 받아, 분량·내용이 부족한 글의 전체 본문 속 적절한 자리에 《 이 자리에 ~한 경험을 2~3문장으로 써보세요 》 식의 안내 문구를 끼워 넣음(완성된 문장을 대신 써주는 게 아니라 무엇을 쓰면 좋을지 안내만). 평가 화면과 기록 상세보기에 "🧭 단락 보완 가이드(선생님 전용)" 카드로 별도 표시되며, 《 》 부분은 노란 배경으로 강조. 기존 "보완할 점"(학생도 보는 카드)과 명확히 분리된 완전히 새로운 카드로, 학생 포털·학부모 보고서에는 절대 노출되지 않음(해당 렌더 함수를 그 두 곳에서 호출하지 않음으로써 원천 차단)',
+    'v8.22 — [개선] 사용자 의견 — "단락 보완 가이드"를 "또래 평균보다 부족한 경우에만"으로 제한했던 걸, 어차피 선생님이 직접 보고 판단할 거라서 그 기준이 불필요하다는 의견 반영 — 조금이라도 보완하면 좋을 부분이 있으면 사소해도 보여주고, 정말 없으면(기존처럼) 빈 문자열로 두도록 프롬프트 완화',
+    'v8.23 — [신규] 사용자 요청으로 "🖨️ 평가 결과 인쇄" 버튼 추가 — 항목별 점수·종합 평가·이전 글과 비교·보완할 점·단락 보완 가이드(선생님 전용)까지 전부 포함한 교사용 인쇄물을 생성(printEvalResult). 기존 학부모 보고서 인쇄와는 별개 기능이며, 이건 교사가 수업 중 직접 들고 지도하는 용도라 단락 보완 가이드도 그대로 포함됨(학부모 보고서 인쇄에는 여전히 미포함)'
   ];
   console.log(`%c글답 학습기 ${APP_VERSION}`, 'font-weight:bold; font-size:14px; color:#0d1b4b;');
   console.groupCollapsed('%c버전 기록 (클릭해서 펼치기)', 'color:#888; font-size:11px;');
@@ -8002,7 +8016,7 @@ ${s.name} 학생의 이번 어휘력 진단 결과를 안내드립니다.
     setLoading(true,'AI가 글을 분석하고 있습니다...');
     document.getElementById('evalResult').style.display='none';
     try {
-      const prompt = `당신은 22년 경력의 국어 교사입니다. ${selectedStudent.grade} 학생의 ${type} 글을, 그 학년 눈높이에 맞춰 정직하고 구체적으로, 그러나 아이가 자신감을 잃지 않도록 따뜻한 태도로 평가해주세요.\n\n채점 기준: 점수는 '완성된 작가의 글'이 아니라 '${selectedStudent.grade} 또래 학생의 평균적인 글'을 기준(약 78~82점)으로 삼아 후하게 매기세요. 또래 대비 잘한 점이 있으면 그만큼 높게 주고, 부족한 점이 있어도 사소한 흠 때문에 점수를 크게 깎지 마세요. 아이들이 점수를 보고 의욕을 잃지 않도록, 애매하면 낮은 쪽보다 높은 쪽으로 판단하세요.\n채점 항목에 맞춤법·오타는 절대 포함하지 마세요. 사진으로 옮겨 적는 과정(OCR)에서 손글씨가 실제와 다르게 읽혔을 가능성이 있어, 맞춤법·오타 지적은 부정확하고 아이에게 억울할 수 있습니다. strengths·improvements·summary 어디에서도 맞춤법·띄어쓰기·오타를 언급하지 마세요.\n피드백 원칙: strengths(잘된 점)는 반드시 이 글에서 실제로 찾을 수 있는 구체적인 부분을 근거로 들어 작성하고, improvements(아쉬운 점)는 비난이 아니라 다음에 시도해볼 만한 방향으로 제시하세요(맞춤법 관련 내용 제외). encouragement(한마디)는 학생을 진심으로 격려하는 내용으로 작성하세요. 학생을 부를 때는 성을 빼고 이름만 불러주세요(예: 학생 이름이 '구아라'면 '구아라야'가 아니라 '아라야'로).\n\ncorrectedContent: 아래 [학생 글]의 띄어쓰기와 명백한 맞춤법 오류만 조용히 자연스럽게 고친 전체 글입니다(이건 지적이 아니라 그냥 매끄럽게 다듬는 용도입니다). 문장 내용, 표현, 문체는 절대 바꾸지 마세요.\n\nimprovementExample(다음 글에 바로 쓸 수 있는 첨삭 예시 — 아이가 직접 봅니다): [학생 글] 안에서 표현이 평이하거나 더 생생하게 쓸 수 있는 문장을 딱 1개만 원문 그대로 골라서 original에 넣고, 같은 의미를 살리면서 더 좋은 표현으로 다듬은 문장을 improved에 넣으세요. 맞춤법 교정이 아니라 표현력·구체성을 살리는 방향으로 고치세요(예: 막연한 감정 표현을 구체적인 장면 묘사로, 단조로운 서술을 생생한 표현으로). 그리고 문장 전체를 다시 읽지 않아도 뭐가 바뀌었는지 한눈에 보이도록, original 중에서 실제로 바뀐 부분만 짧게 그대로 잘라내 originalHighlight에 넣고, improved 중에서 그 자리에 해당하는 새로운 표현만 짧게 잘라내 improvedHighlight에 넣으세요(둘 다 반드시 original/improved 문장 안에 토씨 하나 안 틀리고 그대로 들어있는 부분 문자열이어야 하며, 문장 전체를 넣지 말고 정말 바뀐 낱말·구절만 넣을 것). reason에는 왜 이렇게 바꾸면 더 좋은지 아이 눈높이로 한 문장 설명을 넣으세요. 반드시 [학생 글]에 실제로 있는 문장을 그대로 인용하세요(지어내지 말 것).\n\nnextGoal(다음 글쓰기 목표 — 아이가 직접 봅니다): 이 글 전체에서 반복되는 패턴 하나를 찾아(예: 접속사를 계속 같은 것만 씀, 문장이 다 비슷한 길이임, 대화 없이 서술만 이어짐 등) 다음 글을 쓸 때 딱 하나만 신경 쓰면 되는 짧고 구체적인 목표 한 문장으로 만드세요. 친근한 말투로("다음 글에서는 ~해보세요" 식) 작성하고, 너무 많은 걸 요구하지 말고 정말 한 가지만 담으세요.\n\nparentComments: 학부모님께 이 학생의 글에 대해 전달할 만한 구체적인 코멘트 문장을 5~8개 만들어주세요. 정중한 습니다체로, 이 글에서 실제로 확인할 수 있는 내용을 근거로 들어 작성하세요(추상적인 칭찬 금지, 맞춤법·오타 언급 금지). 잘된 점, 흥미로운 시도 등 긍정적인 내용 위주로 섞어서 만드세요. 아쉬운 점이나 개선이 필요한 부분을 언급할 때는 학부모에게 '~하면 좋겠습니다', '~연습을 추천합니다'처럼 학부모가 직접 지도해야 하는 것처럼 쓰지 말고, '앞으로 ~하도록 지도하겠습니다', '~부분을 좀 더 살펴보겠습니다', '~하도록 도와주겠습니다'처럼 선생님이 주도적으로 지도하겠다는 어투로 작성하세요. 선생님이 이 중 마음에 드는 것만 골라 학부모에게 보낼 예정이니, 각 문장은 그 자체로 완결된 하나의 코멘트여야 합니다.\n\n학생: ${selectedStudent.name} (${selectedStudent.grade})\n글 종류: ${type}${topic?'\n주제: '+topic:''}\n${prevInfo}\n\n[학생 글]\n${content}\n\n아래 JSON 형식으로만 응답하세요:\n{"title":"글 제목","scores":{"논리성":점수,"소재참신성":점수,"어휘풍부성":점수,"문장구성력":점수,"표현다양성":점수,"주제일관성":점수,"감수성창의성":점수},"strengths":["잘된 점1","잘된 점2","잘된 점3"],"improvements":["아쉬운 점1","아쉬운 점2"],"summary":"전체 총평 3-4문장","compare":"이전 글과 비교 또는 앞으로 방향","encouragement":"학생에게 한마디","correctedContent":"띄어쓰기·맞춤법만 고친 전체 글","improvementExample":{"original":"원문에서 그대로 인용한 문장","originalHighlight":"original 중 실제로 바뀐 짧은 부분","improved":"더 좋게 다듬은 문장","improvedHighlight":"improved 중 새로 바뀐 짧은 부분","reason":"왜 이렇게 바꾸면 좋은지 한 문장"},"nextGoal":"다음 글쓰기 목표 한 문장","parentComments":["코멘트1","코멘트2","코멘트3","코멘트4","코멘트5"]}`;
+      const prompt = `당신은 22년 경력의 국어 교사입니다. ${selectedStudent.grade} 학생의 ${type} 글을, 그 학년 눈높이에 맞춰 정직하고 구체적으로, 그러나 아이가 자신감을 잃지 않도록 따뜻한 태도로 평가해주세요.\n\n채점 기준: 점수는 '완성된 작가의 글'이 아니라 '${selectedStudent.grade} 또래 학생의 평균적인 글'을 기준(약 78~82점)으로 삼아 후하게 매기세요. 또래 대비 잘한 점이 있으면 그만큼 높게 주고, 부족한 점이 있어도 사소한 흠 때문에 점수를 크게 깎지 마세요. 아이들이 점수를 보고 의욕을 잃지 않도록, 애매하면 낮은 쪽보다 높은 쪽으로 판단하세요.\n채점 항목에 맞춤법·오타는 절대 포함하지 마세요. 사진으로 옮겨 적는 과정(OCR)에서 손글씨가 실제와 다르게 읽혔을 가능성이 있어, 맞춤법·오타 지적은 부정확하고 아이에게 억울할 수 있습니다. strengths·improvements·summary 어디에서도 맞춤법·띄어쓰기·오타를 언급하지 마세요.\n피드백 원칙: strengths(잘된 점)는 반드시 이 글에서 실제로 찾을 수 있는 구체적인 부분을 근거로 들어 작성하고, improvements(아쉬운 점)는 비난이 아니라 다음에 시도해볼 만한 방향으로 제시하세요(맞춤법 관련 내용 제외). encouragement(한마디)는 학생을 진심으로 격려하는 내용으로 작성하세요. 학생을 부를 때는 성을 빼고 이름만 불러주세요(예: 학생 이름이 '구아라'면 '구아라야'가 아니라 '아라야'로).\n\ncorrectedContent: 아래 [학생 글]의 띄어쓰기와 명백한 맞춤법 오류만 조용히 자연스럽게 고친 전체 글입니다(이건 지적이 아니라 그냥 매끄럽게 다듬는 용도입니다). 문장 내용, 표현, 문체는 절대 바꾸지 마세요.\n\nimprovementExample(다음 글에 바로 쓸 수 있는 첨삭 예시 — 아이가 직접 봅니다): [학생 글] 안에서 표현이 평이하거나 더 생생하게 쓸 수 있는 문장을 딱 1개만 원문 그대로 골라서 original에 넣고, 같은 의미를 살리면서 더 좋은 표현으로 다듬은 문장을 improved에 넣으세요. 맞춤법 교정이 아니라 표현력·구체성을 살리는 방향으로 고치세요(예: 막연한 감정 표현을 구체적인 장면 묘사로, 단조로운 서술을 생생한 표현으로). 그리고 문장 전체를 다시 읽지 않아도 뭐가 바뀌었는지 한눈에 보이도록, original 중에서 실제로 바뀐 부분만 짧게 그대로 잘라내 originalHighlight에 넣고, improved 중에서 그 자리에 해당하는 새로운 표현만 짧게 잘라내 improvedHighlight에 넣으세요(둘 다 반드시 original/improved 문장 안에 토씨 하나 안 틀리고 그대로 들어있는 부분 문자열이어야 하며, 문장 전체를 넣지 말고 정말 바뀐 낱말·구절만 넣을 것). reason에는 왜 이렇게 바꾸면 더 좋은지 아이 눈높이로 한 문장 설명을 넣으세요. 반드시 [학생 글]에 실제로 있는 문장을 그대로 인용하세요(지어내지 말 것).\n\nnextGoal(다음 글쓰기 목표 — 아이가 직접 봅니다): 이 글 전체에서 반복되는 패턴 하나를 찾아(예: 접속사를 계속 같은 것만 씀, 문장이 다 비슷한 길이임, 대화 없이 서술만 이어짐 등) 다음 글을 쓸 때 딱 하나만 신경 쓰면 되는 짧고 구체적인 목표 한 문장으로 만드세요. 친근한 말투로("다음 글에서는 ~해보세요" 식) 작성하고, 너무 많은 걸 요구하지 말고 정말 한 가지만 담으세요.\n\nteacherParagraphGuide(선생님만 보는 지도 참고용 — 학생·학부모에게는 절대 보여주지 않습니다): 이 글을 보고 조금이라도 더 보완하면 좋겠다 싶은 부분이 있으면 작성하세요(또래 평균과 비교해서 판단할 필요 없이, 선생님이 직접 보고 판단할 것이므로 사소한 것도 괜찮습니다). correctedContent 전체 글을 그대로 사용하되, 내용을 보강하면 좋을 자리(단락과 단락 사이, 또는 한 단락 안에서 설명이 빈약한 지점)에 《 》 기호로 감싼 안내 문구를 끼워 넣어 하나의 완성된 문자열로 만드세요. 절대로 완성된 문장을 대신 써주지 말고, 그 자리에 어떤 내용을 어느 정도 분량으로 쓰면 좋을지만 구체적으로 안내하세요(예: 《 이 자리에 그때 느꼈던 감정을 2~3문장으로 구체적으로 써보세요 》, 《 이 자리에 그 상황을 더 자세히 묘사하는 문장을 2~3개 추가해보세요 》, 《 이 자리에 왜 그렇게 생각했는지 이유를 1~2문장 덧붙여보세요 》). 한 글에 2~4개 정도만 넣고, 이미 충분히 잘 쓴 글이면 빈 문자열("")로 두세요.\n\nparentComments: 학부모님께 이 학생의 글에 대해 전달할 만한 구체적인 코멘트 문장을 5~8개 만들어주세요. 정중한 습니다체로, 이 글에서 실제로 확인할 수 있는 내용을 근거로 들어 작성하세요(추상적인 칭찬 금지, 맞춤법·오타 언급 금지). 잘된 점, 흥미로운 시도 등 긍정적인 내용 위주로 섞어서 만드세요. 아쉬운 점이나 개선이 필요한 부분을 언급할 때는 학부모에게 '~하면 좋겠습니다', '~연습을 추천합니다'처럼 학부모가 직접 지도해야 하는 것처럼 쓰지 말고, '앞으로 ~하도록 지도하겠습니다', '~부분을 좀 더 살펴보겠습니다', '~하도록 도와주겠습니다'처럼 선생님이 주도적으로 지도하겠다는 어투로 작성하세요. 선생님이 이 중 마음에 드는 것만 골라 학부모에게 보낼 예정이니, 각 문장은 그 자체로 완결된 하나의 코멘트여야 합니다.\n\n학생: ${selectedStudent.name} (${selectedStudent.grade})\n글 종류: ${type}${topic?'\n주제: '+topic:''}\n${prevInfo}\n\n[학생 글]\n${content}\n\n아래 JSON 형식으로만 응답하세요:\n{"title":"글 제목","scores":{"논리성":점수,"소재참신성":점수,"어휘풍부성":점수,"문장구성력":점수,"표현다양성":점수,"주제일관성":점수,"감수성창의성":점수},"strengths":["잘된 점1","잘된 점2","잘된 점3"],"improvements":["아쉬운 점1","아쉬운 점2"],"summary":"전체 총평 3-4문장","compare":"이전 글과 비교 또는 앞으로 방향","encouragement":"학생에게 한마디","correctedContent":"띄어쓰기·맞춤법만 고친 전체 글","improvementExample":{"original":"원문에서 그대로 인용한 문장","originalHighlight":"original 중 실제로 바뀐 짧은 부분","improved":"더 좋게 다듬은 문장","improvedHighlight":"improved 중 새로 바뀐 짧은 부분","reason":"왜 이렇게 바꾸면 좋은지 한 문장"},"nextGoal":"다음 글쓰기 목표 한 문장","teacherParagraphGuide":"선생님 전용 단락 보완 가이드가 삽입된 전체 글(필요 없으면 빈 문자열)","parentComments":["코멘트1","코멘트2","코멘트3","코멘트4","코멘트5"]}`;
 
       const rawText = await callGemini(prompt);
       const text = rawText.replace(/```json|```/g,'').trim();
@@ -8335,6 +8349,49 @@ ${s.name} 학생의 이번 어휘력 진단 결과를 안내드립니다.
     document.getElementById('evalImprovementBody').innerHTML = evalImprovementHTML(e);
   }
 
+  // 선생님 전용 단락 보완 가이드 — 《 》 안의 안내 문구만 눈에 띄게 강조해서 보여준다.
+  // 학생 포털·학부모 보고서에서는 이 함수를 절대 호출하지 않는다(의도적으로 분리된 카드).
+  function teacherParagraphGuideHTML(e) {
+    const raw = e.teacherParagraphGuide || '';
+    if (!raw.trim()) return '';
+    const escaped = escapeHtml(raw);
+    return escaped.replace(/《([^》]*)》/g,
+      '<span style="display:inline-block; background:#fff3cd; border:1px dashed #c5a149; color:#8a6d00; padding:2px 8px; border-radius:6px; margin:2px 0; font-size:13px;">《 $1 》</span>'
+    ).replace(/\n/g, '<br>');
+  }
+  function renderEvalParagraphGuide(e) {
+    const card = document.getElementById('evalParagraphGuideCard');
+    if (!card) return;
+    const html = teacherParagraphGuideHTML(e);
+    if (!html) { card.style.display = 'none'; return; }
+    card.style.display = '';
+    document.getElementById('evalParagraphGuideBody').innerHTML = html;
+  }
+
+  // 선생님이 종이로 들고 바로 지도할 수 있도록 "평가 결과" 화면 전체(단락 보완 가이드 포함)를
+  // 인쇄한다 — 학부모 보고서 인쇄와는 별개로, 이건 교사용이라 단락 보완 가이드도 그대로 들어간다.
+  function printEvalResult() {
+    const s = selectedStudent;
+    const section = (title, bodyHtml) => bodyHtml ? `<div style="margin-bottom:18px;"><div style="font-weight:700; font-size:14px; color:#0d6b6b; margin-bottom:6px;">${title}</div><div style="font-size:14px; line-height:1.7;">${bodyHtml}</div></div>` : '';
+    const scoreHtml = document.getElementById('scoreGrid').innerHTML;
+    const summaryHtml = document.getElementById('evalSummary').innerHTML;
+    const compareHtml = document.getElementById('evalCompare').innerHTML;
+    const improvementHtml = document.getElementById('evalImprovementCard').style.display !== 'none' ? document.getElementById('evalImprovementBody').innerHTML : '';
+    const guideHtml = document.getElementById('evalParagraphGuideCard').style.display !== 'none' ? document.getElementById('evalParagraphGuideBody').innerHTML : '';
+    const content = `
+      ${vocabPrintFrameOpen('글쓰기 평가 결과 (교사용)')}
+      <div style="text-align:center; font-size:13px; color:#888; margin-bottom:18px;">${s?s.name:''} 학생 · ${todayLocalDateStr()}</div>
+      ${section('항목별 점수', `<div style="display:grid; grid-template-columns:repeat(2,1fr); gap:8px;">${scoreHtml}</div>`)}
+      ${section('종합 평가', summaryHtml)}
+      ${section('이전 글과 비교', compareHtml)}
+      ${section('✏️ 보완할 점', improvementHtml)}
+      ${section('🧭 단락 보완 가이드 (선생님 전용)', guideHtml)}
+      ${VOCAB_PRINT_FRAME_CLOSE}
+    `;
+    document.getElementById('evalPrintArea').innerHTML = content;
+    printVocabHTML('evalPrintArea');
+  }
+
   function renderEval() {
     const e = currentEval;
     document.getElementById('evalHeader').innerHTML = evalHeaderHTML(e);
@@ -8342,6 +8399,7 @@ ${s.name} 학생의 이번 어휘력 진단 결과를 안내드립니다.
     document.getElementById('evalSummary').innerHTML = evalSummaryHTML(e);
     document.getElementById('evalCompare').innerHTML=`<div class="eval-text">${e.compare}</div>`;
     renderEvalImprovement(e);
+    renderEvalParagraphGuide(e);
     renderParentComments(e);
     const isDone = e.completionStatus !== '미완성';
     document.getElementById('completionStatusDone').checked = isDone;
@@ -8584,6 +8642,7 @@ ${s.name} 학생의 이번 어휘력 진단 결과를 안내드립니다.
       document.getElementById('recordDetailSummary').innerHTML = `<div class="eval-text">글쓰기 평가 없이 독서 기록으로만 저장된 항목입니다.${r.genre?' (장르: '+r.genre+')':''}</div>`;
       document.getElementById('recordDetailCompare').innerHTML = '';
       document.getElementById('recordDetailImprovementCard').style.display = 'none';
+      document.getElementById('recordDetailParagraphGuideCard').style.display = 'none';
       document.getElementById('recordDetailContent').textContent = '';
     } else {
       document.getElementById('recordDetailHeader').innerHTML = evalHeaderHTML(r);
@@ -8593,6 +8652,9 @@ ${s.name} 학생의 이번 어휘력 진단 결과를 안내드립니다.
       const hasImprovement = (r.improvementExample && r.improvementExample.original) || r.nextGoal;
       document.getElementById('recordDetailImprovementCard').style.display = hasImprovement ? '' : 'none';
       if (hasImprovement) document.getElementById('recordDetailImprovementBody').innerHTML = evalImprovementHTML(r);
+      const guideHtml = teacherParagraphGuideHTML(r);
+      document.getElementById('recordDetailParagraphGuideCard').style.display = guideHtml ? '' : 'none';
+      if (guideHtml) document.getElementById('recordDetailParagraphGuideBody').innerHTML = guideHtml;
       document.getElementById('recordDetailContent').textContent = r.content || '(저장된 원본 글이 없습니다)';
     }
     document.querySelectorAll('#recordDetailModal .modal-actions .btn-secondary[onclick*="openParentReport"], #recordDetailModal .modal-actions .btn-primary[onclick*="editAndReevaluate"]').forEach(btn => {
