@@ -2183,6 +2183,13 @@
     snap.forEach(d => jobs.push(deleteDoc(d.ref)));
     await Promise.all(jobs);
   };
+  window._deleteAutoAttendance = async function(studentId, date) {
+    const q = query(collection(db, 'geuldap_attendance'), where('studentId', '==', studentId), where('date', '==', date));
+    const snap = await getDocs(q);
+    const jobs = [];
+    snap.forEach(d => { const v = d.data(); if (v && v.autoFilled) jobs.push(deleteDoc(d.ref)); });
+    await Promise.all(jobs);
+  };
   window._updateByFieldId = async function(collName, id, data) {
     const q = query(collection(db, collName), where('id', '==', id));
     const snap = await getDocs(q);
@@ -2312,7 +2319,7 @@
 
 <script>
   // ===== 버전 정보 (콘솔에서 확인: APP_VERSION 또는 페이지 로드시 자동 출력) =====
-  const APP_VERSION = 'v8.23';
+  const APP_VERSION = 'v8.24';
   const APP_VERSION_LOG = [
     'v1.0 — 탭 구조 + UI 껍데기',
     'v1.1 — AI 문제 생성 + 개념 사다리',
@@ -2479,7 +2486,8 @@
     'v8.20 — [버그 수정] 사용자 사례(김지유 학생 — PC엔 있는데 모바일엔 안 보임)로 발견 — 학생 신규 등록 저장이 예전 window._fbReady(느리게 true되는 플래그) 기준으로 되어 있어서, 앱을 켜자마자 빠르게 학생을 등록하면 로컬에만 저장되고 서버(Firestore)엔 안 올라가는 버그가 학생관리에만 남아있었음(어휘력·자료실은 예전에 이미 고쳤었음) → window._fbWriteReady()로 교체. 이미 로컬에만 남아있는 학생도 다음 로그인 시 자동 복구되도록 healTargets에 geuldap_students 추가',
     'v8.21 — [신규] 사용자 요청으로 "단락 보완 가이드"(교사 전용) 기능 추가 — AI 평가 시 teacherParagraphGuide 필드를 새로 받아, 분량·내용이 부족한 글의 전체 본문 속 적절한 자리에 《 이 자리에 ~한 경험을 2~3문장으로 써보세요 》 식의 안내 문구를 끼워 넣음(완성된 문장을 대신 써주는 게 아니라 무엇을 쓰면 좋을지 안내만). 평가 화면과 기록 상세보기에 "🧭 단락 보완 가이드(선생님 전용)" 카드로 별도 표시되며, 《 》 부분은 노란 배경으로 강조. 기존 "보완할 점"(학생도 보는 카드)과 명확히 분리된 완전히 새로운 카드로, 학생 포털·학부모 보고서에는 절대 노출되지 않음(해당 렌더 함수를 그 두 곳에서 호출하지 않음으로써 원천 차단)',
     'v8.22 — [개선] 사용자 의견 — "단락 보완 가이드"를 "또래 평균보다 부족한 경우에만"으로 제한했던 걸, 어차피 선생님이 직접 보고 판단할 거라서 그 기준이 불필요하다는 의견 반영 — 조금이라도 보완하면 좋을 부분이 있으면 사소해도 보여주고, 정말 없으면(기존처럼) 빈 문자열로 두도록 프롬프트 완화',
-    'v8.23 — [신규] 사용자 요청으로 "🖨️ 평가 결과 인쇄" 버튼 추가 — 항목별 점수·종합 평가·이전 글과 비교·보완할 점·단락 보완 가이드(선생님 전용)까지 전부 포함한 교사용 인쇄물을 생성(printEvalResult). 기존 학부모 보고서 인쇄와는 별개 기능이며, 이건 교사가 수업 중 직접 들고 지도하는 용도라 단락 보완 가이드도 그대로 포함됨(학부모 보고서 인쇄에는 여전히 미포함)'
+    'v8.23 — [신규] 사용자 요청으로 "🖨️ 평가 결과 인쇄" 버튼 추가 — 항목별 점수·종합 평가·이전 글과 비교·보완할 점·단락 보완 가이드(선생님 전용)까지 전부 포함한 교사용 인쇄물을 생성(printEvalResult). 기존 학부모 보고서 인쇄와는 별개 기능이며, 이건 교사가 수업 중 직접 들고 지도하는 용도라 단락 보완 가이드도 그대로 포함됨(학부모 보고서 인쇄에는 여전히 미포함)',
+    'v8.24 — [수정] 새로 입학한 학생이 입학일 이전 날짜에도 출석으로 저장되던 문제 수정 — 자동 출석 저장은 입학일 당일부터만 적용, 출석부 화면에도 입학 전 날짜엔 표시 안 함, 이미 잘못 만들어진 입학일 이전 자동 기록(autoFilled)은 접속 시 자동 삭제(직접 저장한 기록은 유지), 같은 날 다른 학생 기록이 있어도 학생별로 누락분 채움'
   ];
   console.log(`%c글답 학습기 ${APP_VERSION}`, 'font-weight:bold; font-size:14px; color:#0d1b4b;');
   console.groupCollapsed('%c버전 기록 (클릭해서 펼치기)', 'color:#888; font-size:11px;');
@@ -2603,7 +2611,7 @@
   }
   function scheduledStudentsForDate(dateStr) {
     const wk = weekdayKorFromDateStr(dateStr);
-    return _students.filter(s => s.active !== false && studentScheduleEntries(s).some(e=>e.day===wk));
+    return _students.filter(s => s.active !== false && (!s.date || s.date <= dateStr) && studentScheduleEntries(s).some(e=>e.day===wk));
   }
   function addHolidayDate() {
     const date = document.getElementById('newHolidayDate').value;
@@ -2637,17 +2645,29 @@
     try {
       const today = new Date();
       today.setHours(0,0,0,0);
-      const existingDates = new Set(window._attendance.map(a=>a.date));
+      // 입학일 이전에 자동으로 만들어졌던 잘못된 기록 정리(수동 저장 기록은 건드리지 않음)
+      const stuMap = {};
+      _students.forEach(s => { stuMap[s.id] = s; });
+      const bad = window._attendance.filter(a => a.autoFilled && stuMap[a.studentId] && stuMap[a.studentId].date && a.date < stuMap[a.studentId].date);
+      if (bad.length) {
+        window._attendance = window._attendance.filter(a => bad.indexOf(a) < 0);
+        localStorage.setItem('ga', JSON.stringify(window._attendance));
+        if (window._fbWriteReady && window._fbWriteReady() && window._deleteAutoAttendance) {
+          await Promise.all(bad.map(a => window._deleteAutoAttendance(a.studentId, a.date).catch(e=>console.error('잘못된 자동출석 삭제 오류', e))));
+        }
+        console.log('입학일 이전 자동 출석 정리: ' + bad.length + '건');
+      }
+      const existingKeys = new Set(window._attendance.map(a=>a.date + '|' + a.studentId));
       const newRecords = [];
       for (let i = 0; i <= 60; i++) {
         const d = new Date(today);
         d.setDate(d.getDate() - i);
         const dateStr = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
-        if (existingDates.has(dateStr)) continue; // 이미 수동/자동으로 처리된 날은 건드리지 않음
         const scheduled = scheduledStudentsForDate(dateStr);
         if (!scheduled.length) continue; // 그 요일에 예정된 학생이 없으면 만들 것도 없음
         const holiday = isHolidayDate(dateStr);
         scheduled.forEach(s => {
+          if (existingKeys.has(dateStr + '|' + s.id)) return; // 이미 있는 기록은 건드리지 않음
           newRecords.push({
             date: dateStr, studentId: s.id, studentName: s.name, grade: s.grade,
             present: !holiday, checkInTime: null, checkOutTime: null,
@@ -2673,7 +2693,7 @@
     const existingMap = {};
     existing.forEach(a => { existingMap[a.studentId] = a; });
 
-    const scheduled = _students.filter(s => s.active !== false && studentScheduleEntries(s).some(e=>e.day===wk));
+    const scheduled = _students.filter(s => s.active !== false && (!s.date || s.date <= dateStr || existingMap[s.id]) && studentScheduleEntries(s).some(e=>e.day===wk));
     const rows = [];
     const seen = new Set();
 
