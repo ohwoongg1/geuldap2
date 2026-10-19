@@ -2336,7 +2336,7 @@
 
 <script>
   // ===== 버전 정보 (콘솔에서 확인: APP_VERSION 또는 페이지 로드시 자동 출력) =====
-  const APP_VERSION = 'v8.25';
+  const APP_VERSION = 'v8.26';
   const APP_VERSION_LOG = [
     'v1.0 — 탭 구조 + UI 껍데기',
     'v1.1 — AI 문제 생성 + 개념 사다리',
@@ -2505,7 +2505,8 @@
     'v8.22 — [개선] 사용자 의견 — "단락 보완 가이드"를 "또래 평균보다 부족한 경우에만"으로 제한했던 걸, 어차피 선생님이 직접 보고 판단할 거라서 그 기준이 불필요하다는 의견 반영 — 조금이라도 보완하면 좋을 부분이 있으면 사소해도 보여주고, 정말 없으면(기존처럼) 빈 문자열로 두도록 프롬프트 완화',
     'v8.23 — [신규] 사용자 요청으로 "🖨️ 평가 결과 인쇄" 버튼 추가 — 항목별 점수·종합 평가·이전 글과 비교·보완할 점·단락 보완 가이드(선생님 전용)까지 전부 포함한 교사용 인쇄물을 생성(printEvalResult). 기존 학부모 보고서 인쇄와는 별개 기능이며, 이건 교사가 수업 중 직접 들고 지도하는 용도라 단락 보완 가이드도 그대로 포함됨(학부모 보고서 인쇄에는 여전히 미포함)',
     'v8.24 — [수정] 새로 입학한 학생이 입학일 이전 날짜에도 출석으로 저장되던 문제 수정 — 자동 출석 저장은 입학일 당일부터만 적용, 출석부 화면에도 입학 전 날짜엔 표시 안 함, 이미 잘못 만들어진 입학일 이전 자동 기록(autoFilled)은 접속 시 자동 삭제(직접 저장한 기록은 유지), 같은 날 다른 학생 기록이 있어도 학생별로 누락분 채움',
-    'v8.25 — [신규] 자료실에 "속담 학습지 (50개)"·"관용어 학습지 (50개)" 기본 등록(사용자가 올린 PDF 내용을 텍스트로 옮김, 카테고리 어휘력) — 접속 시 한 번만 자동 등록되며 이미 같은 제목이 있거나 지우셨으면 다시 만들지 않음. 여러 단어로 된 항목 제목(속담·관용어)도 전체가 빨간색으로 강조되도록 개선'
+    'v8.25 — [신규] 자료실에 "속담 학습지 (50개)"·"관용어 학습지 (50개)" 기본 등록(사용자가 올린 PDF 내용을 텍스트로 옮김, 카테고리 어휘력) — 접속 시 한 번만 자동 등록되며 이미 같은 제목이 있거나 지우셨으면 다시 만들지 않음. 여러 단어로 된 항목 제목(속담·관용어)도 전체가 빨간색으로 강조되도록 개선',
+    'v8.26 — [개선] 자료실 인쇄·이미지 저장에서 속담·관용어처럼 항목이 짧은 학습지(항목당 4줄 이하)는 2단 표 대신 사용자가 보여준 PDF 형식(1단 목록, 한 페이지 10개, 페이지마다 학원 헤더, "[비슷한 사자성어]·[글자 그대로]" 줄은 작은 회색 글씨)으로 표시 — 사자성어처럼 줄 수가 많은 항목은 기존 2단 표 유지'
   ];
   console.log(`%c글답 학습기 ${APP_VERSION}`, 'font-weight:bold; font-size:14px; color:#0d1b4b;');
   console.groupCollapsed('%c버전 기록 (클릭해서 펼치기)', 'color:#888; font-size:11px;');
@@ -8319,6 +8320,7 @@ ${s.name} 학생의 이번 어휘력 진단 결과를 안내드립니다.
         if (m) return `${escapeHtml(m[1])}<span style="color:#c0392b; font-weight:700;">${escapeHtml(m[2])}</span>${escapeHtml(m[3])}`;
         return escapeHtml(line);
       }
+      if (/^\s*\[(비슷한 사자성어|글자 그대로)/.test(line)) return `<span style="color:#777; font-size:0.88em;">${escapeHtml(line)}</span>`;
       const labelMatch = line.match(/^(\s*)(뜻|예문)(\s*[:：]\s*)(.*)$/);
       if (labelMatch) {
         const isExample = labelMatch[2] === '예문';
@@ -8331,6 +8333,21 @@ ${s.name} 학생의 이번 어휘력 진단 결과를 안내드립니다.
   function buildMaterialPageBlock(m, pageItems, pageNum, totalPages) {
     const cellStyle = 'border:1px solid #ccc; padding:10px; width:50%; vertical-align:top; white-space:pre-wrap; font-size:12.5px; line-height:1.6;';
     let rows = '';
+    // 속담·관용어처럼 항목이 짧은 학습지(항목당 4줄 이하)는 표 대신 1단 목록으로 보여준다 — 한 페이지 10개, 글이 큼직하고 읽기 편함
+    const singleCol = pageItems.every(it => it.split('\n').length <= 4);
+    if (singleCol) {
+      const listHtml = pageItems.map(it => {
+        const plain = it.split('\n').map(l => l.replace(/^\s+/, '')).join('\n');
+        return `<div style="margin:0 0 13px; white-space:pre-wrap; font-size:13.5px; line-height:1.7; page-break-inside:avoid;">${highlightMaterialItemHtml(plain).replace(/^(\d+\.\s*)(<span[^>]*>)/, '$1$2')}</div>`;
+      }).join('');
+      const pageLabel1 = totalPages>1 ? `${escapeHtml(m.title)} (${pageNum}/${totalPages}페이지)` : escapeHtml(m.title);
+      return `<div style="max-width:800px; ${pageNum<totalPages ? 'break-after:page; page-break-after:always;' : ''}">
+      ${vocabPrintFrameOpen(pageLabel1)}
+      ${m.category && pageNum===1 ? `<div style="text-align:center; font-size:12px; color:#888; margin-bottom:14px;">${escapeHtml(m.category)} · ${m.createdAt||''}</div>` : ''}
+      <div style="padding:0 6px;">${listHtml}</div>
+      ${VOCAB_PRINT_FRAME_CLOSE}
+    </div>`;
+    }
     for (let i=0; i<pageItems.length; i+=2) {
       const left = `<td style="${cellStyle}">${highlightMaterialItemHtml(pageItems[i])}</td>`;
       const right = pageItems[i+1] ? `<td style="${cellStyle}">${highlightMaterialItemHtml(pageItems[i+1])}</td>` : `<td style="border:1px solid #ccc;"></td>`;
