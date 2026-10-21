@@ -2320,6 +2320,8 @@
   } catch(e5) { console.log('자료실 속담·관용어 등록:', e5); }
   renderStudents();
   window._fbReady = true;
+  await syncPauseStates();
+  renderStudents();
   autoBackfillAttendance();
   // 학원에서 여러 학생이 같은 컴퓨터를 같이 쓸 수 있어서, 새로고침해도 로그인이 유지되면
   // 다음 학생이 로그아웃을 깜빡했을 때 이전 학생 화면을 그대로 보게 되는 위험이 있다.
@@ -2336,7 +2338,7 @@
 
 <script>
   // ===== 버전 정보 (콘솔에서 확인: APP_VERSION 또는 페이지 로드시 자동 출력) =====
-  const APP_VERSION = 'v8.29';
+  const APP_VERSION = 'v8.30';
   const APP_VERSION_LOG = [
     'v1.0 — 탭 구조 + UI 껍데기',
     'v1.1 — AI 문제 생성 + 개념 사다리',
@@ -2509,7 +2511,8 @@
     'v8.26 — [개선] 자료실 인쇄·이미지 저장에서 속담·관용어처럼 항목이 짧은 학습지(항목당 4줄 이하)는 2단 표 대신 사용자가 보여준 PDF 형식(1단 목록, 한 페이지 10개, 페이지마다 학원 헤더, "[비슷한 사자성어]·[글자 그대로]" 줄은 작은 회색 글씨)으로 표시 — 사자성어처럼 줄 수가 많은 항목은 기존 2단 표 유지',
     'v8.27 — [버그 수정] 관용어 학습지 인쇄 시 첫 페이지가 9번에서 잘리던 문제 수정 — 관용어는 항목마다 "[글자 그대로]" 줄이 있어 속담보다 줄 수가 많았음. 1단 목록형 학습지는 페이지별 줄 수를 계산해, 줄이 많은 페이지는 글자·간격을 조금 줄여 10개가 한 장에 들어가게 함(속담은 기존 크기 그대로). 속담·관용어 모두 5쪽, 쪽당 10개로 A4 인쇄 확인',
     'v8.28 — [개선] 초등학생용이라 글자가 작다는 요청에 따라 속담·관용어 학습지(1단 목록형)를 한 페이지 9개씩(6쪽)으로 나누고 글자 크기를 13.5/12.2px → 14.5px로 키움. 관용어 첫 페이지가 잘리지 않는 높이(A4 인쇄 확인)로 맞춤',
-    'v8.29 — [개선] 학부모 보고서에서 "보완할 점"(문장 전/후 비교·다음 글 목표) 삭제 — 인사말 + 제목 + 학생 글(+ 체크한 선생님 코멘트만)로 구성. 카톡 복사용 학생 글은 단락을 빈 줄로 구분하고 문장 중간에서 끊긴 줄은 이어 붙이도록 정리(formatStudentTextForKakao), AI 교정 지시에도 "단락을 빈 줄로 구분, 띄어쓰기·맞춤법 교정"을 명시 — 이미 저장된 평가도 보고서를 열면 새 단락 정리가 적용됨(맞춤법 교정 자체는 평가 시점의 AI 교정본을 사용)'
+    'v8.29 — [개선] 학부모 보고서에서 "보완할 점"(문장 전/후 비교·다음 글 목표) 삭제 — 인사말 + 제목 + 학생 글(+ 체크한 선생님 코멘트만)로 구성. 카톡 복사용 학생 글은 단락을 빈 줄로 구분하고 문장 중간에서 끊긴 줄은 이어 붙이도록 정리(formatStudentTextForKakao), AI 교정 지시에도 "단락을 빈 줄로 구분, 띄어쓰기·맞춤법 교정"을 명시 — 이미 저장된 평가도 보고서를 열면 새 단락 정리가 적용됨(맞춤법 교정 자체는 평가 시점의 AI 교정본을 사용)',
+    'v8.30 — [신규] 휴원 기간 기능 — "휴원 처리" 시 시작일·복귀 예정일(비우면 복귀 버튼 누를 때까지)을 입력. 휴원 기간 동안 ①출석부(자동 출석 저장 포함)·시간표에서 제외 ②수납관리에는 "🏖️ 휴원 MM/DD ~ MM/DD" 표시, 그 달 전체가 휴원이면 "휴원처리" 배지·청구액 0원·미납 집계 제외, 일부만 겹치면 일반 청구 행에 휴원 기간만 표시. 복귀 예정일이 지나면 접속 시 자동 복귀(syncPauseStates), 복귀 버튼은 휴원 기간을 어제까지로 남김. 휴원 기간 안에 이미 자동으로 만들어진 출석 기록(autoFilled)은 접속 시 자동 정리. 기존 휴원 학생(기간 없음)은 이전과 같게 동작'
   ];
   console.log(`%c글답 학습기 ${APP_VERSION}`, 'font-weight:bold; font-size:14px; color:#0d1b4b;');
   console.groupCollapsed('%c버전 기록 (클릭해서 펼치기)', 'color:#888; font-size:11px;');
@@ -2631,9 +2634,35 @@
   function isHolidayDate(dateStr) {
     return getHolidayList().some(h => h.date === dateStr);
   }
+  // ===== 휴원 기간 판정 =====
+  // 휴원 처리하면 pauseFrom(시작일)·pauseTo(복귀 예정일, 비어있으면 복귀 버튼을 누를 때까지)가 기록된다.
+  // 예전 방식(active:false 만 있고 기간이 없는 학생)은 withdrawDate 이후 계속 휴원으로 본다.
+  function studentPausedOn(s, dateStr) {
+    if (!s) return false;
+    if (s.pauseFrom) return dateStr >= s.pauseFrom && (!s.pauseTo || dateStr <= s.pauseTo);
+    if (s.active === false) return !s.withdrawDate || dateStr >= s.withdrawDate;
+    return false;
+  }
+  // 그 달 전체가 휴원인지(full), 일부만 겹치는지(partial) 판정. 겹치지 않으면 null.
+  function studentPauseInMonth(s, monthStr) {
+    if (!s) return null;
+    const first = monthStr + '-01';
+    const last = monthStr + '-' + String(new Date(Number(monthStr.slice(0,4)), Number(monthStr.slice(5,7)), 0).getDate()).padStart(2,'0');
+    let from = s.pauseFrom || (s.active === false ? (s.withdrawDate || '0000-01-01') : null);
+    if (!from) return null;
+    const to = s.pauseTo || '9999-12-31';
+    if (from > last || to < first) return null;
+    return { full: from <= first && to >= last, from: from, to: s.pauseTo || '' };
+  }
+  function pauseLabel(s) {
+    const from = s.pauseFrom || s.withdrawDate || '';
+    const md = function(d) { return d ? (Number(d.slice(5,7)) + '/' + Number(d.slice(8,10))) : ''; };
+    return from ? ('휴원 ' + md(from) + ' ~ ' + (s.pauseTo ? md(s.pauseTo) : '복귀 시까지')) : '휴원 중';
+  }
+
   function scheduledStudentsForDate(dateStr) {
     const wk = weekdayKorFromDateStr(dateStr);
-    return _students.filter(s => s.active !== false && (!s.date || s.date <= dateStr) && studentScheduleEntries(s).some(e=>e.day===wk));
+    return _students.filter(s => !studentPausedOn(s, dateStr) && (!s.date || s.date <= dateStr) && studentScheduleEntries(s).some(e=>e.day===wk));
   }
   function addHolidayDate() {
     const date = document.getElementById('newHolidayDate').value;
@@ -2670,7 +2699,7 @@
       // 입학일 이전에 자동으로 만들어졌던 잘못된 기록 정리(수동 저장 기록은 건드리지 않음)
       const stuMap = {};
       _students.forEach(s => { stuMap[s.id] = s; });
-      const bad = window._attendance.filter(a => a.autoFilled && stuMap[a.studentId] && stuMap[a.studentId].date && a.date < stuMap[a.studentId].date);
+      const bad = window._attendance.filter(a => a.autoFilled && stuMap[a.studentId] && ((stuMap[a.studentId].date && a.date < stuMap[a.studentId].date) || studentPausedOn(stuMap[a.studentId], a.date)));
       if (bad.length) {
         window._attendance = window._attendance.filter(a => bad.indexOf(a) < 0);
         localStorage.setItem('ga', JSON.stringify(window._attendance));
@@ -2715,7 +2744,7 @@
     const existingMap = {};
     existing.forEach(a => { existingMap[a.studentId] = a; });
 
-    const scheduled = _students.filter(s => s.active !== false && (!s.date || s.date <= dateStr || existingMap[s.id]) && studentScheduleEntries(s).some(e=>e.day===wk));
+    const scheduled = _students.filter(s => !studentPausedOn(s, dateStr) && (!s.date || s.date <= dateStr || existingMap[s.id]) && studentScheduleEntries(s).some(e=>e.day===wk));
     const rows = [];
     const seen = new Set();
 
@@ -2777,7 +2806,7 @@
 
     const addSelect = document.getElementById('attAddSelect');
     const shownIds = new Set(attRows.map(r=>r.studentId));
-    const remaining = _students.filter(s=>!shownIds.has(s.id) && s.active !== false);
+    const remaining = _students.filter(s=>!shownIds.has(s.id) && !studentPausedOn(s, attCurrentDate));
     addSelect.innerHTML = '<option value="">+ 오늘 추가로 온 학생...</option>' + remaining.map(s=>`<option value="${s.id}">${s.name} · ${s.grade}</option>`).join('');
   }
 
@@ -2908,7 +2937,7 @@
     const recordsThisMonth = window._attendance.filter(a => a.date.startsWith(monthStr));
     const idsWithRecords = new Set(recordsThisMonth.map(r=>r.studentId));
     const studentMap = new Map();
-    _students.forEach(s => { if (s.active !== false) studentMap.set(s.id, s); });
+    _students.forEach(s => { if (!studentPauseInMonth(s, monthStr) || !studentPauseInMonth(s, monthStr).full) studentMap.set(s.id, s); });
     recordsThisMonth.forEach(r => { if (!studentMap.has(r.studentId)) studentMap.set(r.studentId, { id:r.studentId, name:r.studentName, grade:r.grade||'' }); });
     const rowsStudents = Array.from(studentMap.values()).sort((a,b)=>a.name.localeCompare(b.name,'ko'));
 
@@ -3405,7 +3434,8 @@
 
   // 학생 하나가 요일마다 다른 시각을 가질 수 있으므로, (학생, 요일, 시각, 시간) 낱개 항목으로 펼쳐서 반환
   function getTimetableEntries() {
-    const active = _students.filter(s => s.active !== false && (s.schedule||[]).length);
+    const todayStr = todayLocalDateStr();
+    const active = _students.filter(s => !studentPausedOn(s, todayStr) && (s.schedule||[]).length);
     const withTimeEntries = []; // {name, day, time, duration}
     const withoutTimeEntries = []; // {name, day}
     active.forEach(s => {
@@ -3524,7 +3554,8 @@
     existing.forEach(p => { existingMap[p.studentId] = p; });
 
     const active = _students.filter(s => {
-      if (s.active === false) return false;
+      const pz = studentPauseInMonth(s, monthStr);
+      if (s.active === false && !pz && !existingMap[s.id]) return false; // 휴원(기간 없음)·퇴원 학생 중 이 달과 무관한 경우
       // 등록일(실무상 서류 작성일)과 실제 청구 시작월이 다를 수 있어(예: 등록은 미리 했지만 수업은 다음달부터),
       // billingStartMonth가 따로 지정돼 있으면 그걸 기준으로, 없으면 등록일 기준으로 판단한다.
       const enrollMonth = s.billingStartMonth || (s.date ? s.date.slice(0,7) : null);
@@ -3534,13 +3565,16 @@
 
     payRows = active.map(s => {
       const ex = existingMap[s.id];
+      const pz = studentPauseInMonth(s, monthStr);
       return {
+        paused: !!(pz && pz.full),
+        pausedLabel: pz ? pauseLabel(s) : '',
         studentId: s.id,
         studentName: s.name,
         phone: s.phone || '',
         billingDay: s.billingDay || (s.date ? Number(s.date.split('-')[2]) : 1),
         baseTuition: s.tuition || 0,
-        amount: ex ? ex.amount : computeNewMonthAmount(s),
+        amount: ex ? ex.amount : ((pz && pz.full) ? 0 : computeNewMonthAmount(s)),
         discountApplied: ex ? (ex.discountApplied || '') : '',
         paid: ex ? ex.paid : false,
         paidDate: ex ? (ex.paidDate || null) : null,
@@ -3595,8 +3629,8 @@
     for (let day=1; day<=daysInMonth; day++) {
       const rows = byDay[day] || [];
       const dots = rows.map(r => {
-        const color = r.paid ? '#4a7c59' : '#c0392b';
-        return `<span title="${escapeHtml(r.studentName)} — ${r.paid?'수납완료':'미납'}" style="display:inline-block; width:9px; height:9px; border-radius:50%; background:${color}; margin:1px;"></span>`;
+        const color = r.paused ? '#aaaaaa' : (r.paid ? '#4a7c59' : '#c0392b');
+        return `<span title="${escapeHtml(r.studentName)} — ${r.paused?'휴원처리':(r.paid?'수납완료':'미납')}" style="display:inline-block; width:9px; height:9px; border-radius:50%; background:${color}; margin:1px;"></span>`;
       }).join('');
       html += `<div style="border:1px solid #eee; border-radius:6px; min-height:56px; padding:4px; background:${rows.length?'#fafafa':'#fff'};">
         <div style="font-size:11px; color:#aaa;">${day}</div>
@@ -3689,11 +3723,11 @@
 
     const totalBilled = payRows.reduce((a,r)=>a+(r.amount||0),0);
     const totalPaid = payRows.filter(r=>r.paid).reduce((a,r)=>a+(r.amount||0),0);
-    const unpaidCount = payRows.filter(r=>!r.paid && r.amount>0).length;
+    const unpaidCount = payRows.filter(r=>!r.paid && !r.paused && r.amount>0).length;
     document.getElementById('paySummary').textContent = `${monthLabel(payCurrentMonth)} · 청구 총액 ${totalBilled.toLocaleString()}원 · 수납 ${totalPaid.toLocaleString()}원 · 미납 ${unpaidCount}명`;
 
     const list = document.getElementById('payList');
-    const rows = payFilter==='unpaid' ? payRows.filter(r=>!r.paid) : payRows;
+    const rows = payFilter==='unpaid' ? payRows.filter(r=>!r.paid && !r.paused) : payRows;
     if (!rows.length) {
       list.innerHTML = '<div class="empty" style="padding:20px 0;">' + (payFilter==='unpaid' ? '미납자가 없습니다 🎉' : '재원 중인 학생이 없습니다.') + '</div>';
       return;
@@ -3704,9 +3738,10 @@
         <tr style="border-bottom:1px solid #f0f0f0;">
           <td style="padding:8px 6px;">
             <label style="display:flex; align-items:center; gap:6px; font-weight:600; white-space:nowrap;">
-              <input type="checkbox" ${r.paid?'checked':''} onchange="togglePaymentPaid(${i}, this.checked)">
+              <input type="checkbox" ${r.paid?'checked':''} ${r.paused?'disabled':''} onchange="togglePaymentPaid(${i}, this.checked)">
               ${r.studentName}
             </label>
+            ${r.pausedLabel ? `<div style="font-size:11px; color:#8a6d00; margin-left:22px;">🏖️ ${escapeHtml(r.pausedLabel)}</div>` : ''}
           </td>
           <td style="padding:8px 6px; font-size:12px; color:#888; white-space:nowrap;">매월 ${r.billingDay}일</td>
           <td style="padding:8px 6px;">
@@ -3721,7 +3756,9 @@
             <input type="number" value="${r.amount}" style="width:100px;" onchange="updatePaymentAmount(${i}, this.value)"> 원
           </td>
           <td style="padding:8px 6px; white-space:nowrap;">
-            ${r.paid
+            ${r.paused
+              ? `<span style="font-size:11px; color:#fff; background:#8a8a8a; padding:2px 8px; border-radius:10px;">휴원처리</span>`
+              : r.paid
               ? `<span style="font-size:11px; color:#fff; background:#4a7c59; padding:2px 8px; border-radius:10px;">완납</span>`
               : `<span style="font-size:11px; color:#fff; background:#c0392b; padding:2px 8px; border-radius:10px;">미납</span>`}
           </td>
@@ -3742,7 +3779,7 @@
             <input type="text" value="${escapeHtml(r.note||'')}" placeholder="비고" style="width:120px; font-size:12px;" onchange="updatePaymentNote(${i}, this.value)">
           </td>
           <td style="padding:8px 6px; white-space:nowrap;">
-            <button class="btn btn-secondary btn-sm" onclick="openPaymentSms(${i})">📱 문자</button>
+            ${r.paused ? '' : `<button class="btn btn-secondary btn-sm" onclick="openPaymentSms(${i})">📱 문자</button>`}
           </td>
           <td style="padding:8px 6px;">
             <button class="btn btn-secondary btn-sm" style="color:#b3261e;" onclick="removeFromThisMonth(${i})" title="이 학생을 이번 달 청구 목록에서 뺍니다">✕</button>
@@ -3834,7 +3871,8 @@
       paidDate: r.paidDate,
       method: r.method || '',
       note: r.note || '',
-      discountApplied: r.discountApplied || ''
+      discountApplied: r.discountApplied || '',
+      paused: !!r.paused
     }));
     window._payments.push(...newRecords);
     localStorage.setItem('gp', JSON.stringify(window._payments));
@@ -5378,6 +5416,7 @@ ${a.name}`;
         <div class="student-avatar">${s.name[0]}</div>
         <div class="student-name">${s.name}</div>
         <div class="student-info">${s.grade} · ${s.date}</div>
+        ${(paused || s.pauseFrom) ? `<div style="font-size:12px; color:#8a6d00; margin-top:2px;">🏖️ ${escapeHtml(pauseLabel(s))}</div>` : ''}
         ${s.courseName ? `<div style="font-size:12px; color:#c5a149; margin-top:2px;">${s.courseName}</div>` : ''}
         ${s.accessCode ? `<div style="font-size:11px; color:#aaa; margin-top:2px;">🔑 학습코드 ${s.accessCode}</div>` : ''}
         <div class="student-count">📝 ${cnt}편</div>
@@ -5417,16 +5456,48 @@ ${a.name}`;
   function toggleStudentActive(id) {
     const idx = _students.findIndex(s=>s.id===id);
     if (idx === -1) return;
-    const nextActive = _students[idx].active === false ? true : false;
-    // 비활성화(휴원/퇴원) 시점의 날짜를 남겨서, 법정 서류(수강생 대장)의 "퇴원 연월일"에 쓴다.
-    // 다시 활성화하면 퇴원일은 지운다.
-    const withdrawDate = nextActive ? null : todayLocalDateStr();
-    _students[idx] = { ..._students[idx], active: nextActive, withdrawDate };
+    const s = _students[idx];
+    const today = todayLocalDateStr();
+    const isPausedNow = s.active === false || (s.pauseFrom && s.pauseFrom > today);
+    let patch;
+    if (isPausedNow) {
+      // 복귀: 휴원 기간은 어제까지로 남겨둬서 수납·출석 기록에서 휴원 기간이 그대로 보이게 한다(예정 휴원이면 취소)
+      if (s.pauseFrom && s.pauseFrom > today) patch = { active: true, pauseFrom: null, pauseTo: null, withdrawDate: null };
+      else patch = { active: true, pauseTo: s.pauseFrom ? addDaysToDateStr(today, -1) : null, withdrawDate: null };
+    } else {
+      const from = prompt(s.name + ' 학생 휴원 시작일을 입력하세요 (예: 2026-10-21)\n오늘부터면 그대로 확인을 누르세요.', today);
+      if (from === null) return;
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(from.trim())) { alert('날짜 형식이 올바르지 않아요. 2026-10-21 처럼 입력해주세요.'); return; }
+      const to = prompt('복귀 예정일(휴원 마지막 날)을 입력하세요 (예: 2026-11-20)\n모르면 비워두세요 — 복귀 버튼을 누를 때까지 휴원으로 유지돼요.', '');
+      if (to === null) return;
+      if (to.trim() && (!/^\d{4}-\d{2}-\d{2}$/.test(to.trim()) || to.trim() < from.trim())) { alert('복귀 예정일 형식이 올바르지 않거나 시작일보다 빨라요.'); return; }
+      const f = from.trim(), tt = to.trim() || null;
+      const startedNow = f <= today;
+      patch = { pauseFrom: f, pauseTo: tt, active: !startedNow, withdrawDate: startedNow ? f : null };
+    }
+    _students[idx] = Object.assign({}, s, patch);
     localStorage.setItem('gs', JSON.stringify(_students));
     if (window._fbReady) {
-      window._updateByFieldId('geuldap_students', id, { active: nextActive, withdrawDate }).catch(console.error);
+      window._updateByFieldId('geuldap_students', id, patch).catch(console.error);
     }
     renderStudents();
+  }
+
+  // 접속할 때마다 휴원 기간에 맞춰 재원/휴원 상태를 자동으로 맞춘다 — 복귀 예정일이 지나면 자동 복귀, 시작일이 되면 자동 휴원.
+  async function syncPauseStates() {
+    try {
+      const today = todayLocalDateStr();
+      for (let i = 0; i < _students.length; i++) {
+        const s = _students[i];
+        if (!s.pauseFrom) continue;
+        const shouldPause = studentPausedOn(s, today);
+        if ((s.active === false) === shouldPause) continue;
+        const patch = shouldPause ? { active: false, withdrawDate: s.pauseFrom } : { active: true, withdrawDate: null };
+        _students[i] = Object.assign({}, s, patch);
+        if (window._fbWriteReady && window._fbWriteReady()) { try { await window._updateByFieldId('geuldap_students', s.id, patch); } catch(e) { console.error('휴원 상태 동기화 오류', e); } }
+      }
+      localStorage.setItem('gs', JSON.stringify(_students));
+    } catch(e) { console.error('휴원 상태 동기화 오류', e); }
   }
 
   function renderUploadStudents() {
