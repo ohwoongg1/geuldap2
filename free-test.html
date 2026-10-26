@@ -146,7 +146,7 @@
     {level:5,  band:'초3', sub:'기초', desc:'교과서 사회·과학에 처음 나오는 낱말, 이어주는 말(그래서·그러나 등) 이해'},
     {level:6,  band:'초3', sub:'심화', desc:'쉬운 속담·관용구 도입, 문단 속에서 낱말의 뜻 짐작하기'},
     {level:7,  band:'초4', sub:'기초', desc:'교과서에 자주 나오는 기본 어휘, 일상생활에서 흔히 쓰는 낱말 위주'},
-    {level:8,  band:'초4', sub:'심화', desc:'초4 교과서 어휘 중 다소 어려운 낱말, 뜻이 여러 개인 낱말 포함'},
+    {level:8,  band:'초4', sub:'심화', desc:'교과서 어휘 중 다소 어려운 낱말, 뜻이 여러 개인 낱말 포함'},
     {level:9,  band:'초5', sub:'기초', desc:'속담·관용구 도입, 두 글자 한자어 어휘 시작'},
     {level:10, band:'초5', sub:'심화', desc:'관용구 확장, 한자어 어휘 비중 증가'},
     {level:11, band:'초6', sub:'기초', desc:'사회·과학 교과서에 나오는 개념어 도입'},
@@ -239,7 +239,10 @@
       const baseLevel = VOCAB_GRADE_START_LEVEL[grade] || 1;
       showLoading('진단 시험지를 준비하고 있어요...');
       const stdQ = query(collection(db, 'geuldap_vocab_standard_tests'), where('level', '==', baseLevel));
-      const stdSnap = await getDocs(stdQ);
+      const stdSnapAll = await getDocs(stdQ);
+      // 아직 확정되지 않은 "초안" 시험지는 쓰지 않는다(관리자가 확인·수정 중인 문제)
+      const stdDocs = stdSnapAll.docs.filter(d => d.data().status !== 'draft');
+      const stdSnap = { empty: stdDocs.length === 0, docs: stdDocs };
       if (stdSnap.empty) {
         document.getElementById('stepLoading').classList.add('hidden');
         document.getElementById('stepForm').classList.remove('hidden');
@@ -315,7 +318,7 @@
     }
 
     document.getElementById('resultLevel').textContent = diagnosed + '급';
-    document.getElementById('resultBand').textContent = `${def.band} ${def.sub} 수준`;
+    document.getElementById('resultBand').textContent = '이 급수에서 다루는 어휘';
     document.getElementById('resultDesc').textContent = def.desc;
     document.getElementById('resultMessage').innerHTML =
       `<strong>${currentName}</strong> 학생은 ${totalQ}문항 중 <strong>${totalCorrect}문항</strong>을 맞혀 <strong>${diagnosed}급</strong>으로 진단되었습니다.<br><br>` +
