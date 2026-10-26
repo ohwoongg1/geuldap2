@@ -562,6 +562,7 @@
   <div class="page active" id="page-students">
     <div class="card">
       <div class="card-title">등록된 학생</div>
+      <div style="text-align:right; margin-bottom:8px;"><button class="btn btn-secondary btn-sm" onclick="openArchiveBox()">📦 퇴원생 보관함</button></div>
       <div class="student-grid" id="studentGrid"></div>
     </div>
   </div>
@@ -2338,7 +2339,7 @@
 
 <script>
   // ===== 버전 정보 (콘솔에서 확인: APP_VERSION 또는 페이지 로드시 자동 출력) =====
-  const APP_VERSION = 'v8.30';
+  const APP_VERSION = 'v8.33';
   const APP_VERSION_LOG = [
     'v1.0 — 탭 구조 + UI 껍데기',
     'v1.1 — AI 문제 생성 + 개념 사다리',
@@ -2512,7 +2513,10 @@
     'v8.27 — [버그 수정] 관용어 학습지 인쇄 시 첫 페이지가 9번에서 잘리던 문제 수정 — 관용어는 항목마다 "[글자 그대로]" 줄이 있어 속담보다 줄 수가 많았음. 1단 목록형 학습지는 페이지별 줄 수를 계산해, 줄이 많은 페이지는 글자·간격을 조금 줄여 10개가 한 장에 들어가게 함(속담은 기존 크기 그대로). 속담·관용어 모두 5쪽, 쪽당 10개로 A4 인쇄 확인',
     'v8.28 — [개선] 초등학생용이라 글자가 작다는 요청에 따라 속담·관용어 학습지(1단 목록형)를 한 페이지 9개씩(6쪽)으로 나누고 글자 크기를 13.5/12.2px → 14.5px로 키움. 관용어 첫 페이지가 잘리지 않는 높이(A4 인쇄 확인)로 맞춤',
     'v8.29 — [개선] 학부모 보고서에서 "보완할 점"(문장 전/후 비교·다음 글 목표) 삭제 — 인사말 + 제목 + 학생 글(+ 체크한 선생님 코멘트만)로 구성. 카톡 복사용 학생 글은 단락을 빈 줄로 구분하고 문장 중간에서 끊긴 줄은 이어 붙이도록 정리(formatStudentTextForKakao), AI 교정 지시에도 "단락을 빈 줄로 구분, 띄어쓰기·맞춤법 교정"을 명시 — 이미 저장된 평가도 보고서를 열면 새 단락 정리가 적용됨(맞춤법 교정 자체는 평가 시점의 AI 교정본을 사용)',
-    'v8.30 — [신규] 휴원 기간 기능 — "휴원 처리" 시 시작일·복귀 예정일(비우면 복귀 버튼 누를 때까지)을 입력. 휴원 기간 동안 ①출석부(자동 출석 저장 포함)·시간표에서 제외 ②수납관리에는 "🏖️ 휴원 MM/DD ~ MM/DD" 표시, 그 달 전체가 휴원이면 "휴원처리" 배지·청구액 0원·미납 집계 제외, 일부만 겹치면 일반 청구 행에 휴원 기간만 표시. 복귀 예정일이 지나면 접속 시 자동 복귀(syncPauseStates), 복귀 버튼은 휴원 기간을 어제까지로 남김. 휴원 기간 안에 이미 자동으로 만들어진 출석 기록(autoFilled)은 접속 시 자동 정리. 기존 휴원 학생(기간 없음)은 이전과 같게 동작'
+    'v8.30 — [신규] 휴원 기간 기능 — "휴원 처리" 시 시작일·복귀 예정일(비우면 복귀 버튼 누를 때까지)을 입력. 휴원 기간 동안 ①출석부(자동 출석 저장 포함)·시간표에서 제외 ②수납관리에는 "🏖️ 휴원 MM/DD ~ MM/DD" 표시, 그 달 전체가 휴원이면 "휴원처리" 배지·청구액 0원·미납 집계 제외, 일부만 겹치면 일반 청구 행에 휴원 기간만 표시. 복귀 예정일이 지나면 접속 시 자동 복귀(syncPauseStates), 복귀 버튼은 휴원 기간을 어제까지로 남김. 휴원 기간 안에 이미 자동으로 만들어진 출석 기록(autoFilled)은 접속 시 자동 정리. 기존 휴원 학생(기간 없음)은 이전과 같게 동작',
+    'v8.31 — [신규] "📦 퇴원생 보관함" — 학생 삭제 시 그 학생의 글·평가·퀴즈·어휘력·독서·출석·수납 자료를 삭제 전에 서버(geuldap_archive)와 내 컴퓨터(JSON 파일)에 자동 보관. 보관함에서 보기·인쇄 / 파일 저장 / 학생 복원(글·평가 포함) / 영구 삭제 가능. 이 기능 이전에 삭제한 학생은 글·평가가 이미 지워져 복구 불가하지만, 서버에 남아있던 어휘력·독서·출석·수납 자료는 "보관 기록 없이 남은 자료"로 찾아 보관함에 저장할 수 있음',
+    'v8.32 — [개선] 표준 어휘력 시험지를 "초안 → 수정 → 확정" 방식으로 변경 — 같은 급수로 처음 진단받는 학생이 처음 시험지를 만들면 먼저 "초안"으로 저장되고(다른 학생에겐 아직 적용 안 됨, 단 초안이 있으면 같은 초안을 공유), 정답지에서 문제별 ✏️ 직접 수정 / AI로 그 문제만 다시 생성 / 전체 다시 생성이 가능. "✅ 확정"을 누르면 그때부터 10일 동안 같은 급수 첫 진단 학생(상담자 포함)과 무료진단 페이지에 똑같은 문제가 나가고, 10일이 지나면 다음 첫 진단 때 새 초안이 만들어짐(기존 확정본은 새 시험지가 확정될 때까지 무료진단용으로 유지). 기존에 저장돼 있던 표준 시험지는 확정된 것으로 보되 10일이 지난 것은 만료로 처리',
+    'v8.33 — [수정] 표준 시험지를 불러올 때 학생마다 보기 순서를 다시 섞던 것을 없앰 — 문제·보기 순서·정답 번호가 같은 급수 학생 모두 완전히 동일하게 나감(정답 번호 편중은 처음 만들 때 한 번만 섞어서 방지, 이후 고정)'
   ];
   console.log(`%c글답 학습기 ${APP_VERSION}`, 'font-weight:bold; font-size:14px; color:#0d1b4b;');
   console.groupCollapsed('%c버전 기록 (클릭해서 펼치기)', 'color:#888; font-size:11px;');
@@ -5784,8 +5788,60 @@ ${a.name}`;
   }
 
   // ===== 학생 삭제 =====
+  // ===== 퇴원생 보관함 =====
+  // 학생을 삭제하기 전에 그 학생의 모든 자료(글·평가·퀴즈·어휘력·독서·출석·수납)를 하나로 묶어
+  // 서버(geuldap_archive)와 내 컴퓨터(JSON 파일)에 저장해둔다. 삭제 후에도 보관함에서 보거나 복원할 수 있다.
+  window._archive = window._archive || [];
+  function buildStudentArchive(id, studentObj) {
+    const st = studentObj || _students.find(s=>s.id===id) || { id: id };
+    const by = function(arr) { return (arr||[]).filter(function(x){ return x && x.studentId === id; }); };
+    return {
+      id: id,
+      studentName: st.name || '',
+      grade: st.grade || '',
+      archivedAt: todayLocalDateStr(),
+      student: st,
+      records: by(window._records),
+      quizzes: by(window._quizzes),
+      vocabRecords: by(window._vocabRecords),
+      readings: by(window._readings),
+      attendance: by(window._attendance),
+      payments: by(window._payments)
+    };
+  }
+  function archiveCounts(a) {
+    return '글 ' + (a.records||[]).length + '편 · 어휘력 ' + (a.vocabRecords||[]).length + '건 · 독서 ' + (a.readings||[]).length + '건 · 출석 ' + (a.attendance||[]).length + '일 · 수납 ' + (a.payments||[]).length + '건';
+  }
+  function downloadArchiveFile(a) {
+    try {
+      const blob = new Blob([JSON.stringify(a, null, 1)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const el = document.createElement('a');
+      el.href = url; el.download = '퇴원생자료_' + (a.studentName || a.id) + '_' + (a.archivedAt || '') + '.json';
+      document.body.appendChild(el); el.click(); document.body.removeChild(el);
+      setTimeout(function(){ URL.revokeObjectURL(url); }, 2000);
+    } catch(e) { console.error('보관 파일 저장 오류', e); }
+  }
+  async function saveArchiveToServer(a) {
+    if (!(window._fbWriteReady && window._fbWriteReady())) return false;
+    const size = JSON.stringify(a).length;
+    if (size > 900000) return false; // Firestore 문서 1MB 제한
+    try {
+      await window._deleteByFieldId('geuldap_archive', a.id);
+      await window._add(window._col(window._db,'geuldap_archive'), a);
+      window._archive = (window._archive||[]).filter(function(x){ return x.id !== a.id; });
+      window._archive.push(a);
+      return true;
+    } catch(e) { console.error('보관함 서버 저장 오류', e); return false; }
+  }
+
   async function deleteStudent(id) {
-    if (!confirm('삭제할까요?')) return;
+    const stu = _students.find(s=>s.id===id);
+    if (!confirm('삭제할까요?\n\n삭제하기 전에 이 학생의 모든 자료(글·평가·어휘력·독서·출석·수납)를 "📦 퇴원생 보관함"에 저장해둡니다.')) return;
+    const arc = buildStudentArchive(id, stu);
+    downloadArchiveFile(arc); // 내 컴퓨터에도 파일로 한 부 남긴다
+    const ok = await saveArchiveToServer(arc);
+    if (!ok && !confirm('⚠️ 보관함(서버) 저장에 실패했어요(용량이 크거나 연결 문제). 방금 내려받은 파일에는 자료가 저장되어 있습니다.\n\n그래도 삭제할까요?')) return;
     window._students = _students.filter(s=>s.id!==id);
     window._records = _records.filter(r=>r.studentId!==id);
     window._quizzes = _quizzes.filter(q=>q.studentId!==id);
@@ -5806,6 +5862,129 @@ ${a.name}`;
         await Promise.all(jobs);
       } catch(e) { console.error('클라우드 삭제 오류:', e); }
     }
+  }
+
+  // 보관함 화면 — 보관된 학생 + (예전에 삭제해서 보관 기록은 없지만) 어휘력·독서·출석·수납 자료가 남아있는 학생
+  let _archiveView = [];
+  async function openArchiveBox() {
+    let host = document.getElementById('archiveModal');
+    if (!host) {
+      host = document.createElement('div');
+      host.id = 'archiveModal'; host.className = 'modal-bg';
+      host.innerHTML = '<div class="modal" style="max-width:640px; max-height:85vh; overflow-y:auto;"><div class="modal-title">📦 퇴원생 보관함</div><div id="archiveBody" style="font-size:13px;"></div><div style="text-align:right; margin-top:14px;"><button class="btn btn-secondary" onclick="document.getElementById(\'archiveModal\').classList.remove(\'open\')">닫기</button></div></div>';
+      document.body.appendChild(host);
+    }
+    host.classList.add('open');
+    document.getElementById('archiveBody').innerHTML = '<div style="color:#888;">불러오는 중...</div>';
+    try {
+      if (window._fbWriteReady && window._fbWriteReady()) {
+        const snap = await window._get(window._col(window._db,'geuldap_archive'));
+        const arr = []; snap.forEach(d => arr.push(d.data()));
+        window._archive = arr;
+      }
+    } catch(e) { console.error('보관함 불러오기 오류', e); }
+    renderArchiveBox();
+  }
+  function renderArchiveBox() {
+    const saved = (window._archive || []).slice().sort(function(a,b){ return String(b.archivedAt||'').localeCompare(String(a.archivedAt||'')); });
+    const savedIds = new Set(saved.map(function(a){ return a.id; }));
+    const liveIds = new Set(_students.map(function(s){ return s.id; }));
+    // 보관 기록 없이 흩어져 남아있는 자료 찾기
+    const orphan = {};
+    [['vocabRecords', window._vocabRecords], ['readings', window._readings], ['attendance', window._attendance], ['payments', window._payments]].forEach(function(pair) {
+      (pair[1] || []).forEach(function(x) {
+        if (!x || !x.studentId || liveIds.has(x.studentId) || savedIds.has(x.studentId)) return;
+        if (!orphan[x.studentId]) orphan[x.studentId] = { name: '', grade: '' };
+        if (x.studentName && !orphan[x.studentId].name) orphan[x.studentId].name = x.studentName;
+        if (x.grade && !orphan[x.studentId].grade) orphan[x.studentId].grade = x.grade;
+      });
+    });
+    const orphans = Object.keys(orphan).map(function(sid) {
+      const a = buildStudentArchive(sid, { id: sid, name: orphan[sid].name || '(이름 없음)', grade: orphan[sid].grade || '' });
+      a.fromLeftovers = true; return a;
+    });
+    _archiveView = saved.concat(orphans);
+    const row = function(a, i) {
+      return '<div style="border:1px solid #eee; border-radius:8px; padding:10px 12px; margin-bottom:8px;">' +
+        '<div style="font-weight:700;">' + escapeHtml(a.studentName || '(이름 없음)') + ' <span style="font-weight:400; color:#888; font-size:12px;">' + escapeHtml(a.grade || '') + (a.fromLeftovers ? ' · 보관 기록 없이 남은 자료' : ' · 보관일 ' + escapeHtml(a.archivedAt || '')) + '</span></div>' +
+        '<div style="font-size:12px; color:#666; margin:3px 0 8px;">' + archiveCounts(a) + '</div>' +
+        '<div style="display:flex; gap:6px; flex-wrap:wrap;">' +
+        '<button class="btn btn-secondary btn-sm" onclick="viewArchive(' + i + ')">🖨️ 보기·인쇄</button>' +
+        '<button class="btn btn-secondary btn-sm" onclick="downloadArchiveFile(_archiveView[' + i + '])">💾 파일 저장</button>' +
+        (a.fromLeftovers ? '<button class="btn btn-secondary btn-sm" onclick="saveLeftoverToArchive(' + i + ')">📦 보관함에 저장</button>'
+                         : '<button class="btn btn-secondary btn-sm" onclick="restoreArchivedStudent(' + i + ')">↩️ 복원</button><button class="btn btn-secondary btn-sm" style="color:#b3261e;" onclick="deleteArchiveEntry(' + i + ')">영구 삭제</button>') +
+        '</div></div>';
+    };
+    document.getElementById('archiveBody').innerHTML =
+      '<div style="color:#666; margin-bottom:10px;">학생을 삭제하면 그 학생의 자료가 여기에 자동으로 보관됩니다. (이 기능 이전에 삭제한 학생은 글·평가가 이미 지워져서 복구할 수 없고, 남아있는 어휘력·독서·출석·수납 자료만 아래에 보입니다.)</div>' +
+      (_archiveView.length ? _archiveView.map(row).join('') : '<div class="empty" style="padding:20px 0;">보관된 학생이 없습니다.</div>');
+  }
+  async function saveLeftoverToArchive(i) {
+    const a = Object.assign({}, _archiveView[i]); delete a.fromLeftovers;
+    const ok = await saveArchiveToServer(a);
+    alert(ok ? '보관함에 저장했어요.' : '서버 저장에 실패했어요. "파일 저장"으로 내려받아 보관해주세요.');
+    renderArchiveBox();
+  }
+  async function deleteArchiveEntry(i) {
+    const a = _archiveView[i];
+    if (!confirm(a.studentName + ' 학생의 보관 자료를 영구 삭제할까요? 되돌릴 수 없어요.\n(필요하면 먼저 "파일 저장"으로 내려받으세요.)')) return;
+    try { await window._deleteByFieldId('geuldap_archive', a.id); } catch(e) { console.error(e); }
+    window._archive = (window._archive||[]).filter(function(x){ return x.id !== a.id; });
+    renderArchiveBox();
+  }
+  async function restoreArchivedStudent(i) {
+    const a = _archiveView[i];
+    if (!a || !a.student) return;
+    if (_students.some(function(s){ return s.id === a.id; })) { alert('이미 같은 학생이 목록에 있어요.'); return; }
+    if (!confirm(a.studentName + ' 학생을 학생 목록으로 복원할까요? (글·평가 기록도 함께 돌아옵니다)')) return;
+    const st = Object.assign({}, a.student, { active: true, pauseFrom: null, pauseTo: null, withdrawDate: null });
+    _students.push(st);
+    const haveRec = new Set(_records.map(function(r){ return r.id; }));
+    const haveQz = new Set(_quizzes.map(function(r){ return r.id; }));
+    const newRecs = (a.records||[]).filter(function(r){ return !haveRec.has(r.id); });
+    const newQz = (a.quizzes||[]).filter(function(r){ return !haveQz.has(r.id); });
+    newRecs.forEach(function(r){ _records.push(r); });
+    newQz.forEach(function(r){ _quizzes.push(r); });
+    localStorage.setItem('gs', JSON.stringify(_students));
+    localStorage.setItem('gr', JSON.stringify(_records));
+    localStorage.setItem('gq', JSON.stringify(_quizzes));
+    if (window._fbWriteReady && window._fbWriteReady()) {
+      try {
+        await window._add(window._col(window._db,'geuldap_students'), st);
+        await Promise.all(newRecs.map(function(r){ return window._add(window._col(window._db,'geuldap_records'), r); }));
+        await Promise.all(newQz.map(function(r){ return window._add(window._col(window._db,'geuldap_quizzes'), r); }));
+      } catch(e) { console.error('복원 저장 오류', e); alert('복원은 화면에 반영됐지만 서버 저장 중 오류가 있었어요: ' + e.message); }
+    }
+    renderStudents();
+    alert('복원했어요. (보관함 기록은 그대로 남겨둡니다)');
+  }
+  function viewArchive(i) {
+    const a = _archiveView[i]; if (!a) return;
+    const esc = escapeHtml;
+    const st = a.student || {};
+    const prim = function(o, skip) {
+      return Object.keys(o||{}).filter(function(k){ return !(skip||[]).includes(k) && o[k] !== null && o[k] !== '' && typeof o[k] !== 'object'; }).map(function(k){ return esc(k) + ': ' + esc(String(o[k])); }).join(' · ');
+    };
+    const recs = (a.records||[]).slice().sort(function(x,y){ return String(x.date||'').localeCompare(String(y.date||'')); });
+    let h = '<h1 style="font-size:20px;">' + esc(a.studentName||'') + ' 학생 보관 자료</h1><div style="color:#666; font-size:12px; margin-bottom:12px;">' + esc(a.grade||'') + ' · 보관일 ' + esc(a.archivedAt||'') + ' · ' + archiveCounts(a) + '</div>';
+    h += '<h2 style="font-size:15px; border-bottom:1px solid #999;">기본 정보</h2><p style="font-size:12px; line-height:1.7;">' + prim(st, ['id']) + '</p>';
+    h += '<h2 style="font-size:15px; border-bottom:1px solid #999;">글쓰기 평가 (' + recs.length + '편)</h2>';
+    h += recs.map(function(r) {
+      const sc = r.scores ? Object.keys(r.scores).map(function(k){ return esc(k) + ' ' + esc(String(r.scores[k])); }).join(' · ') : '';
+      return '<div style="margin:0 0 14px; page-break-inside:avoid;"><div style="font-weight:700;">' + esc(r.title||'(제목 없음)') + ' <span style="font-weight:400; color:#666; font-size:12px;">' + esc(r.date||'') + ' · ' + esc(r.type||'') + ' · ' + esc(String(r.totalScore||'')) + '점</span></div>' +
+        (sc ? '<div style="font-size:11px; color:#555;">' + sc + '</div>' : '') +
+        (r.summary ? '<div style="font-size:12px; margin:4px 0;">총평: ' + esc(r.summary) + '</div>' : '') +
+        '<div style="font-size:12px; white-space:pre-wrap; line-height:1.7; background:#fafafa; padding:8px; border-radius:6px;">' + esc(r.correctedContent || r.content || '') + '</div></div>';
+    }).join('') || '<p style="font-size:12px; color:#888;">없음</p>';
+    const section = function(title, arr) {
+      return '<h2 style="font-size:15px; border-bottom:1px solid #999;">' + title + ' (' + (arr||[]).length + ')</h2>' + ((arr||[]).length ? '<ul style="font-size:12px; line-height:1.6;">' + arr.map(function(x){ return '<li>' + prim(x, ['id','studentId','studentName','questions','content']) + '</li>'; }).join('') + '</ul>' : '<p style="font-size:12px; color:#888;">없음</p>');
+    };
+    h += section('어휘력 기록', a.vocabRecords) + section('독서 기록', a.readings) + section('수납 내역', a.payments);
+    const att = a.attendance || [];
+    h += '<h2 style="font-size:15px; border-bottom:1px solid #999;">출석 (' + att.length + '일)</h2><p style="font-size:12px;">출석 ' + att.filter(function(x){return x.present;}).length + '일 · 결석 ' + att.filter(function(x){return !x.present;}).length + '일' + (att.length ? ' (' + esc(att.map(function(x){return x.date;}).sort()[0]) + ' ~ ' + esc(att.map(function(x){return x.date;}).sort().slice(-1)[0]) + ')' : '') + '</p>';
+    const w = window.open('', '_blank');
+    w.document.write('<html><head><meta charset="utf-8"><title>' + esc(a.studentName||'') + ' 보관 자료</title></head><body style="font-family:sans-serif; max-width:800px; margin:20px auto; padding:0 16px;">' + h + '</body></html>');
+    w.document.close();
   }
 
   // ===== 학생 선택 =====
@@ -6585,7 +6764,7 @@ ${a.name}`;
     // 이미 만들어둔(대기중) 시험지가 있는데 또 누르면, 인쇄해서 이미 나눠준 문제와 저장되는 문제가
     // 달라지는 사고가 실제로 있었다(사용자 사례) — 인쇄된 종이와 기록이 어긋나 버림. 그래서 대기중인
     // 시험지가 있을 때는 한 번 더 확인한다.
-    if (s._vocabPendingRecordId) {
+    if (s._vocabPendingRecordId && !s._skipPendingConfirm) {
       const proceed = confirm('이미 만들어둔 시험지가 있어요(아직 결과 입력 전). 다시 만들면 그 문제는 사라지고 새 문제로 바뀌어요.\n\n이미 인쇄해서 학생에게 나눠준 상태라면 절대 다시 만들지 마세요 — 종이 시험지와 저장되는 기록이 서로 달라집니다.\n\n그래도 새로 만드시겠어요?');
       if (!proceed) return;
     }
@@ -6603,14 +6782,19 @@ ${a.name}`;
     // 재원생의 두 번째 이후 진단이나, 이미 급수가 학년 표준에서 벗어난 경우는 비교 목적이 아니므로
     // 그냥 매번 새로 만든다.
     const isFirstDiagnosis = vocabRecordsFor(s.id).filter(r=>r.status!=='pending').length === 0;
-    const existingStandard = isFirstDiagnosis ? _vocabStandardTests.find(t=>t.level===baseLevel) : null;
+    // 표준 시험지는 "초안 → 확인·수정 → 확정" 순서로 만든다. 확정된 시험지는 10일 동안만 유효하고,
+    // 10일이 지나면 다음 첫 진단 때 새로 초안을 만든다.
+    const finalStandard = isFirstDiagnosis ? findVocabStandardFinal(baseLevel) : null;
+    const draftStandard = (isFirstDiagnosis && !finalStandard) ? findVocabStandardDraft(baseLevel) : null;
+    const existingStandard = finalStandard || draftStandard;
+    s._vocabDraftLevel = draftStandard ? baseLevel : null;
 
     if (existingStandard && existingStandard.questions) {
       box.innerHTML = '<div style="color:#888; font-size:13px;">저장된 표준 시험지를 불러오고 있어요...</div>';
       // 다른 학생 것과 서로 영향 안 주도록 복사한 뒤, 정답 위치를 다시 섞는다 — 예전에 저장된
       // 표준 시험지가 정답 편중 문제(전부 1번 등)를 그대로 가지고 있을 수 있으므로, 불러올 때마다
       // 다시 섞어서 안전하게 만든다(문제·보기 내용 자체는 그대로라 학생 간 비교에는 영향 없음).
-      const qs = shuffleVocabQuestionOptions(JSON.parse(JSON.stringify(existingStandard.questions)));
+      const qs = JSON.parse(JSON.stringify(existingStandard.questions)); // 보기 순서·정답 번호도 표준 시험지 그대로 — 학생마다 섞지 않는다
       selectedVocabStudent._vocabTestCache = qs;
       vocabInteractiveAnswers = {};
       await saveVocabPendingRecord(s, qs, baseLevel);
@@ -6655,7 +6839,9 @@ ${levelDescText}${avoidText}
       // 첫 진단이었고 이 급수의 표준 시험지가 아직 없었다면, 방금 만든 걸 표준으로 저장해서
       // 다음부터 같은 급수로 첫 진단받는 학생들이 재사용하게 한다.
       if (isFirstDiagnosis && !existingStandard) {
-        await saveVocabStandardTest(baseLevel, qs);
+        await saveVocabStandardTest(baseLevel, qs); // 초안으로 저장 — 확인·수정 후 "확정"해야 다른 학생에게 적용됨
+        s._vocabDraftLevel = baseLevel;
+        renderVocabTestBox(qs);
       }
     } catch(e) {
       box.innerHTML = `<div style="color:#c00; font-size:13px;">시험지 생성 실패: ${e.message}</div>`;
@@ -6664,21 +6850,150 @@ ${levelDescText}${avoidText}
 
   // 급수별 "표준 시험지"를 저장한다 — 같은 급수로 첫 진단받는 모든 학생이 같은 문제를 풀게 되어
   // 서로 비교할 수 있게 하기 위함. 한 번 저장되면 그 급수에는 다시 저장하지 않는다(맨 처음 것 유지).
+  const VOCAB_STANDARD_VALID_DAYS = 10; // 확정된 표준 시험지가 유효한 기간(일)
+  function findVocabStandardDraft(level) {
+    return _vocabStandardTests.find(t => t.level === level && t.status === 'draft') || null;
+  }
+  function findVocabStandardFinal(level) {
+    const rec = _vocabStandardTests.find(t => t.level === level && t.status !== 'draft');
+    if (!rec) return null;
+    return isVocabStandardExpired(rec) ? null : rec;
+  }
+  function vocabStandardDaysOld(rec) {
+    const d0 = rec.finalizedAt || rec.createdAt;
+    if (!d0) return 0;
+    const a = new Date(d0 + 'T00:00:00'), b = new Date(todayLocalDateStr() + 'T00:00:00');
+    return Math.floor((b - a) / 86400000);
+  }
+  function isVocabStandardExpired(rec) { return vocabStandardDaysOld(rec) >= VOCAB_STANDARD_VALID_DAYS; }
+
+  // 새로 만든 시험지를 "초안"으로 저장한다 — 이미 같은 급수의 초안이 있으면 교체한다.
   async function saveVocabStandardTest(level, qs) {
-    if (_vocabStandardTests.find(t=>t.level===level)) return; // 이미 있으면(동시 생성 등) 건드리지 않음
-    const rec = { id: 'std_' + level, level, questions: qs, createdAt: todayLocalDateStr() };
+    const old = findVocabStandardDraft(level);
+    if (old) {
+      window._vocabStandardTests = _vocabStandardTests.filter(x => x.id !== old.id);
+      if (window._fbWriteReady()) { try { await window._deleteByFieldId('geuldap_vocab_standard_tests', old.id); } catch(e) { console.error(e); } }
+    }
+    const rec = { id: 'std_draft_' + level, level, questions: qs, status: 'draft', createdAt: todayLocalDateStr() };
+    await persistVocabStandardRecord(rec);
+  }
+  async function persistVocabStandardRecord(rec) {
     window._vocabStandardTests.push(rec);
     localStorage.setItem('gvst', JSON.stringify(_vocabStandardTests));
     if (window._fbWriteReady()) {
       try { await window._add(window._col(window._db,'geuldap_vocab_standard_tests'), rec); }
       catch(e) {
         console.error('표준 시험지 저장 오류', e);
-        // 조용히 넘어가면 이 컴퓨터에서는 만들어진 것처럼 보이지만 서버엔 없어서 무료 진단(free-test)에서 "준비 중"이 뜬다.
-        alert(`⚠️ ${level}급 표준 시험지를 서버에 저장하지 못했어요.\n(이 컴퓨터에는 저장됨 — 무료 진단 페이지에서는 아직 못 씀)\n\n원인: ${e && (e.code || e.message) || e}\n\nFirestore 보안 규칙에 geuldap_vocab_standard_tests가 있는지 확인해주세요.`);
+        alert(`⚠️ ${rec.level}급 표준 시험지를 서버에 저장하지 못했어요.\n(이 컴퓨터에는 저장됨)\n\n원인: ${e && (e.code || e.message) || e}`);
       }
     } else {
-      alert(`⚠️ 서버에 연결되지 않아 ${level}급 표준 시험지가 이 컴퓨터에만 저장됐어요.\n연결된 뒤 관리자 화면을 새로고침하면 자동으로 서버에 올라가요.`);
+      alert(`⚠️ 서버에 연결되지 않아 ${rec.level}급 표준 시험지가 이 컴퓨터에만 저장됐어요.\n연결된 뒤 관리자 화면을 새로고침하면 자동으로 서버에 올라가요.`);
     }
+  }
+  // 초안의 현재 문제를 갱신(문제 수정할 때마다)
+  async function updateVocabDraftQuestions(level, qs) {
+    const d = findVocabStandardDraft(level);
+    if (!d) return;
+    d.questions = JSON.parse(JSON.stringify(qs));
+    localStorage.setItem('gvst', JSON.stringify(_vocabStandardTests));
+    if (window._fbWriteReady()) { try { await window._updateByFieldId('geuldap_vocab_standard_tests', d.id, { questions: d.questions }); } catch(e) { console.error('초안 갱신 오류', e); } }
+  }
+  // 초안을 "확정" — 이때부터 같은 급수로 처음 진단받는 모든 학생(상담자·무료진단 포함)이 같은 문제를 푼다.
+  async function finalizeVocabStandard() {
+    const s = selectedVocabStudent;
+    const level = s && s._vocabDraftLevel;
+    const qs = s && s._vocabTestCache;
+    if (!level || !qs) return;
+    if (!confirm(`${level}급 표준 시험지로 확정할까요?\n\n확정하면 오늘부터 ${VOCAB_STANDARD_VALID_DAYS}일 동안, ${level}급으로 처음 진단받는 모든 학생에게 이 시험지가 똑같이 나갑니다.\n(확정 후에는 문제를 고칠 수 없고, ${VOCAB_STANDARD_VALID_DAYS}일이 지나면 새로 만들 수 있어요)`)) return;
+    // 확정본은 보기 순서를 섞기 전의 현재 문제 그대로 저장한다(불러올 때마다 학생별로 보기 순서만 섞임)
+    const toDelete = _vocabStandardTests.filter(x => x.level === level);
+    window._vocabStandardTests = _vocabStandardTests.filter(x => x.level !== level);
+    if (window._fbWriteReady()) { for (const x of toDelete) { try { await window._deleteByFieldId('geuldap_vocab_standard_tests', x.id); } catch(e) { console.error(e); } } }
+    const rec = { id: 'std_' + level, level, questions: JSON.parse(JSON.stringify(qs)), status: 'final', createdAt: todayLocalDateStr(), finalizedAt: todayLocalDateStr() };
+    await persistVocabStandardRecord(rec);
+    s._vocabDraftLevel = null;
+    renderVocabTestBox(qs);
+    alert(`${level}급 표준 시험지를 확정했어요. ${VOCAB_STANDARD_VALID_DAYS}일 동안 같은 급수 첫 진단 학생에게 동일하게 적용됩니다.`);
+  }
+  // 초안을 버리고 완전히 새로 만든다
+  async function regenerateVocabDraft() {
+    const s = selectedVocabStudent;
+    if (!s || !s._vocabDraftLevel) return;
+    if (!confirm('지금 초안을 버리고 새 문제로 다시 만들까요?')) return;
+    const level = s._vocabDraftLevel;
+    const d = findVocabStandardDraft(level);
+    if (d) {
+      window._vocabStandardTests = _vocabStandardTests.filter(x => x.id !== d.id);
+      localStorage.setItem('gvst', JSON.stringify(_vocabStandardTests));
+      if (window._fbWriteReady()) { try { await window._deleteByFieldId('geuldap_vocab_standard_tests', d.id); } catch(e) { console.error(e); } }
+    }
+    s._skipPendingConfirm = true; // 방금 "전체 다시 생성"을 확인받았으므로 대기중 시험지 확인 창은 건너뜀
+    try { await generateVocabTest(); } finally { s._skipPendingConfirm = false; }
+  }
+
+  // 초안 문제 하나를 직접 고친다
+  function openVocabQuestionEditor(i) {
+    const s = selectedVocabStudent;
+    const q = s && s._vocabTestCache && s._vocabTestCache[i];
+    if (!q) return;
+    let host = document.getElementById('vocabQEditModal');
+    if (!host) { host = document.createElement('div'); host.id = 'vocabQEditModal'; host.className = 'modal-bg'; document.body.appendChild(host); }
+    const opt = function(k) { return '<input type="text" id="vqe_o' + k + '" value="' + escapeHtml((q.options||[])[k]||'').replace(/"/g,'&quot;') + '" style="margin-bottom:4px;">'; };
+    host.innerHTML = '<div class="modal" style="max-width:560px; max-height:88vh; overflow-y:auto;"><div class="modal-title">' + (i+1) + '번 문제 수정 <span style="font-size:12px; color:#888; font-weight:400;">(' + q.level + '급 · ' + escapeHtml(q.type||'') + ')</span></div>' +
+      '<label style="font-size:12px;">문제</label><textarea id="vqe_q" rows="3">' + escapeHtml(q.question||'') + '</textarea>' +
+      '<div style="font-size:11px; color:#888; margin:2px 0 8px;">밑줄 칠 낱말은 __낱말__ 처럼 밑줄 두 개로 감싸세요.</div>' +
+      '<label style="font-size:12px;">보기 ①~④</label>' + opt(0) + opt(1) + opt(2) + opt(3) +
+      '<label style="font-size:12px; margin-top:6px; display:block;">정답</label><select id="vqe_a" style="width:auto;">' + [0,1,2,3].map(function(k){ return '<option value="' + k + '"' + (q.answerIndex===k?' selected':'') + '>' + ['①','②','③','④'][k] + '</option>'; }).join('') + '</select>' +
+      '<label style="font-size:12px; margin-top:8px; display:block;">해설</label><textarea id="vqe_e" rows="2">' + escapeHtml(q.explanation||'') + '</textarea>' +
+      '<div id="vqe_msg" style="font-size:12px; color:#888; margin-top:6px;"></div>' +
+      '<div style="display:flex; gap:8px; justify-content:flex-end; margin-top:12px; flex-wrap:wrap;"><button class="btn btn-secondary" onclick="aiRegenerateVocabQuestion(' + i + ')">🔄 AI로 이 문제만 다시 생성</button><button class="btn btn-secondary" onclick="document.getElementById(\'vocabQEditModal\').classList.remove(\'open\')">취소</button><button class="btn btn-primary" onclick="saveVocabQuestionEdit(' + i + ')">저장</button></div></div>';
+    host.classList.add('open');
+  }
+  async function commitVocabTestChange(qs) {
+    const s = selectedVocabStudent;
+    s._vocabTestCache = qs;
+    // 이 학생의 대기중 기록의 문제도 같이 바꿔서, 인쇄한 시험지와 기록이 어긋나지 않게 한다
+    const pid = s._vocabPendingRecordId;
+    const rec = pid && _vocabRecords.find(r => r.id === pid);
+    if (rec) {
+      rec.questions = JSON.parse(JSON.stringify(qs));
+      localStorage.setItem('gvr', JSON.stringify(_vocabRecords));
+      if (window._fbWriteReady()) { try { await window._updateByFieldId('geuldap_vocab_records', pid, { questions: rec.questions }); } catch(e) { console.error(e); } }
+    }
+    if (s._vocabDraftLevel) await updateVocabDraftQuestions(s._vocabDraftLevel, qs);
+    renderVocabTestBox(qs);
+    const ak = document.getElementById('vocabAnswerKeyArea'); if (ak && s._vocabDraftLevel) ak.style.display = '';
+  }
+  async function saveVocabQuestionEdit(i) {
+    const s = selectedVocabStudent;
+    const qs = JSON.parse(JSON.stringify(s._vocabTestCache));
+    const opts = [0,1,2,3].map(function(k){ return document.getElementById('vqe_o'+k).value.trim(); });
+    const qText = document.getElementById('vqe_q').value.trim();
+    if (!qText || opts.some(function(o){ return !o; })) { alert('문제와 보기 4개를 모두 입력해주세요.'); return; }
+    if (new Set(opts).size < 4) { alert('보기에 같은 내용이 있어요.'); return; }
+    qs[i] = Object.assign({}, qs[i], { question: qText, options: opts, answerIndex: parseInt(document.getElementById('vqe_a').value), explanation: document.getElementById('vqe_e').value.trim() });
+    document.getElementById('vocabQEditModal').classList.remove('open');
+    await commitVocabTestChange(qs);
+  }
+  async function aiRegenerateVocabQuestion(i) {
+    const s = selectedVocabStudent;
+    const cur = s._vocabTestCache[i];
+    const msg = document.getElementById('vqe_msg');
+    msg.textContent = 'AI가 새 문제를 만들고 있어요...';
+    const d = vocabLevelDef(cur.level);
+    const others = s._vocabTestCache.filter(function(_, k){ return k !== i; }).map(function(q){ return q.question; }).join('\n');
+    const prompt = `당신은 한국 국어 어휘 교육 전문가입니다. 아래 조건에 맞는 4지선다 객관식 문제 딱 1개를 새로 만들어주세요.\n\n급수: ${cur.level}급 (${d.band} ${d.sub}): ${d.desc}\n문제 유형: ${cur.type || '뜻고르기'}\n\n기존에 쓰인 문제(이 문제들과 같은 낱말은 쓰지 말 것):\n${others}\n\n이 문제는 마음에 들지 않아 교체합니다(이와 다른 낱말로): ${cur.question}\n\n요구사항: 정답이 단 하나로 명확할 것, 보기 4개는 같은 형식의 짧은 낱말/어구, 밑줄 칠 낱말은 __낱말__ 로 감쌀 것, explanation에 정답 이유를 한두 문장으로.\n설명이나 코드블록 없이 아래 형식의 JSON 객체 하나로만 응답:\n{"level":${cur.level},"type":"${cur.type || '뜻고르기'}","question":"...","options":["","","",""],"answerIndex":0,"explanation":"..."}`;
+    try {
+      const text = await callGemini(prompt);
+      const obj = JSON.parse(text.replace(/```json|```/g,'').trim());
+      const fixed = shuffleVocabQuestionOptions([obj])[0];
+      if (!fixed || !fixed.options || fixed.options.length !== 4) throw new Error('형식 오류');
+      document.getElementById('vqe_q').value = fixed.question || '';
+      [0,1,2,3].forEach(function(k){ document.getElementById('vqe_o'+k).value = fixed.options[k] || ''; });
+      document.getElementById('vqe_a').value = String(fixed.answerIndex);
+      document.getElementById('vqe_e').value = fixed.explanation || '';
+      msg.textContent = '새 문제가 채워졌어요. 확인하고 "저장"을 누르세요.';
+    } catch(e) { msg.textContent = 'AI 생성 실패: ' + e.message; }
   }
 
   // 저장된 표준 시험지를 전부 지운다 — 정답 편중 방지(보기 순서 섞기) 기능이 추가되기 전에
@@ -6799,13 +7114,23 @@ ${levelDescText}${avoidText}
     const box = document.getElementById('vocabWorksheetResult');
     const optionLabels = ['①','②','③','④'];
     const rows = qs.map((q,i)=>buildVocabTestRowHtml(q, i, optionLabels)).join('');
+    const draftMode = !!(s && s._vocabDraftLevel);
     const answerRows = qs.map((q,i)=>`<tr>
-      <td style="border:1px solid #ccc; padding:6px; text-align:center;">${i+1}</td>
+      <td style="border:1px solid #ccc; padding:6px; text-align:center;">${i+1}${draftMode ? `<br><button class="btn btn-secondary btn-sm" style="margin-top:4px; padding:2px 6px;" onclick="openVocabQuestionEditor(${i})">✏️ 수정</button>` : ''}</td>
       <td style="border:1px solid #ccc; padding:6px; text-align:center;">${q.level}급</td>
       <td style="border:1px solid #ccc; padding:6px; text-align:center;">${optionLabels[q.answerIndex]} ${(q.options||[])[q.answerIndex]||''}</td>
       <td style="border:1px solid #ccc; padding:6px; font-size:12px; color:#555;">${q.explanation||''}</td>
     </tr>`).join('');
+    const finalRec = (s && !s._vocabDraftLevel) ? _vocabStandardTests.find(x => x.level === currentVocabLevel(s) && x.status !== 'draft') : null;
+    const bannerHtml = draftMode
+      ? `<div style="max-width:800px; background:#fff8e1; border:1px solid #f0c36d; border-radius:8px; padding:10px 12px; margin-bottom:10px; font-size:13px;">
+           <div style="font-weight:700; color:#8a6d00;">📝 ${s._vocabDraftLevel}급 표준 시험지 초안</div>
+           <div style="color:#666; margin:3px 0 8px;">처음 만들어진 문제라 어색한 문제가 있을 수 있어요. 아래 <b>정답지의 "✏️ 수정"</b>으로 문제를 고치거나 다시 만든 뒤, 괜찮으면 <b>확정</b>하세요. 확정하면 ${VOCAB_STANDARD_VALID_DAYS}일 동안 ${s._vocabDraftLevel}급으로 처음 진단받는 모든 학생이 같은 문제를 풀어요. (확정 전에는 다른 학생에게 적용되지 않아요)</div>
+           <div style="display:flex; gap:8px; flex-wrap:wrap;"><button class="btn btn-primary btn-sm" onclick="finalizeVocabStandard()">✅ 이 시험지로 확정</button><button class="btn btn-secondary btn-sm" onclick="regenerateVocabDraft()">🔄 전체 다시 생성</button></div>
+         </div>`
+      : (finalRec ? `<div style="max-width:800px; font-size:12px; color:#2f6b3a; margin-bottom:8px;">✅ 확정된 ${finalRec.level}급 표준 시험지 — 확정 ${vocabStandardDaysOld(finalRec)}일째 (${Math.max(0, VOCAB_STANDARD_VALID_DAYS - vocabStandardDaysOld(finalRec))}일 후 새로 만들 수 있어요)</div>` : '');
     box.innerHTML = `
+      ${bannerHtml}
       <div id="vocabTestPrintArea" style="max-width:800px;">
         ${vocabPrintFrameOpen('어휘 진단 시험지 (객관식)')}
         <div style="text-align:center; font-size:13px; color:#888; margin-bottom:14px;">${s.name} · ${s.grade||''} · ${todayLocalDateStr()} · 이름: ________</div>
@@ -6825,7 +7150,7 @@ ${levelDescText}${avoidText}
           <button class="btn btn-secondary btn-sm" onclick="toggleVocabAnswerKey()">🔑 정답지 보기/숨기기</button>
           <button class="btn btn-primary btn-sm" onclick="gradeVocabInteractive()">✅ 위에서 고른 답으로 채점하기</button>
         </div>
-        <div id="vocabAnswerKeyArea" style="display:none; margin-top:14px; max-width:800px;">
+        <div id="vocabAnswerKeyArea" style="display:${draftMode ? '' : 'none'}; margin-top:14px; max-width:800px;">
           <div style="font-weight:700; margin-bottom:6px;">정답과 해설 (원장님용 — 채점 후 아래 "시험 결과 입력" 버튼으로 급수별 정답 수를 입력해주세요)</div>
           <table style="border-collapse:collapse; width:100%; font-size:13px;">
             <tr style="background:#faf8f3;"><th style="border:1px solid #ccc; padding:6px;">번호</th><th style="border:1px solid #ccc; padding:6px;">급수</th><th style="border:1px solid #ccc; padding:6px;">정답</th><th style="border:1px solid #ccc; padding:6px;">해설</th></tr>
