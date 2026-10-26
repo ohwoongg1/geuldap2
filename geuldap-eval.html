@@ -2339,7 +2339,7 @@
 
 <script>
   // ===== 버전 정보 (콘솔에서 확인: APP_VERSION 또는 페이지 로드시 자동 출력) =====
-  const APP_VERSION = 'v8.36';
+  const APP_VERSION = 'v8.39';
   const APP_VERSION_LOG = [
     'v1.0 — 탭 구조 + UI 껍데기',
     'v1.1 — AI 문제 생성 + 개념 사다리',
@@ -2519,7 +2519,10 @@
     'v8.33 — [수정] 표준 시험지를 불러올 때 학생마다 보기 순서를 다시 섞던 것을 없앰 — 문제·보기 순서·정답 번호가 같은 급수 학생 모두 완전히 동일하게 나감(정답 번호 편중은 처음 만들 때 한 번만 섞어서 방지, 이후 고정)',
     'v8.34 — [수정] 사용자 사례(김민규 5급 시험을 만들었는데 김형주 5급은 다른 문제가 나옴) — 표준 시험지가 "처음 진단받는 학생"에게만 적용되던 제한을 없앰. 이제 처음이든 재진단이든 같은 급수면 확정 후 10일 이내의 표준 시험지(또는 아직 확정 전 초안)를 그대로 사용. 확정된 표준 시험지도 "✏️ 이 표준 시험지 수정"으로 문제별 수정 가능(수정 즉시 표준에 저장, 이미 인쇄한 시험지는 그대로)',
     'v8.35 — [신규] 어휘력 시험지 화면에 "📌 이 시험지를 N급 표준 시험지로 지정" 버튼 추가 — 이미 만들어진 특정 학생(예: 김민규)의 시험지를 그 급수의 확정 표준 시험지로 바로 지정할 수 있고, 같은 급수 학생(예: 김형주)이 시험지를 생성하면 같은 문제가 나옴. 기존 표준·초안은 교체됨',
-    'v8.36 — [개선] 학생·학부모에게 나가는 어휘력 결과에서 "초2 수준" 같은 학년 빗댄 표현과 학년 대비 앞섬/뒤처짐 문구를 모두 제거 — 학습지 인쇄 머리글·진단 평가서·결과 안내 복사 문구는 "N급"만 표시, 학부모 보고서 AI 작성 지침에서 학년 비교 데이터를 빼고 학년 빗댄 표현·또래 비교를 금지, 8급 설명의 "초4" 문구 삭제. 선생님만 보는 화면(학생 선택·현재 급수 표시·결과 입력)은 기존대로 유지'
+    'v8.36 — [개선] 학생·학부모에게 나가는 어휘력 결과에서 "초2 수준" 같은 학년 빗댄 표현과 학년 대비 앞섬/뒤처짐 문구를 모두 제거 — 학습지 인쇄 머리글·진단 평가서·결과 안내 복사 문구는 "N급"만 표시, 학부모 보고서 AI 작성 지침에서 학년 비교 데이터를 빼고 학년 빗댄 표현·또래 비교를 금지, 8급 설명의 "초4" 문구 삭제. 선생님만 보는 화면(학생 선택·현재 급수 표시·결과 입력)은 기존대로 유지',
+    'v8.37 — [개선] 어휘력 "🖨️ 평가서 인쇄"를 시험문제 → 정답지(정답·학생 답 O/X·해설) → 의견(종합 급수·급수별 정답 현황·진단 보고서 글) 순서로 구성 — 이전엔 급수별 표와 의견만 있었음. 페이지마다 학원 헤더와 테두리가 붙는 독립 블록(시험문제 7개/정답지 9개씩)으로 분할. 저장된 문제 데이터가 없는 예전 기록은 의견 페이지만 출력',
+    'v8.38 — [개선] 어휘력 카톡 복사(통짜 공유·"문제만 복사")를 인쇄 평가서와 같은 순서(시험문제 → 정답지 → 의견)로 변경 — 시험문제에 보기(①~④)를 포함(이전엔 보기가 빠져 있었음), 정답지에 정답·학생 답 O/X·해설, 의견에 결과 요약+보고서 글. 밑줄 표시(__낱말__)는 [낱말]로 바꿔 복사',
+    'v8.39 — [수정] 과거 평가 기록의 보고서를 열었을 때도 결과·문제·전체 복사가 그 기록 기준으로 되도록 수정 — 이전엔 복사 버튼이 항상 가장 최근 기록을 복사했고 "전체 한번에 복사"는 과거 보고서 화면에 없었음. 이제 "보고서 보기"에서 연 기록의 시험문제·정답지·의견을 그대로 복사 가능(저장된 문제·보고서가 있는 기록만)'
   ];
   console.log(`%c글답 학습기 ${APP_VERSION}`, 'font-weight:bold; font-size:14px; color:#0d1b4b;');
   console.groupCollapsed('%c버전 기록 (클릭해서 펼치기)', 'color:#888; font-size:11px;');
@@ -7635,11 +7638,11 @@ ${s.name} 학생의 이번 어휘력 진단 결과를 안내드립니다.
           <div style="font-weight:700; margin-bottom:8px;">어휘력 진단 보고서</div>
           <textarea id="vocabParentReportText" rows="10" style="width:100%; font-size:14px; line-height:1.7; padding:10px; border:1px solid #ddd; border-radius:8px; font-family:inherit;">${text}</textarea>
           <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
-            <button class="btn btn-secondary btn-sm" onclick="copyVocabResultOnly()">📋 결과만 복사</button>
-            <button class="btn btn-secondary btn-sm" onclick="copyVocabQuestionsOnly()">📋 문제만 복사</button>
+            <button class="btn btn-secondary btn-sm" onclick="copyVocabResultOnly('${last.id}')">📋 결과만 복사</button>
+            <button class="btn btn-secondary btn-sm" onclick="copyVocabQuestionsOnly('${last.id}')">📋 문제만 복사</button>
             <button class="btn btn-secondary btn-sm" onclick="copyVocabReportOnly()">📋 보고서만 복사</button>
             <button class="btn btn-primary btn-sm" onclick="printVocabReportCertificate('${last.id}')">🖨️ 평가서 인쇄</button>
-            <button class="btn btn-primary btn-sm" onclick="shareVocabToParent()">📤 전체 한번에 복사</button>
+            <button class="btn btn-primary btn-sm" onclick="shareVocabToParent('${last.id}')">📤 전체 한번에 복사</button>
           </div>
         </div>
       `;
@@ -7659,8 +7662,11 @@ ${s.name} 학생의 이번 어휘력 진단 결과를 안내드립니다.
         <div style="font-weight:700; margin-bottom:8px;">어휘력 진단 보고서 (${rec.month})</div>
         <textarea id="vocabParentReportText" rows="10" style="width:100%; font-size:14px; line-height:1.7; padding:10px; border:1px solid #ddd; border-radius:8px; font-family:inherit;">${rec.report}</textarea>
         <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
+          <button class="btn btn-secondary btn-sm" onclick="copyVocabResultOnly('${rec.id}')">📋 결과만 복사</button>
+          <button class="btn btn-secondary btn-sm" onclick="copyVocabQuestionsOnly('${rec.id}')">📋 문제만 복사</button>
           <button class="btn btn-secondary btn-sm" onclick="copyVocabReportOnly()">📋 보고서만 복사</button>
           <button class="btn btn-primary btn-sm" onclick="printVocabReportCertificate('${rec.id}')">🖨️ 평가서 인쇄</button>
+          <button class="btn btn-primary btn-sm" onclick="shareVocabToParent('${rec.id}')">📤 전체 한번에 복사</button>
           <button class="btn btn-secondary btn-sm" onclick="generateVocabParentReport('${rec.id}')">🔄 이 기록 보고서 다시 작성</button>
         </div>
       </div>
@@ -7686,28 +7692,85 @@ ${s.name} 학생의 이번 어휘력 진단 결과를 안내드립니다.
       <td style="border:1px solid #ccc; padding:6px; text-align:center;">${b.total ? Math.round(b.correct/b.total*100) : 0}%</td>
     </tr>`).join('');
     const paragraphHtml = escapeHtml(text).split('\n').filter(p=>p.trim()).map(p=>`<p style="margin:0 0 10px; line-height:1.8;">${p}</p>`).join('');
-    const bodyHtml = `
-      <div style="max-width:800px; font-family:inherit;">
-        ${vocabPrintFrameOpen('어휘력 진단 평가서')}
-        <table style="width:100%; font-size:13px; margin-bottom:16px;">
+    // 평가서 구성: ① 시험문제 ② 정답지(학생 답·O/X·해설) ③ 의견(종합 급수·급수별 현황·보고서 글)
+    // 각 페이지가 자기 헤더+테두리를 가진 독립 블록이 되도록 미리 나눈다(인쇄 엔진에 기대지 않는 방식).
+    const optionLabels = ['①','②','③','④'];
+    const qs = last.questions || [];
+    const PER_Q = 7, PER_A = 9;
+    const ans = last.answers || {};
+    const infoTable = `<table style="width:100%; font-size:13px; margin-bottom:12px;">
           <tr>
-            <td style="padding:4px 0; width:70px; color:#888;">이름</td><td style="padding:4px 0; font-weight:600;">${escapeHtml(s.name)}</td>
-            <td style="padding:4px 0; width:70px; color:#888;">학년</td><td style="padding:4px 0;">${escapeHtml(s.grade||'')}</td>
+            <td style="padding:3px 0; width:70px; color:#888;">이름</td><td style="padding:3px 0; font-weight:600;">${escapeHtml(s.name)}</td>
+            <td style="padding:3px 0; width:70px; color:#888;">학년</td><td style="padding:3px 0;">${escapeHtml(s.grade||'')}</td>
           </tr>
           <tr>
-            <td style="padding:4px 0; color:#888;">진단일</td><td style="padding:4px 0;">${last.date||last.month}</td>
-            <td style="padding:4px 0; color:#888;">종합 급수</td><td style="padding:4px 0; font-weight:700; color:#0d6b6b;">${last.newLevel}급</td>
+            <td style="padding:3px 0; color:#888;">진단일</td><td style="padding:3px 0;">${last.date||last.month}</td>
+            <td style="padding:3px 0; color:#888;">종합 급수</td><td style="padding:3px 0; font-weight:700; color:#0d6b6b;">${last.newLevel}급</td>
           </tr>
+        </table>`;
+    const blocks = [];
+    const qPages = []; for (let a=0; a<qs.length; a+=PER_Q) qPages.push(qs.slice(a, a+PER_Q));
+    const aPages = []; for (let a=0; a<qs.length; a+=PER_A) aPages.push(qs.slice(a, a+PER_A));
+    const total = qPages.length + aPages.length + 1;
+    let n = 0;
+    qPages.forEach((pageQs, pi) => {
+      n++;
+      const rows = pageQs.map((q, k) => {
+        const idx = pi*PER_Q + k;
+        return `<tr>
+          <td style="border:1px solid #ccc; padding:8px; width:30px; text-align:center; vertical-align:top;">${idx+1}</td>
+          <td style="border:1px solid #ccc; padding:8px;">
+            <div style="font-size:11px; color:#0d6b6b; margin-bottom:2px;">[${escapeHtml(q.type||'')}]</div>
+            <div>${renderUnderlineMarkers(q.question)}</div>
+            <div style="margin-top:6px; color:#333;">${(q.options||[]).map((op,oi)=>`${optionLabels[oi]} ${escapeHtml(op)}`).join('&nbsp;&nbsp;&nbsp;')}</div>
+          </td></tr>`;
+      }).join('');
+      blocks.push(`<div style="max-width:800px; break-after:page; page-break-after:always;">
+        ${vocabPrintFrameOpen(`어휘력 진단 평가서 · 시험문제 (${n}/${total})`)}
+        ${pi===0 ? infoTable : ''}
+        <table style="border-collapse:collapse; width:100%; font-size:13px;">
+          <tr style="background:#faf8f3;"><th style="border:1px solid #ccc; padding:6px;">번호</th><th style="border:1px solid #ccc; padding:6px;">문제 / 보기</th></tr>
+          ${rows}
         </table>
+        ${VOCAB_PRINT_FRAME_CLOSE}
+      </div>`);
+    });
+    aPages.forEach((pageQs, pi) => {
+      n++;
+      const rows = pageQs.map((q, k) => {
+        const idx = pi*PER_A + k;
+        const sel = ans[idx];
+        const hasSel = sel !== undefined && sel !== null;
+        const ok = hasSel && sel === q.answerIndex;
+        return `<tr>
+          <td style="border:1px solid #ccc; padding:6px; text-align:center;">${idx+1}</td>
+          <td style="border:1px solid #ccc; padding:6px; text-align:center;">${q.level}급</td>
+          <td style="border:1px solid #ccc; padding:6px;">${optionLabels[q.answerIndex]} ${escapeHtml((q.options||[])[q.answerIndex]||'')}</td>
+          <td style="border:1px solid #ccc; padding:6px; text-align:center;">${hasSel ? `${optionLabels[sel]} <b style="color:${ok?'#2f6b3a':'#c0392b'};">${ok?'O':'X'}</b>` : '-'}</td>
+          <td style="border:1px solid #ccc; padding:6px; font-size:12px; color:#555;">${escapeHtml(q.explanation||'')}</td></tr>`;
+      }).join('');
+      blocks.push(`<div style="max-width:800px; break-after:page; page-break-after:always;">
+        ${vocabPrintFrameOpen(`어휘력 진단 평가서 · 정답지 (${n}/${total})`)}
+        <table style="border-collapse:collapse; width:100%; font-size:12.5px;">
+          <tr style="background:#faf8f3;"><th style="border:1px solid #ccc; padding:6px;">번호</th><th style="border:1px solid #ccc; padding:6px;">급수</th><th style="border:1px solid #ccc; padding:6px;">정답</th><th style="border:1px solid #ccc; padding:6px;">학생 답</th><th style="border:1px solid #ccc; padding:6px;">해설</th></tr>
+          ${rows}
+        </table>
+        ${VOCAB_PRINT_FRAME_CLOSE}
+      </div>`);
+    });
+    n++;
+    blocks.push(`<div style="max-width:800px;">
+        ${vocabPrintFrameOpen(`어휘력 진단 평가서 · 의견${total>1 ? ` (${n}/${total})` : ''}`)}
+        ${infoTable}
         <table style="border-collapse:collapse; width:100%; font-size:13px; margin-bottom:20px;">
           <tr style="background:#faf8f3;"><th style="border:1px solid #ccc; padding:6px;">급수</th><th style="border:1px solid #ccc; padding:6px;">정답 수</th><th style="border:1px solid #ccc; padding:6px;">정답률</th></tr>
           ${breakdownRows}
         </table>
-        <div style="font-size:13px;">${paragraphHtml}</div>
+        <div style="font-size:13px;">${paragraphHtml || '<span style="color:#888;">(진단 보고서를 먼저 작성하면 여기에 의견이 들어갑니다)</span>'}</div>
         ${VOCAB_PRINT_FRAME_CLOSE}
-      </div>`;
+      </div>`);
     const w = window.open('', '_blank');
-    w.document.write(`<html><head><style>${VOCAB_PRINT_FRAME_FILL_CSS}</style></head><body>${bodyHtml}</body></html>`);
+    w.document.write(`<html><head><style>${VOCAB_PRINT_FRAME_FILL_CSS}</style></head><body>${blocks.join('')}</body></html>`);
     w.document.close();
     w.print();
   }
@@ -7731,14 +7794,18 @@ ${s.name} 학생의 이번 어휘력 진단 결과를 안내드립니다.
   function buildVocabQuestionsText(last) {
     const optionLabels = ['①','②','③','④'];
     if (!last.questions || !last.questions.length) return '(이 기록은 저장된 문제 데이터가 없습니다.)';
-    let msg = `[문제와 정답·해설 (총 ${last.questions.length}문항)]\n`;
+    const strip = function(x) { return String(x || '').replace(/__(.+?)__/g, '[$1]'); }; // 밑줄 표시(__낱말__)는 카톡에서 [낱말]로
+    let msg = `[시험문제 (총 ${last.questions.length}문항)]\n`;
+    last.questions.forEach((q,i)=>{
+      msg += `${i+1}. ${strip(q.question)}\n   ${(q.options||[]).map((op,oi)=>`${optionLabels[oi]} ${op}`).join('  ')}\n`;
+    });
+    msg += `\n[정답지]\n`;
     last.questions.forEach((q,i)=>{
       const correctText = `${optionLabels[q.answerIndex]} ${(q.options||[])[q.answerIndex]||''}`;
-      let line = `${i+1}. (${q.level}급) ${q.question}\n   정답: ${correctText}`;
-      if (last.answers && last.answers[i]!==undefined) {
+      let line = `${i+1}. (${q.level}급) 정답: ${correctText}`;
+      if (last.answers && last.answers[i]!==undefined && last.answers[i]!==null) {
         const sel = last.answers[i];
-        const selText = `${optionLabels[sel]} ${(q.options||[])[sel]||''}`;
-        line += ` | 학생 답: ${selText} (${sel===q.answerIndex ? 'O' : 'X'})`;
+        line += ` | 학생 답: ${optionLabels[sel]} ${(q.options||[])[sel]||''} (${sel===q.answerIndex ? 'O' : 'X'})`;
       }
       if (q.explanation) line += `\n   해설: ${q.explanation}`;
       msg += line + '\n';
@@ -7752,23 +7819,25 @@ ${s.name} 학생의 이번 어휘력 진단 결과를 안내드립니다.
       .catch(()=> alert('복사에 실패했어요. 화면의 내용을 직접 선택해서 복사해주세요.'));
   }
 
-  function getSelectedVocabLastRecord() {
+  // recordId를 주면 그 기록(과거 평가 포함)을, 안 주면 가장 최근 완료 기록을 돌려준다.
+  function getSelectedVocabLastRecord(recordId) {
     const s = selectedVocabStudent;
     const recs = (s.isGuest ? _vocabRecords.filter(r=>r.studentId===s.id) : vocabRecordsFor(s.id)).filter(r=>r.status!=='pending');
     recs.sort((a,b)=>a.month.localeCompare(b.month));
-    return { s, last: recs[recs.length-1] };
+    const picked = recordId ? recs.find(r=>r.id===recordId) : null;
+    return { s, last: picked || recs[recs.length-1] };
   }
 
   // 결과 요약만 복사 (학년·급수·점수·급수별 현황)
-  function copyVocabResultOnly() {
-    const { s, last } = getSelectedVocabLastRecord();
+  function copyVocabResultOnly(rid) {
+    const { s, last } = getSelectedVocabLastRecord(rid);
     if (!last) { alert('평가 기록을 찾을 수 없습니다.'); return; }
     copyToClipboardWithAlert(buildVocabResultText(s, last));
   }
 
   // 문제·정답·해설만 복사
-  function copyVocabQuestionsOnly() {
-    const { last } = getSelectedVocabLastRecord();
+  function copyVocabQuestionsOnly(rid) {
+    const { last } = getSelectedVocabLastRecord(rid);
     if (!last) { alert('평가 기록을 찾을 수 없습니다.'); return; }
     copyToClipboardWithAlert(buildVocabQuestionsText(last));
   }
@@ -7781,13 +7850,13 @@ ${s.name} 학생의 이번 어휘력 진단 결과를 안내드립니다.
   }
 
   // 결과 요약 + 문제 전부 + 진단 보고서를 한 번에 복사 (기존 통짜 공유 버튼)
-  function shareVocabToParent() {
-    const { s, last } = getSelectedVocabLastRecord();
+  function shareVocabToParent(rid) {
+    const { s, last } = getSelectedVocabLastRecord(rid);
     if (!last) { alert('평가 기록을 찾을 수 없습니다.'); return; }
     const ta = document.getElementById('vocabParentReportText');
     const reportText = ta ? ta.value.trim() : '';
     if (!reportText) { alert('먼저 "진단 보고서 생성"을 눌러 보고서를 작성해주세요.'); return; }
-    const msg = buildVocabResultText(s, last) + '\n' + buildVocabQuestionsText(last) + `\n[진단 보고서]\n${reportText}\n`;
+    const msg = buildVocabQuestionsText(last) + `\n[의견]\n` + buildVocabResultText(s, last) + `\n${reportText}\n`; // 시험문제 → 정답지 → 의견 순서
     copyToClipboardWithAlert(msg);
   }
 
