@@ -2339,7 +2339,7 @@
 
 <script>
   // ===== 버전 정보 (콘솔에서 확인: APP_VERSION 또는 페이지 로드시 자동 출력) =====
-  const APP_VERSION = 'v8.33';
+  const APP_VERSION = 'v8.35';
   const APP_VERSION_LOG = [
     'v1.0 — 탭 구조 + UI 껍데기',
     'v1.1 — AI 문제 생성 + 개념 사다리',
@@ -2516,7 +2516,9 @@
     'v8.30 — [신규] 휴원 기간 기능 — "휴원 처리" 시 시작일·복귀 예정일(비우면 복귀 버튼 누를 때까지)을 입력. 휴원 기간 동안 ①출석부(자동 출석 저장 포함)·시간표에서 제외 ②수납관리에는 "🏖️ 휴원 MM/DD ~ MM/DD" 표시, 그 달 전체가 휴원이면 "휴원처리" 배지·청구액 0원·미납 집계 제외, 일부만 겹치면 일반 청구 행에 휴원 기간만 표시. 복귀 예정일이 지나면 접속 시 자동 복귀(syncPauseStates), 복귀 버튼은 휴원 기간을 어제까지로 남김. 휴원 기간 안에 이미 자동으로 만들어진 출석 기록(autoFilled)은 접속 시 자동 정리. 기존 휴원 학생(기간 없음)은 이전과 같게 동작',
     'v8.31 — [신규] "📦 퇴원생 보관함" — 학생 삭제 시 그 학생의 글·평가·퀴즈·어휘력·독서·출석·수납 자료를 삭제 전에 서버(geuldap_archive)와 내 컴퓨터(JSON 파일)에 자동 보관. 보관함에서 보기·인쇄 / 파일 저장 / 학생 복원(글·평가 포함) / 영구 삭제 가능. 이 기능 이전에 삭제한 학생은 글·평가가 이미 지워져 복구 불가하지만, 서버에 남아있던 어휘력·독서·출석·수납 자료는 "보관 기록 없이 남은 자료"로 찾아 보관함에 저장할 수 있음',
     'v8.32 — [개선] 표준 어휘력 시험지를 "초안 → 수정 → 확정" 방식으로 변경 — 같은 급수로 처음 진단받는 학생이 처음 시험지를 만들면 먼저 "초안"으로 저장되고(다른 학생에겐 아직 적용 안 됨, 단 초안이 있으면 같은 초안을 공유), 정답지에서 문제별 ✏️ 직접 수정 / AI로 그 문제만 다시 생성 / 전체 다시 생성이 가능. "✅ 확정"을 누르면 그때부터 10일 동안 같은 급수 첫 진단 학생(상담자 포함)과 무료진단 페이지에 똑같은 문제가 나가고, 10일이 지나면 다음 첫 진단 때 새 초안이 만들어짐(기존 확정본은 새 시험지가 확정될 때까지 무료진단용으로 유지). 기존에 저장돼 있던 표준 시험지는 확정된 것으로 보되 10일이 지난 것은 만료로 처리',
-    'v8.33 — [수정] 표준 시험지를 불러올 때 학생마다 보기 순서를 다시 섞던 것을 없앰 — 문제·보기 순서·정답 번호가 같은 급수 학생 모두 완전히 동일하게 나감(정답 번호 편중은 처음 만들 때 한 번만 섞어서 방지, 이후 고정)'
+    'v8.33 — [수정] 표준 시험지를 불러올 때 학생마다 보기 순서를 다시 섞던 것을 없앰 — 문제·보기 순서·정답 번호가 같은 급수 학생 모두 완전히 동일하게 나감(정답 번호 편중은 처음 만들 때 한 번만 섞어서 방지, 이후 고정)',
+    'v8.34 — [수정] 사용자 사례(김민규 5급 시험을 만들었는데 김형주 5급은 다른 문제가 나옴) — 표준 시험지가 "처음 진단받는 학생"에게만 적용되던 제한을 없앰. 이제 처음이든 재진단이든 같은 급수면 확정 후 10일 이내의 표준 시험지(또는 아직 확정 전 초안)를 그대로 사용. 확정된 표준 시험지도 "✏️ 이 표준 시험지 수정"으로 문제별 수정 가능(수정 즉시 표준에 저장, 이미 인쇄한 시험지는 그대로)',
+    'v8.35 — [신규] 어휘력 시험지 화면에 "📌 이 시험지를 N급 표준 시험지로 지정" 버튼 추가 — 이미 만들어진 특정 학생(예: 김민규)의 시험지를 그 급수의 확정 표준 시험지로 바로 지정할 수 있고, 같은 급수 학생(예: 김형주)이 시험지를 생성하면 같은 문제가 나옴. 기존 표준·초안은 교체됨'
   ];
   console.log(`%c글답 학습기 ${APP_VERSION}`, 'font-weight:bold; font-size:14px; color:#0d1b4b;');
   console.groupCollapsed('%c버전 기록 (클릭해서 펼치기)', 'color:#888; font-size:11px;');
@@ -6784,10 +6786,12 @@ ${a.name}`;
     const isFirstDiagnosis = vocabRecordsFor(s.id).filter(r=>r.status!=='pending').length === 0;
     // 표준 시험지는 "초안 → 확인·수정 → 확정" 순서로 만든다. 확정된 시험지는 10일 동안만 유효하고,
     // 10일이 지나면 다음 첫 진단 때 새로 초안을 만든다.
-    const finalStandard = isFirstDiagnosis ? findVocabStandardFinal(baseLevel) : null;
-    const draftStandard = (isFirstDiagnosis && !finalStandard) ? findVocabStandardDraft(baseLevel) : null;
+    // 처음 진단이든 재진단이든, 같은 급수의 표준 시험지(확정 후 10일 이내 또는 초안)가 있으면 그걸 그대로 쓴다.
+    const finalStandard = findVocabStandardFinal(baseLevel);
+    const draftStandard = !finalStandard ? findVocabStandardDraft(baseLevel) : null;
     const existingStandard = finalStandard || draftStandard;
     s._vocabDraftLevel = draftStandard ? baseLevel : null;
+    s._vocabEditFinalLevel = null;
 
     if (existingStandard && existingStandard.questions) {
       box.innerHTML = '<div style="color:#888; font-size:13px;">저장된 표준 시험지를 불러오고 있어요...</div>';
@@ -6838,7 +6842,7 @@ ${levelDescText}${avoidText}
       renderVocabTestBox(qs);
       // 첫 진단이었고 이 급수의 표준 시험지가 아직 없었다면, 방금 만든 걸 표준으로 저장해서
       // 다음부터 같은 급수로 첫 진단받는 학생들이 재사용하게 한다.
-      if (isFirstDiagnosis && !existingStandard) {
+      if (!existingStandard) {
         await saveVocabStandardTest(baseLevel, qs); // 초안으로 저장 — 확인·수정 후 "확정"해야 다른 학생에게 적용됨
         s._vocabDraftLevel = baseLevel;
         renderVocabTestBox(qs);
@@ -6892,7 +6896,7 @@ ${levelDescText}${avoidText}
   }
   // 초안의 현재 문제를 갱신(문제 수정할 때마다)
   async function updateVocabDraftQuestions(level, qs) {
-    const d = findVocabStandardDraft(level);
+    const d = findVocabStandardDraft(level) || _vocabStandardTests.find(x => x.level === level && x.status !== 'draft');
     if (!d) return;
     d.questions = JSON.parse(JSON.stringify(qs));
     localStorage.setItem('gvst', JSON.stringify(_vocabStandardTests));
@@ -6904,7 +6908,7 @@ ${levelDescText}${avoidText}
     const level = s && s._vocabDraftLevel;
     const qs = s && s._vocabTestCache;
     if (!level || !qs) return;
-    if (!confirm(`${level}급 표준 시험지로 확정할까요?\n\n확정하면 오늘부터 ${VOCAB_STANDARD_VALID_DAYS}일 동안, ${level}급으로 처음 진단받는 모든 학생에게 이 시험지가 똑같이 나갑니다.\n(확정 후에는 문제를 고칠 수 없고, ${VOCAB_STANDARD_VALID_DAYS}일이 지나면 새로 만들 수 있어요)`)) return;
+    if (!confirm(`${level}급 표준 시험지로 확정할까요?\n\n확정하면 오늘부터 ${VOCAB_STANDARD_VALID_DAYS}일 동안, ${level}급 시험을 보는 모든 학생에게 이 시험지가 똑같이 나갑니다.\n(확정 후에도 "✏️ 이 표준 시험지 수정"으로 고칠 수 있고, ${VOCAB_STANDARD_VALID_DAYS}일이 지나면 새로 만들 수 있어요)`)) return;
     // 확정본은 보기 순서를 섞기 전의 현재 문제 그대로 저장한다(불러올 때마다 학생별로 보기 순서만 섞임)
     const toDelete = _vocabStandardTests.filter(x => x.level === level);
     window._vocabStandardTests = _vocabStandardTests.filter(x => x.level !== level);
@@ -6914,6 +6918,35 @@ ${levelDescText}${avoidText}
     s._vocabDraftLevel = null;
     renderVocabTestBox(qs);
     alert(`${level}급 표준 시험지를 확정했어요. ${VOCAB_STANDARD_VALID_DAYS}일 동안 같은 급수 첫 진단 학생에게 동일하게 적용됩니다.`);
+  }
+  // 지금 화면의 시험지(예: 김민규 학생 것)를 그 급수의 확정 표준 시험지로 지정한다 — 기존 표준·초안은 대체된다.
+  async function setCurrentTestAsStandard(level) {
+    const s = selectedVocabStudent;
+    const qs = s && s._vocabTestCache;
+    if (!qs || !qs.length) return;
+    if (!confirm(`지금 화면의 시험지를 ${level}급 표준 시험지로 지정할까요?\n\n오늘부터 ${VOCAB_STANDARD_VALID_DAYS}일 동안 ${level}급 시험을 보는 모든 학생에게 이 문제가 똑같이 나가요.\n(기존 ${level}급 표준 시험지·초안은 이것으로 교체돼요)`)) return;
+    const toDelete = _vocabStandardTests.filter(x => x.level === level);
+    window._vocabStandardTests = _vocabStandardTests.filter(x => x.level !== level);
+    if (window._fbWriteReady()) { for (const x of toDelete) { try { await window._deleteByFieldId('geuldap_vocab_standard_tests', x.id); } catch(e) { console.error(e); } } }
+    await persistVocabStandardRecord({ id: 'std_' + level, level, questions: JSON.parse(JSON.stringify(qs)), status: 'final', createdAt: todayLocalDateStr(), finalizedAt: todayLocalDateStr() });
+    s._vocabDraftLevel = null; s._vocabEditFinalLevel = null;
+    renderVocabTestBox(qs);
+    alert(`${level}급 표준 시험지로 지정했어요. 다른 학생(예: 같은 급수의 김형주)이 "시험지 생성"을 누르면 같은 문제가 나와요.\n※ 이미 다른 문제로 시험지를 만들어 둔 학생은 "시험지 생성"을 다시 누르면 바뀌어요.`);
+  }
+
+  // 확정된 표준 시험지를 다시 고치는 모드
+  function startEditFinalStandard() {
+    const s = selectedVocabStudent;
+    if (!s || !s._vocabTestCache) return;
+    s._vocabEditFinalLevel = currentVocabLevel(s);
+    renderVocabTestBox(s._vocabTestCache);
+    const ak = document.getElementById('vocabAnswerKeyArea'); if (ak) ak.style.display = '';
+  }
+  function finishEditFinalStandard() {
+    const s = selectedVocabStudent;
+    if (!s) return;
+    s._vocabEditFinalLevel = null;
+    renderVocabTestBox(s._vocabTestCache);
   }
   // 초안을 버리고 완전히 새로 만든다
   async function regenerateVocabDraft() {
@@ -6960,9 +6993,10 @@ ${levelDescText}${avoidText}
       localStorage.setItem('gvr', JSON.stringify(_vocabRecords));
       if (window._fbWriteReady()) { try { await window._updateByFieldId('geuldap_vocab_records', pid, { questions: rec.questions }); } catch(e) { console.error(e); } }
     }
-    if (s._vocabDraftLevel) await updateVocabDraftQuestions(s._vocabDraftLevel, qs);
+    const editLevel = s._vocabDraftLevel || s._vocabEditFinalLevel;
+    if (editLevel) await updateVocabDraftQuestions(editLevel, qs);
     renderVocabTestBox(qs);
-    const ak = document.getElementById('vocabAnswerKeyArea'); if (ak && s._vocabDraftLevel) ak.style.display = '';
+    const ak = document.getElementById('vocabAnswerKeyArea'); if (ak && editLevel) ak.style.display = '';
   }
   async function saveVocabQuestionEdit(i) {
     const s = selectedVocabStudent;
@@ -7114,21 +7148,31 @@ ${levelDescText}${avoidText}
     const box = document.getElementById('vocabWorksheetResult');
     const optionLabels = ['①','②','③','④'];
     const rows = qs.map((q,i)=>buildVocabTestRowHtml(q, i, optionLabels)).join('');
-    const draftMode = !!(s && s._vocabDraftLevel);
+    const draftMode = !!(s && (s._vocabDraftLevel || s._vocabEditFinalLevel));
     const answerRows = qs.map((q,i)=>`<tr>
       <td style="border:1px solid #ccc; padding:6px; text-align:center;">${i+1}${draftMode ? `<br><button class="btn btn-secondary btn-sm" style="margin-top:4px; padding:2px 6px;" onclick="openVocabQuestionEditor(${i})">✏️ 수정</button>` : ''}</td>
       <td style="border:1px solid #ccc; padding:6px; text-align:center;">${q.level}급</td>
       <td style="border:1px solid #ccc; padding:6px; text-align:center;">${optionLabels[q.answerIndex]} ${(q.options||[])[q.answerIndex]||''}</td>
       <td style="border:1px solid #ccc; padding:6px; font-size:12px; color:#555;">${q.explanation||''}</td>
     </tr>`).join('');
-    const finalRec = (s && !s._vocabDraftLevel) ? _vocabStandardTests.find(x => x.level === currentVocabLevel(s) && x.status !== 'draft') : null;
-    const bannerHtml = draftMode
+    const finalRec = (s && !s._vocabDraftLevel && !s._vocabEditFinalLevel) ? _vocabStandardTests.find(x => x.level === currentVocabLevel(s) && x.status !== 'draft') : null;
+    // 지금 화면의 시험지가 표준 시험지와 다르면(또는 표준이 아직 없으면), 이 시험지를 그 급수의 표준으로 지정할 수 있게 한다
+    let setStdBtn = '';
+    if (s && !s._vocabDraftLevel && !s._vocabEditFinalLevel) {
+      const stdLevel = (function(){ const pr = s._vocabPendingRecordId && _vocabRecords.find(function(r){ return r.id === s._vocabPendingRecordId; }); return (pr && pr.oldLevel) || currentVocabLevel(s); })();
+      const curStd = _vocabStandardTests.find(function(x){ return x.level === stdLevel && x.status !== 'draft'; });
+      const same = curStd && JSON.stringify(curStd.questions) === JSON.stringify(qs);
+      if (!same) setStdBtn = `<div style="max-width:800px; margin-bottom:8px;"><button class="btn btn-secondary btn-sm" onclick="setCurrentTestAsStandard(${stdLevel})">📌 이 시험지를 ${stdLevel}급 표준 시험지로 지정</button> <span style="font-size:11px; color:#888;">같은 급수 학생에게 ${VOCAB_STANDARD_VALID_DAYS}일 동안 이 문제가 똑같이 나가요</span></div>`;
+    }
+    const editFinalBanner = (s && s._vocabEditFinalLevel)
+      ? `<div style="max-width:800px; background:#eef6ff; border:1px solid #9cc4ee; border-radius:8px; padding:10px 12px; margin-bottom:10px; font-size:13px;"><div style="font-weight:700; color:#1d5fa3;">✏️ ${s._vocabEditFinalLevel}급 확정 표준 시험지 수정 중</div><div style="color:#666; margin:3px 0 8px;">정답지의 "✏️ 수정"으로 고친 내용은 바로 표준 시험지에 저장되고, 이후 이 급수 시험을 보는 학생부터 적용돼요. (이미 인쇄·배포한 시험지는 바뀌지 않아요)</div><button class="btn btn-secondary btn-sm" onclick="finishEditFinalStandard()">수정 끝내기</button></div>` : '';
+    const bannerHtml = setStdBtn + (editFinalBanner || (draftMode
       ? `<div style="max-width:800px; background:#fff8e1; border:1px solid #f0c36d; border-radius:8px; padding:10px 12px; margin-bottom:10px; font-size:13px;">
            <div style="font-weight:700; color:#8a6d00;">📝 ${s._vocabDraftLevel}급 표준 시험지 초안</div>
-           <div style="color:#666; margin:3px 0 8px;">처음 만들어진 문제라 어색한 문제가 있을 수 있어요. 아래 <b>정답지의 "✏️ 수정"</b>으로 문제를 고치거나 다시 만든 뒤, 괜찮으면 <b>확정</b>하세요. 확정하면 ${VOCAB_STANDARD_VALID_DAYS}일 동안 ${s._vocabDraftLevel}급으로 처음 진단받는 모든 학생이 같은 문제를 풀어요. (확정 전에는 다른 학생에게 적용되지 않아요)</div>
+           <div style="color:#666; margin:3px 0 8px;">처음 만들어진 문제라 어색한 문제가 있을 수 있어요. 아래 <b>정답지의 "✏️ 수정"</b>으로 문제를 고치거나 다시 만든 뒤, 괜찮으면 <b>확정</b>하세요. 확정하면 ${VOCAB_STANDARD_VALID_DAYS}일 동안 ${s._vocabDraftLevel}급 시험을 보는 모든 학생(처음이든 재진단이든)이 같은 문제를 풀어요. (확정 전에는 무료 진단 페이지에는 적용되지 않아요)</div>
            <div style="display:flex; gap:8px; flex-wrap:wrap;"><button class="btn btn-primary btn-sm" onclick="finalizeVocabStandard()">✅ 이 시험지로 확정</button><button class="btn btn-secondary btn-sm" onclick="regenerateVocabDraft()">🔄 전체 다시 생성</button></div>
          </div>`
-      : (finalRec ? `<div style="max-width:800px; font-size:12px; color:#2f6b3a; margin-bottom:8px;">✅ 확정된 ${finalRec.level}급 표준 시험지 — 확정 ${vocabStandardDaysOld(finalRec)}일째 (${Math.max(0, VOCAB_STANDARD_VALID_DAYS - vocabStandardDaysOld(finalRec))}일 후 새로 만들 수 있어요)</div>` : '');
+      : (finalRec ? `<div style="max-width:800px; font-size:12px; color:#2f6b3a; margin-bottom:8px;">✅ 확정된 ${finalRec.level}급 표준 시험지 — 확정 ${vocabStandardDaysOld(finalRec)}일째 (${Math.max(0, VOCAB_STANDARD_VALID_DAYS - vocabStandardDaysOld(finalRec))}일 후 새로 만들 수 있어요) <button class="btn btn-secondary btn-sm" style="margin-left:6px;" onclick="startEditFinalStandard()">✏️ 이 표준 시험지 수정</button></div>` : '')));
     box.innerHTML = `
       ${bannerHtml}
       <div id="vocabTestPrintArea" style="max-width:800px;">
