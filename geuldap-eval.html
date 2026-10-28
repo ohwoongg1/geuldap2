@@ -2340,7 +2340,7 @@
 
 <script>
   // ===== 버전 정보 (콘솔에서 확인: APP_VERSION 또는 페이지 로드시 자동 출력) =====
-  const APP_VERSION = 'v8.46';
+  const APP_VERSION = 'v8.47';
   const APP_VERSION_LOG = [
     'v1.0 — 탭 구조 + UI 껍데기',
     'v1.1 — AI 문제 생성 + 개념 사다리',
@@ -2530,7 +2530,8 @@
     'v8.43 — [신규] 어휘력 진단 보고서에 "단순 등급 매기기가 아니라 중·고등 학습의 바탕이 되는 기본 어휘에 아이·학부모가 관심을 갖고 낱말을 익히게 하려는 취지" 고정 문단 추가(진단 결과 설명 뒤, 4주 커리큘럼 안내 앞)',
     'v8.44 — [개선] 학년 기준에 못 미치는 학생의 어휘력 보고서: 학년 언급 없이 "기초를 다지는 단계, 꾸준히 하면 올라갈 수 있다"는 격려 어조로 작성하도록 지침 보강(부정 표현 금지, 사실과 다른 수준 표현도 금지)',
     'v8.45 — [수정] 어휘력 보고서에서 11급→13급인데 "한 단계 상승"이라 나오던 문제 수정(단계 수 표현 금지, "○급에서 ○급으로"로만 서술). 4주 커리큘럼 안내 문구를 "학원에서도 지속적인 관심으로 4주 자료를 학습시키겠으니 가정에서도 관심을 가져 달라"는 내용으로 변경',
-    'v8.46 — [문구] 4주 커리큘럼 안내 문단 끝을 "큰 도움이 되겠습니다"로 부드럽게 수정'
+    'v8.46 — [문구] 4주 커리큘럼 안내 문단 끝을 "큰 도움이 되겠습니다"로 부드럽게 수정',
+    'v8.47 — [신규] 4주 급수향상 커리큘럼 아래 "📝 주차별 단어시험지 인쇄" 버튼 — 커리큘럼 낱말(주당 10개)만으로 주차별 단어시험 4장(홀수=낱말→뜻, 짝수=뜻→낱말) + 정답지 1장 인쇄. AI 추가 호출 없음'
   ];
   console.log(`%c글답 학습기 ${APP_VERSION}`, 'font-weight:bold; font-size:14px; color:#0d1b4b;');
   console.groupCollapsed('%c버전 기록 (클릭해서 펼치기)', 'color:#888; font-size:11px;');
@@ -6740,8 +6741,56 @@ ${a.name}`;
       <div id="vocabCurriculumPrintArea">${weekBlocksHtml}</div>
       <div style="margin-top:10px;">
         <button class="btn btn-secondary btn-sm" onclick="printVocabCurriculum()">🖨️ 4주치 전체 인쇄</button>
+        <button class="btn btn-secondary btn-sm" onclick="printVocabWeeklyWordTests()">📝 주차별 단어시험지 인쇄 (주 10단어)</button>
       </div>
     `;
+  }
+
+  // 4주 커리큘럼의 낱말만으로 만드는 주차별 단어시험(AI 추가 호출 없음 — 이미 만든 낱말·뜻을 그대로 사용).
+  // 홀수 번호는 "낱말 보고 뜻 쓰기", 짝수 번호는 "뜻 보고 낱말 쓰기"로 섞어 출제. 시험지 4장 뒤에 정답지 1장.
+  function buildVocabWeeklyWordTestHtml(cache) {
+    const s = selectedVocabStudent;
+    const weeks = cache.weeksData || [];
+    const testPages = weeks.map((w, wi) => {
+      const rows = (w.words || []).map((x, i) => {
+        const isWordFirst = (i % 2 === 0);
+        return `<tr>
+          <td style="border:1px solid #999; padding:10px 6px; width:34px; text-align:center; font-weight:700;">${i+1}</td>
+          <td style="border:1px solid #999; padding:10px 12px; width:42%; font-size:${isWordFirst ? '17px' : '14px'}; ${isWordFirst ? 'font-weight:700;' : ''}">${escapeHtml(isWordFirst ? x.word : x.meaning)}</td>
+          <td style="border:1px solid #999; padding:10px 12px; color:#bbb; font-size:12px;">${isWordFirst ? '뜻을 쓰세요' : '알맞은 낱말을 쓰세요'}</td>
+        </tr>`;
+      }).join('');
+      return `<div style="max-width:800px; break-after:page; page-break-after:always; margin-bottom:20px;">
+        ${vocabPrintFrameOpen(`급수 향상 단어시험 — ${wi+1}주차`)}
+        <div style="display:flex; justify-content:space-between; font-size:14px; margin-bottom:14px;"><span>이름: ${escapeHtml(s.name)}</span><span>날짜: ______________</span><span>점수: ______ / 10</span></div>
+        <div style="font-size:12px; color:#666; margin-bottom:8px;">※ 1·3·5·7·9번은 낱말을 보고 뜻을, 2·4·6·8·10번은 뜻을 보고 낱말을 쓰세요.</div>
+        <table style="border-collapse:collapse; width:100%; font-size:14px;">${rows}</table>
+        ${VOCAB_PRINT_FRAME_CLOSE}
+      </div>`;
+    }).join('');
+    const answerBlocks = weeks.map((w, wi) => {
+      const items = (w.words || []).map((x, i) => {
+        const isWordFirst = (i % 2 === 0);
+        return `<div style="font-size:13px; margin-bottom:4px;">${i+1}. <b>${escapeHtml(isWordFirst ? x.meaning : x.word)}</b></div>`;
+      }).join('');
+      return `<div style="border:1px solid #ccc; border-radius:4px; padding:10px 14px;"><div style="font-weight:700; margin-bottom:8px; color:#0d6b6b;">${wi+1}주차</div>${items}</div>`;
+    }).join('');
+    const answerPage = `<div style="max-width:800px; margin-bottom:20px;">
+        ${vocabPrintFrameOpen('급수 향상 단어시험 — 정답지')}
+        <div style="font-size:12px; color:#888; margin-bottom:10px; text-align:center;">${escapeHtml(s.name)} 학생 · (홀수: 뜻이 정답 / 짝수: 낱말이 정답)</div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">${answerBlocks}</div>
+        ${VOCAB_PRINT_FRAME_CLOSE}
+      </div>`;
+    return testPages + answerPage;
+  }
+
+  function printVocabWeeklyWordTests() {
+    const cache = selectedVocabStudent && selectedVocabStudent._vocabCurriculumCache;
+    if (!cache || !cache.weeksData || !cache.weeksData.length) { alert('먼저 급수 향상 4주 커리큘럼을 만들어주세요.'); return; }
+    const w = window.open('', '_blank');
+    w.document.write(`<html><head><meta charset="utf-8"><style>${VOCAB_PRINT_FRAME_FILL_CSS}</style></head><body>${buildVocabWeeklyWordTestHtml(cache)}</body></html>`);
+    w.document.close();
+    w.print();
   }
 
   function printVocabCurriculum() {
