@@ -2340,7 +2340,7 @@
 
 <script>
   // ===== 버전 정보 (콘솔에서 확인: APP_VERSION 또는 페이지 로드시 자동 출력) =====
-  const APP_VERSION = 'v8.50';
+  const APP_VERSION = 'v8.51';
   const APP_VERSION_LOG = [
     'v1.0 — 탭 구조 + UI 껍데기',
     'v1.1 — AI 문제 생성 + 개념 사다리',
@@ -2534,7 +2534,8 @@
     'v8.47 — [신규] 4주 급수향상 커리큘럼 아래 "📝 주차별 단어시험지 인쇄" 버튼 — 커리큘럼 낱말(주당 10개)만으로 주차별 단어시험 4장(홀수=낱말→뜻, 짝수=뜻→낱말) + 정답지 1장 인쇄. AI 추가 호출 없음',
     'v8.48 — [개선] 주차별 단어시험을 전 문항 "뜻 보고 낱말 쓰기"로 변경 + 4주 커리큘럼 아래 "주차별 쪽지시험 기록"(주차별 점수 0~10·시험일·8점 이상 통과 표시) 저장 기능 추가(학생 커리큘럼 저장본에 함께 저장)',
     'v8.49 — [개선] 주차별 단어시험지의 문제 순서를 그 주 안에서 섞어 출제(학생·주차별 고정 섞기 — 재인쇄해도 시험지·정답지 순서 동일, 학습자료 순서와는 다름)',
-    'v8.50 — [개선] 단어시험 섞기 강화: 학습자료와 같은 자리에 남는 낱말이 없고, 원래 순서로 이어지던 두 낱말이 붙어 나오지 않도록 재섞기(학생·주차별 고정)'
+    'v8.50 — [개선] 단어시험 섞기 강화: 학습자료와 같은 자리에 남는 낱말이 없고, 원래 순서로 이어지던 두 낱말이 붙어 나오지 않도록 재섞기(학생·주차별 고정)',
+    'v8.51 — [개선] 휴원·삭제 시 출석부 정리: 휴원 시작일·퇴원일까지의 출석은 그대로 보존, 그 이후에 자동으로 채워진 "미확인 자동 출석"은 즉시 삭제(직접 저장한 출석은 유지). 삭제할 때 마지막 출석일(퇴원일)을 입력받고(기본 오늘), 일별·월별 출석부에서도 휴원 기간의 자동 기록은 숨김'
   ];
   console.log(`%c글답 학습기 ${APP_VERSION}`, 'font-weight:bold; font-size:14px; color:#0d1b4b;');
   console.groupCollapsed('%c버전 기록 (클릭해서 펼치기)', 'color:#888; font-size:11px;');
@@ -2762,7 +2763,7 @@
     attCurrentDate = dateStr;
     document.getElementById('attDate').value = dateStr;
     const wk = weekdayKorFromDateStr(dateStr);
-    const existing = window._attendance.filter(a => a.date === dateStr);
+    const existing = window._attendance.filter(a => a.date === dateStr && !(a.autoFilled && studentPausedOn(_students.find(x=>x.id===a.studentId), dateStr)));
     const existingMap = {};
     existing.forEach(a => { existingMap[a.studentId] = a; });
 
@@ -2956,7 +2957,7 @@
     const daysInMonth = new Date(y, m, 0).getDate();
 
     // 그 달에 기록이 있는 학생 + 현재 재원 중인 학생을 합쳐서, 이름순으로 정렬
-    const recordsThisMonth = window._attendance.filter(a => a.date.startsWith(monthStr));
+    const recordsThisMonth = window._attendance.filter(a => a.date.startsWith(monthStr) && !(a.autoFilled && studentPausedOn(_students.find(x=>x.id===a.studentId), a.date)));
     const idsWithRecords = new Set(recordsThisMonth.map(r=>r.studentId));
     const studentMap = new Map();
     _students.forEach(s => { if (!studentPauseInMonth(s, monthStr) || !studentPauseInMonth(s, monthStr).full) studentMap.set(s.id, s); });
@@ -5475,6 +5476,20 @@ ${a.name}`;
 
   // 휴원/복귀 전환. 휴원 중인 학생은 출석부 기본 목록(요일 스케줄)에서 자동 제외된다.
   // 요일 스케줄 자체는 그대로 남아있어서, 복귀만 하면 예전에 설정해둔 요일이 그대로 출석부에 다시 반영된다.
+  // 휴원·퇴원 이후 날짜에 자동으로 만들어졌던 "미확인 자동 출석" 기록을 지운다(앱이 알아서 채운 기록만 —
+  // 원장님이 직접 저장한 출석 기록은 건드리지 않는다). shouldRemove(dateStr)가 true인 날짜가 대상.
+  async function pruneAutoAttendance(studentId, shouldRemove) {
+    try {
+      const bad = (window._attendance || []).filter(a => a.studentId === studentId && a.autoFilled && shouldRemove(a.date));
+      if (!bad.length) return;
+      window._attendance = window._attendance.filter(a => bad.indexOf(a) < 0);
+      localStorage.setItem('ga', JSON.stringify(window._attendance));
+      if (window._fbWriteReady && window._fbWriteReady() && window._deleteAutoAttendance) {
+        await Promise.all(bad.map(a => window._deleteAutoAttendance(a.studentId, a.date).catch(e=>console.error('자동출석 삭제 오류', e))));
+      }
+    } catch(e) { console.error('자동출석 정리 오류', e); }
+  }
+
   function toggleStudentActive(id) {
     const idx = _students.findIndex(s=>s.id===id);
     if (idx === -1) return;
@@ -5502,6 +5517,9 @@ ${a.name}`;
     if (window._fbReady) {
       window._updateByFieldId('geuldap_students', id, patch).catch(console.error);
     }
+    // 휴원 기간(또는 복귀로 바뀐 기간)에 미리 자동으로 채워졌던 출석 기록은 바로 정리 — 휴원 전 출석은 그대로 남는다
+    const updated = _students[idx];
+    pruneAutoAttendance(id, function(d) { return studentPausedOn(updated, d); });
     renderStudents();
   }
 
@@ -5856,6 +5874,10 @@ ${a.name}`;
   async function deleteStudent(id) {
     const stu = _students.find(s=>s.id===id);
     if (!confirm('삭제할까요?\n\n삭제하기 전에 이 학생의 모든 자료(글·평가·어휘력·독서·출석·수납)를 "📦 퇴원생 보관함"에 저장해둡니다.')) return;
+    const leaveDate = prompt((stu ? stu.name : '') + ' 학생의 마지막 출석일(퇴원일)을 입력하세요 (예: 2026-10-28)\n이 날짜까지의 출석 기록은 그대로 보존되고, 이후 날짜에 자동으로 채워진 출석은 지워져요.\n오늘까지면 그대로 확인을 누르세요.', todayLocalDateStr());
+    if (leaveDate === null) return;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(leaveDate.trim())) { alert('날짜 형식이 올바르지 않아요. 2026-10-28 처럼 입력해주세요. 삭제를 취소했어요.'); return; }
+    await pruneAutoAttendance(id, function(d) { return d > leaveDate.trim(); });
     const arc = buildStudentArchive(id, stu);
     downloadArchiveFile(arc); // 내 컴퓨터에도 파일로 한 부 남긴다
     const ok = await saveArchiveToServer(arc);
