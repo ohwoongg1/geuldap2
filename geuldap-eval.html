@@ -2340,7 +2340,7 @@
 
 <script>
   // ===== 버전 정보 (콘솔에서 확인: APP_VERSION 또는 페이지 로드시 자동 출력) =====
-  const APP_VERSION = 'v8.48';
+  const APP_VERSION = 'v8.49';
   const APP_VERSION_LOG = [
     'v1.0 — 탭 구조 + UI 껍데기',
     'v1.1 — AI 문제 생성 + 개념 사다리',
@@ -2532,7 +2532,8 @@
     'v8.45 — [수정] 어휘력 보고서에서 11급→13급인데 "한 단계 상승"이라 나오던 문제 수정(단계 수 표현 금지, "○급에서 ○급으로"로만 서술). 4주 커리큘럼 안내 문구를 "학원에서도 지속적인 관심으로 4주 자료를 학습시키겠으니 가정에서도 관심을 가져 달라"는 내용으로 변경',
     'v8.46 — [문구] 4주 커리큘럼 안내 문단 끝을 "큰 도움이 되겠습니다"로 부드럽게 수정',
     'v8.47 — [신규] 4주 급수향상 커리큘럼 아래 "📝 주차별 단어시험지 인쇄" 버튼 — 커리큘럼 낱말(주당 10개)만으로 주차별 단어시험 4장(홀수=낱말→뜻, 짝수=뜻→낱말) + 정답지 1장 인쇄. AI 추가 호출 없음',
-    'v8.48 — [개선] 주차별 단어시험을 전 문항 "뜻 보고 낱말 쓰기"로 변경 + 4주 커리큘럼 아래 "주차별 쪽지시험 기록"(주차별 점수 0~10·시험일·8점 이상 통과 표시) 저장 기능 추가(학생 커리큘럼 저장본에 함께 저장)'
+    'v8.48 — [개선] 주차별 단어시험을 전 문항 "뜻 보고 낱말 쓰기"로 변경 + 4주 커리큘럼 아래 "주차별 쪽지시험 기록"(주차별 점수 0~10·시험일·8점 이상 통과 표시) 저장 기능 추가(학생 커리큘럼 저장본에 함께 저장)',
+    'v8.49 — [개선] 주차별 단어시험지의 문제 순서를 그 주 안에서 섞어 출제(학생·주차별 고정 섞기 — 재인쇄해도 시험지·정답지 순서 동일, 학습자료 순서와는 다름)'
   ];
   console.log(`%c글답 학습기 ${APP_VERSION}`, 'font-weight:bold; font-size:14px; color:#0d1b4b;');
   console.groupCollapsed('%c버전 기록 (클릭해서 펼치기)', 'color:#888; font-size:11px;');
@@ -6750,11 +6751,25 @@ ${a.name}`;
 
   // 4주 커리큘럼의 낱말만으로 만드는 주차별 단어시험(AI 추가 호출 없음 — 이미 만든 낱말·뜻을 그대로 사용).
   // 전 문항 "뜻 보고 낱말 쓰기"로 출제. 시험지 4장 뒤에 정답지 1장.
+  // 한 주차 안의 낱말 순서를 섞는다. 학생 id+주차를 씨앗으로 쓰는 고정 섞기라서, 다시 인쇄해도
+  // 시험지와 정답지 순서가 항상 같고(정답지 불일치 방지), 커리큘럼 자료의 낱말 순서와는 달라진다.
+  function shuffledWeekWords(words, seedStr) {
+    let h = 2166136261;
+    for (let i = 0; i < seedStr.length; i++) { h ^= seedStr.charCodeAt(i); h = Math.imul(h, 16777619); }
+    const rnd = function() { h = Math.imul(h ^ (h >>> 15), 2246822507); h = Math.imul(h ^ (h >>> 13), 3266489909); h ^= h >>> 16; return (h >>> 0) / 4294967296; };
+    const arr = (words || []).slice();
+    for (let i = arr.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); const tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp; }
+    // 섞은 결과가 원래 순서와 똑같이 나오면 한 칸 돌려서 반드시 달라지게 한다
+    if (arr.length > 2 && arr.every(function(x, i) { return x === words[i]; })) arr.push(arr.shift());
+    return arr;
+  }
+
   function buildVocabWeeklyWordTestHtml(cache) {
     const s = selectedVocabStudent;
     const weeks = cache.weeksData || [];
     const testPages = weeks.map((w, wi) => {
-      const rows = (w.words || []).map((x, i) => {
+      const shuffledWords = shuffledWeekWords(w.words, String(s.id) + '_wk' + (wi+1));
+      const rows = shuffledWords.map((x, i) => {
         return `<tr>
           <td style="border:1px solid #999; padding:14px 6px; width:34px; text-align:center; font-weight:700;">${i+1}</td>
           <td style="border:1px solid #999; padding:14px 12px; width:55%; font-size:14px;">${escapeHtml(x.meaning)}</td>
@@ -6770,7 +6785,7 @@ ${a.name}`;
       </div>`;
     }).join('');
     const answerBlocks = weeks.map((w, wi) => {
-      const items = (w.words || []).map((x, i) => {
+      const items = shuffledWeekWords(w.words, String(s.id) + '_wk' + (wi+1)).map((x, i) => {
         return `<div style="font-size:13px; margin-bottom:4px;">${i+1}. <b>${escapeHtml(x.word)}</b></div>`;
       }).join('');
       return `<div style="border:1px solid #ccc; border-radius:4px; padding:10px 14px;"><div style="font-weight:700; margin-bottom:8px; color:#0d6b6b;">${wi+1}주차</div>${items}</div>`;
