@@ -2340,7 +2340,7 @@
 
 <script>
   // ===== 버전 정보 (콘솔에서 확인: APP_VERSION 또는 페이지 로드시 자동 출력) =====
-  const APP_VERSION = 'v8.49';
+  const APP_VERSION = 'v8.50';
   const APP_VERSION_LOG = [
     'v1.0 — 탭 구조 + UI 껍데기',
     'v1.1 — AI 문제 생성 + 개념 사다리',
@@ -2533,7 +2533,8 @@
     'v8.46 — [문구] 4주 커리큘럼 안내 문단 끝을 "큰 도움이 되겠습니다"로 부드럽게 수정',
     'v8.47 — [신규] 4주 급수향상 커리큘럼 아래 "📝 주차별 단어시험지 인쇄" 버튼 — 커리큘럼 낱말(주당 10개)만으로 주차별 단어시험 4장(홀수=낱말→뜻, 짝수=뜻→낱말) + 정답지 1장 인쇄. AI 추가 호출 없음',
     'v8.48 — [개선] 주차별 단어시험을 전 문항 "뜻 보고 낱말 쓰기"로 변경 + 4주 커리큘럼 아래 "주차별 쪽지시험 기록"(주차별 점수 0~10·시험일·8점 이상 통과 표시) 저장 기능 추가(학생 커리큘럼 저장본에 함께 저장)',
-    'v8.49 — [개선] 주차별 단어시험지의 문제 순서를 그 주 안에서 섞어 출제(학생·주차별 고정 섞기 — 재인쇄해도 시험지·정답지 순서 동일, 학습자료 순서와는 다름)'
+    'v8.49 — [개선] 주차별 단어시험지의 문제 순서를 그 주 안에서 섞어 출제(학생·주차별 고정 섞기 — 재인쇄해도 시험지·정답지 순서 동일, 학습자료 순서와는 다름)',
+    'v8.50 — [개선] 단어시험 섞기 강화: 학습자료와 같은 자리에 남는 낱말이 없고, 원래 순서로 이어지던 두 낱말이 붙어 나오지 않도록 재섞기(학생·주차별 고정)'
   ];
   console.log(`%c글답 학습기 ${APP_VERSION}`, 'font-weight:bold; font-size:14px; color:#0d1b4b;');
   console.groupCollapsed('%c버전 기록 (클릭해서 펼치기)', 'color:#888; font-size:11px;');
@@ -6757,10 +6758,23 @@ ${a.name}`;
     let h = 2166136261;
     for (let i = 0; i < seedStr.length; i++) { h ^= seedStr.charCodeAt(i); h = Math.imul(h, 16777619); }
     const rnd = function() { h = Math.imul(h ^ (h >>> 15), 2246822507); h = Math.imul(h ^ (h >>> 13), 3266489909); h ^= h >>> 16; return (h >>> 0) / 4294967296; };
-    const arr = (words || []).slice();
-    for (let i = arr.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); const tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp; }
-    // 섞은 결과가 원래 순서와 똑같이 나오면 한 칸 돌려서 반드시 달라지게 한다
-    if (arr.length > 2 && arr.every(function(x, i) { return x === words[i]; })) arr.push(arr.shift());
+    const src = (words || []).slice();
+    const n = src.length;
+    // 섞은 결과가 (1) 제자리에 남은 낱말이 없고 (2) 원래 순서로 이어지던 두 낱말(A 다음 B)이 그대로 붙어 있지 않을 때까지
+    // 같은 씨앗으로 다시 섞는다 — 그래야 학습 자료 순서와 확실히 달라 보인다(그래도 결과는 항상 같음).
+    let best = src;
+    for (let tries = 0; tries < 300; tries++) {
+      const arr = src.slice();
+      for (let i = n - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); const tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp; }
+      let ok = true;
+      for (let i = 0; i < n && ok; i++) {
+        if (arr[i] === src[i]) ok = false;
+        if (i > 0 && src.indexOf(arr[i]) === src.indexOf(arr[i-1]) + 1) ok = false;
+      }
+      best = arr;
+      if (ok) break;
+    }
+    const arr = best;
     return arr;
   }
 
