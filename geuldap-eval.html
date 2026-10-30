@@ -1201,6 +1201,7 @@
       <button class="btn btn-secondary btn-sm" onclick="generateVocabWorksheet()">📄 학습지 생성</button>
       <button class="btn btn-secondary btn-sm" onclick="generateVocabCurriculum()">📘 급수 향상 4주 커리큘럼</button>
       <select id="vocabCurriculumTargetSelect" style="padding:4px 8px; border:1px solid #ddd; border-radius:6px; font-size:12px;"></select>
+      <button class="btn btn-secondary btn-sm" onclick="regenerateSharedVocabCurriculum()" title="이 목표 급수의 공용 커리큘럼을 새로 만들어 교체합니다">🔄 이 급수 새로 만들기</button>
       <button class="btn btn-secondary btn-sm" onclick="generateVocabTest()">📝 진단 시험지 생성</button>
       <button class="btn btn-primary btn-sm" onclick="openVocabResultForm()">✅ 시험 결과 입력</button>
       <button class="btn btn-secondary btn-sm" onclick="generateVocabParentReport()">👨‍👩‍👧 진단 보고서 생성</button>
@@ -2276,6 +2277,10 @@
       const asDoc = await getDoc(doc(db, 'geuldap_settings', 'academy'));
       if (asDoc.exists()) window._academySettings = asDoc.data();
     } catch(e2) { console.log('학원 정보 로드:', e2); }
+    try {
+      const vcDoc = await getDoc(doc(db, 'geuldap_settings', 'vocab_curricula'));
+      if (vcDoc.exists() && vcDoc.data().byLevel) { window._vocabCurricula = vcDoc.data().byLevel; localStorage.setItem('gvc', JSON.stringify(window._vocabCurricula)); }
+    } catch(e3) { console.log('공용 커리큘럼 로드:', e3); }
     localStorage.setItem('gs', JSON.stringify(window._students));
     localStorage.setItem('gr', JSON.stringify(window._records));
     localStorage.setItem('gq', JSON.stringify(window._quizzes));
@@ -2340,7 +2345,7 @@
 
 <script>
   // ===== 버전 정보 (콘솔에서 확인: APP_VERSION 또는 페이지 로드시 자동 출력) =====
-  const APP_VERSION = 'v8.53';
+  const APP_VERSION = 'v8.54';
   const APP_VERSION_LOG = [
     'v1.0 — 탭 구조 + UI 껍데기',
     'v1.1 — AI 문제 생성 + 개념 사다리',
@@ -2537,7 +2542,8 @@
     'v8.50 — [개선] 단어시험 섞기 강화: 학습자료와 같은 자리에 남는 낱말이 없고, 원래 순서로 이어지던 두 낱말이 붙어 나오지 않도록 재섞기(학생·주차별 고정)',
     'v8.51 — [개선] 휴원·삭제 시 출석부 정리: 휴원 시작일·퇴원일까지의 출석은 그대로 보존, 그 이후에 자동으로 채워진 "미확인 자동 출석"은 즉시 삭제(직접 저장한 출석은 유지). 삭제할 때 마지막 출석일(퇴원일)을 입력받고(기본 오늘), 일별·월별 출석부에서도 휴원 기간의 자동 기록은 숨김',
     'v8.52 — [수정] 학생 삭제 후에도 오늘 출석부에 "미확인 자동 출석"이 남던 문제 수정: 삭제 시 오늘자 자동 출석도 함께 삭제, 이미 삭제된 학생의 오늘 이후 자동 출석은 접속할 때 자동 정리(직접 저장한 출석은 유지)',
-    'v8.53 — [수정] 어휘력 학부모 보고서에 "本格적으로"처럼 한자가 섞여 나오던 문제 수정: 프롬프트에 한글 전용 지침 추가 + 생성 결과에 한자·일본어가 있으면 자동으로 최대 2번 재요청, 그래도 남으면 경고 표시'
+    'v8.53 — [수정] 어휘력 학부모 보고서에 "本格적으로"처럼 한자가 섞여 나오던 문제 수정: 프롬프트에 한글 전용 지침 추가 + 생성 결과에 한자·일본어가 있으면 자동으로 최대 2번 재요청, 그래도 남으면 경고 표시',
+    'v8.54 — [개선] 4주 급수향상 커리큘럼을 목표 급수별 "학원 공용" 하나로 통일: 같은 급수로 이미 만든 것이 있으면 AI를 다시 부르지 않고 그대로 사용(학생마다·매번 달라지지 않음). "🔄 이 급수 새로 만들기" 버튼으로만 교체(이미 받은 학생의 저장본은 유지). 쪽지시험 점수는 학생별로 따로 기록. 공용 자료는 낱말을 학생 학습이력으로 거르지 않음'
   ];
   console.log(`%c글답 학습기 ${APP_VERSION}`, 'font-weight:bold; font-size:14px; color:#0d1b4b;');
   console.groupCollapsed('%c버전 기록 (클릭해서 펼치기)', 'color:#888; font-size:11px;');
@@ -2587,6 +2593,8 @@
   window._vocabRecords = JSON.parse(localStorage.getItem('gvr') || '[]');
   window._materials = JSON.parse(localStorage.getItem('gml') || '[]');
   window._vocabStandardTests = JSON.parse(localStorage.getItem('gvst') || '[]');
+  // 학원 공용 4주 커리큘럼: 목표 급수별로 하나씩 저장 — 같은 급수 학생은 모두 같은 자료를 쓴다(새로 만들기를 누르기 전까지 유지)
+  window._vocabCurricula = JSON.parse(localStorage.getItem('gvc') || '{}');
   window._academySettings = JSON.parse(localStorage.getItem('gas') || 'null');
 
   // 기본 과정 목록: 아직 과정이 하나도 없으면 자동으로 채운다
@@ -6715,11 +6723,22 @@ ${a.name}`;
       return;
     }
 
+    // 학원 공용 커리큘럼: 같은 목표 급수로 이미 만들어 둔 것이 있으면 AI를 부르지 않고 그대로 쓴다(학생마다·매번 다른 자료가
+    // 생성되면 4주 동안 나눠 준 자료와 어긋나므로). 쪽지시험 점수는 학생별로 새로 기록한다.
+    const sharedCurr = (window._vocabCurricula || {})[String(targetLevel)];
+    if (sharedCurr && sharedCurr.weeksData && sharedCurr.weeksData.length && !s._forceNewCurriculum) {
+      const cacheObj = { curLevel, targetLevel, weeksData: JSON.parse(JSON.stringify(sharedCurr.weeksData)), testCount: completedCount, fromShared: true };
+      selectedVocabStudent._vocabCurriculumCache = cacheObj;
+      await persistVocabCurriculum(s, cacheObj);
+      renderVocabCurriculumBox(cacheObj);
+      return;
+    }
+    s._forceNewCurriculum = false;
+
     const curDef = vocabLevelDef(curLevel);
     const targetDef = vocabLevelDef(targetLevel);
     box.innerHTML = '<div style="color:#888; font-size:13px;">AI가 4주치 커리큘럼을 만들고 있어요...</div>';
-    const alreadyStudied = s.vocabStudiedWords || [];
-    const avoidText = alreadyStudied.length ? `\n이미 이전에 학습한 낱말이라 이번엔 피해주세요: ${alreadyStudied.join(', ')}` : '';
+    const avoidText = ''; // 공용 자료라 특정 학생의 학습 이력으로 낱말을 거르지 않는다
     const prompt = `당신은 한국 국어 어휘 교육 전문가입니다. 학생의 어휘 급수를 한 단계 끌어올리기 위한 4주치 학습 커리큘럼을 만들어주세요.
 
 현재 급수: ${curLevel}급 (${curDef.band} ${curDef.sub})
@@ -6738,6 +6757,7 @@ ${a.name}`;
       const weeksData = JSON.parse(clean);
       const cacheObj = { curLevel, targetLevel, weeksData, testCount: completedCount };
       selectedVocabStudent._vocabCurriculumCache = cacheObj;
+      await saveSharedVocabCurriculum(targetLevel, weeksData);
       const allWords = weeksData.flatMap(w=>(w.words||[]).map(x=>x.word));
       await recordVocabStudiedWords(s, allWords);
       await persistVocabCurriculum(s, cacheObj);
@@ -6745,6 +6765,33 @@ ${a.name}`;
     } catch(e) {
       box.innerHTML = `<div style="color:#c00; font-size:13px;">커리큘럼 생성 실패: ${e.message}</div>`;
     }
+  }
+
+  async function saveSharedVocabCurriculum(targetLevel, weeksData) {
+    const obj = { weeksData: weeksData, createdAt: todayLocalDateStr() };
+    window._vocabCurricula = window._vocabCurricula || {};
+    window._vocabCurricula[String(targetLevel)] = obj;
+    localStorage.setItem('gvc', JSON.stringify(window._vocabCurricula));
+    if (window._fbWriteReady && window._fbWriteReady()) {
+      try {
+        const byLevel = {}; byLevel[String(targetLevel)] = obj;
+        await window._setDoc(window._doc(window._db, 'geuldap_settings', 'vocab_curricula'), { byLevel: byLevel }, { merge: true });
+      } catch(e) { console.error('공용 커리큘럼 저장 오류', e); alert('⚠️ 공용 커리큘럼을 서버에 저장하지 못했어요(이 컴퓨터에는 저장됨).\n원인: ' + (e && (e.code || e.message) || e)); }
+    }
+  }
+
+  // 공용 커리큘럼을 의도적으로 바꾸고 싶을 때만 쓴다 — 이후에 이 급수로 커리큘럼을 만드는 학생부터 새 자료를 받는다.
+  // 이미 자료를 받은 학생의 저장본은 그대로 유지된다(4주 동안 자료가 바뀌지 않도록).
+  async function regenerateSharedVocabCurriculum() {
+    const s = selectedVocabStudent;
+    if (!s) return;
+    const targetSel = document.getElementById('vocabCurriculumTargetSelect');
+    const lv = targetSel && targetSel.value ? parseInt(targetSel.value) : Math.min(VOCAB_MAX_LEVEL, currentVocabLevel(s) + 1);
+    if (!confirm(lv + '급 목표의 공용 4주 커리큘럼을 새로 만들까요?\n\n이후 이 급수로 커리큘럼을 만드는 학생부터 새 자료를 받아요. 이미 자료를 나눠 준 학생의 저장본은 바뀌지 않아요.')) return;
+    if (window._vocabCurricula) delete window._vocabCurricula[String(lv)];
+    s.vocabCurriculumSaved = null; // 이 학생은 새 자료로 다시 만든다
+    s._forceNewCurriculum = true;
+    await generateVocabCurriculum();
   }
 
   function renderVocabCurriculumBox(cache) {
