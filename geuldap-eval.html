@@ -948,6 +948,7 @@
         <button class="btn btn-secondary btn-sm" id="payFilterUnpaidBtn" onclick="filterPayments('unpaid')">미납만</button>
       </div>
       <div id="payList"></div>
+      <div id="payExcludedNote" style="margin-top:10px; font-size:12px; color:#888;"></div>
       <div style="display:flex; justify-content:flex-end; margin-top:14px;">
         <button class="btn btn-primary" onclick="savePayments()">💾 수납 현황 저장</button>
       </div>
@@ -2345,7 +2346,7 @@
 
 <script>
   // ===== 버전 정보 (콘솔에서 확인: APP_VERSION 또는 페이지 로드시 자동 출력) =====
-  const APP_VERSION = 'v8.54';
+  const APP_VERSION = 'v8.55';
   const APP_VERSION_LOG = [
     'v1.0 — 탭 구조 + UI 껍데기',
     'v1.1 — AI 문제 생성 + 개념 사다리',
@@ -2543,7 +2544,8 @@
     'v8.51 — [개선] 휴원·삭제 시 출석부 정리: 휴원 시작일·퇴원일까지의 출석은 그대로 보존, 그 이후에 자동으로 채워진 "미확인 자동 출석"은 즉시 삭제(직접 저장한 출석은 유지). 삭제할 때 마지막 출석일(퇴원일)을 입력받고(기본 오늘), 일별·월별 출석부에서도 휴원 기간의 자동 기록은 숨김',
     'v8.52 — [수정] 학생 삭제 후에도 오늘 출석부에 "미확인 자동 출석"이 남던 문제 수정: 삭제 시 오늘자 자동 출석도 함께 삭제, 이미 삭제된 학생의 오늘 이후 자동 출석은 접속할 때 자동 정리(직접 저장한 출석은 유지)',
     'v8.53 — [수정] 어휘력 학부모 보고서에 "本格적으로"처럼 한자가 섞여 나오던 문제 수정: 프롬프트에 한글 전용 지침 추가 + 생성 결과에 한자·일본어가 있으면 자동으로 최대 2번 재요청, 그래도 남으면 경고 표시',
-    'v8.54 — [개선] 4주 급수향상 커리큘럼을 목표 급수별 "학원 공용" 하나로 통일: 같은 급수로 이미 만든 것이 있으면 AI를 다시 부르지 않고 그대로 사용(학생마다·매번 달라지지 않음). "🔄 이 급수 새로 만들기" 버튼으로만 교체(이미 받은 학생의 저장본은 유지). 쪽지시험 점수는 학생별로 따로 기록. 공용 자료는 낱말을 학생 학습이력으로 거르지 않음'
+    'v8.54 — [개선] 4주 급수향상 커리큘럼을 목표 급수별 "학원 공용" 하나로 통일: 같은 급수로 이미 만든 것이 있으면 AI를 다시 부르지 않고 그대로 사용(학생마다·매번 달라지지 않음). "🔄 이 급수 새로 만들기" 버튼으로만 교체(이미 받은 학생의 저장본은 유지). 쪽지시험 점수는 학생별로 따로 기록. 공용 자료는 낱말을 학생 학습이력으로 거르지 않음',
+    'v8.55 — [수정] 수납에서 ✕로 뺀 학생이 다시 들어가면 되살아나던 문제 수정: 수납 목록은 학생 명단으로 매번 새로 만들어져서 기록만 지우면 부활했음 → 학생별로 "이 달 청구 제외"를 저장(billingExcludedMonths), 목록 아래에 "[다시 넣기]" 복원 링크 표시'
   ];
   console.log(`%c글답 학습기 ${APP_VERSION}`, 'font-weight:bold; font-size:14px; color:#0d1b4b;');
   console.groupCollapsed('%c버전 기록 (클릭해서 펼치기)', 'color:#888; font-size:11px;');
@@ -3602,6 +3604,7 @@
     const active = _students.filter(s => {
       const pz = studentPauseInMonth(s, monthStr);
       if (s.active === false && !pz && !existingMap[s.id]) return false; // 휴원(기간 없음)·퇴원 학생 중 이 달과 무관한 경우
+      if ((s.billingExcludedMonths || []).indexOf(monthStr) > -1 && !existingMap[s.id]) return false; // 원장님이 이 달 청구에서 뺀 학생
       // 등록일(실무상 서류 작성일)과 실제 청구 시작월이 다를 수 있어(예: 등록은 미리 했지만 수업은 다음달부터),
       // billingStartMonth가 따로 지정돼 있으면 그걸 기준으로, 없으면 등록일 기준으로 판단한다.
       const enrollMonth = s.billingStartMonth || (s.date ? s.date.slice(0,7) : null);
@@ -3751,6 +3754,14 @@
     const r = payRows[i];
     if (!confirm(`${r.studentName} 학생을 ${monthLabel(payCurrentMonth)} 청구 목록에서 빼시겠어요?`)) return;
     payRows.splice(i, 1);
+    // 이 달 청구에서 뺀 학생을 기억해 둔다 — 안 그러면 목록이 학생 명단으로 다시 만들어질 때 매번 되살아난다.
+    const stIdx = _students.findIndex(x => x.id === r.studentId);
+    if (stIdx > -1) {
+      const ex = (_students[stIdx].billingExcludedMonths || []).filter(m => m !== payCurrentMonth).concat([payCurrentMonth]);
+      _students[stIdx] = Object.assign({}, _students[stIdx], { billingExcludedMonths: ex });
+      localStorage.setItem('gs', JSON.stringify(_students));
+      if (window._fbReady) { try { await window._updateByFieldId('geuldap_students', r.studentId, { billingExcludedMonths: ex }); } catch(e) { console.error('청구 제외 저장 오류', e); } }
+    }
     const docId = payCurrentMonth + '_' + r.studentId;
     window._payments = window._payments.filter(p => p.id !== docId);
     localStorage.setItem('gp', JSON.stringify(window._payments));
@@ -3760,7 +3771,23 @@
     renderPayments();
   }
 
+  // 이 달 청구에서 뺀 학생을 다시 목록에 넣는다
+  async function restoreToThisMonth(studentId) {
+    const idx = _students.findIndex(x => x.id === studentId);
+    if (idx < 0) return;
+    const ex = (_students[idx].billingExcludedMonths || []).filter(m => m !== payCurrentMonth);
+    _students[idx] = Object.assign({}, _students[idx], { billingExcludedMonths: ex });
+    localStorage.setItem('gs', JSON.stringify(_students));
+    if (window._fbReady) { try { await window._updateByFieldId('geuldap_students', studentId, { billingExcludedMonths: ex }); } catch(e) { console.error(e); } }
+    loadPayments(payCurrentMonth);
+  }
+
   function renderPayments() {
+    const exBox = document.getElementById('payExcludedNote');
+    if (exBox) {
+      const ex = _students.filter(s => (s.billingExcludedMonths || []).indexOf(payCurrentMonth) > -1);
+      exBox.innerHTML = ex.length ? ('이 달 청구에서 뺀 학생: ' + ex.map(s => escapeHtml(s.name) + ' <a href="#" onclick="restoreToThisMonth(\'' + s.id + '\'); return false;" style="color:#0d6b6b;">[다시 넣기]</a>').join(' · ')) : '';
+    }
     document.getElementById('payFilterAllBtn').classList.toggle('btn-primary', payFilter==='all');
     document.getElementById('payFilterAllBtn').classList.toggle('btn-secondary', payFilter!=='all');
     document.getElementById('payFilterUnpaidBtn').classList.toggle('btn-primary', payFilter==='unpaid');
