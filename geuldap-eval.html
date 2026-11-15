@@ -2346,7 +2346,7 @@
 
 <script>
   // ===== 버전 정보 (콘솔에서 확인: APP_VERSION 또는 페이지 로드시 자동 출력) =====
-  const APP_VERSION = 'v8.56';
+  const APP_VERSION = 'v8.57';
   const APP_VERSION_LOG = [
     'v1.0 — 탭 구조 + UI 껍데기',
     'v1.1 — AI 문제 생성 + 개념 사다리',
@@ -2546,7 +2546,8 @@
     'v8.53 — [수정] 어휘력 학부모 보고서에 "本格적으로"처럼 한자가 섞여 나오던 문제 수정: 프롬프트에 한글 전용 지침 추가 + 생성 결과에 한자·일본어가 있으면 자동으로 최대 2번 재요청, 그래도 남으면 경고 표시',
     'v8.54 — [개선] 4주 급수향상 커리큘럼을 목표 급수별 "학원 공용" 하나로 통일: 같은 급수로 이미 만든 것이 있으면 AI를 다시 부르지 않고 그대로 사용(학생마다·매번 달라지지 않음). "🔄 이 급수 새로 만들기" 버튼으로만 교체(이미 받은 학생의 저장본은 유지). 쪽지시험 점수는 학생별로 따로 기록. 공용 자료는 낱말을 학생 학습이력으로 거르지 않음',
     'v8.55 — [수정] 수납에서 ✕로 뺀 학생이 다시 들어가면 되살아나던 문제 수정: 수납 목록은 학생 명단으로 매번 새로 만들어져서 기록만 지우면 부활했음 → 학생별로 "이 달 청구 제외"를 저장(billingExcludedMonths), 목록 아래에 "[다시 넣기]" 복원 링크 표시',
-    'v8.56 — [개선] 학생 등록·상담일지(문의자 추가/상세) 학년 선택에 초등 1·2학년 추가(기존엔 초등 3학년부터)'
+    'v8.56 — [개선] 학생 등록·상담일지(문의자 추가/상세) 학년 선택에 초등 1·2학년 추가(기존엔 초등 3학년부터)',
+    'v8.57 — [신규] 학생 이름 검색: 학생을 고르는 모든 화면(학생관리·평가·퀴즈·기록·독서·어휘력·독해 등)의 목록 위에 검색창 자동 추가 — 이름 일부/학년/초성(ㅁㄱ) 검색, 결과가 1명이면 Enter로 바로 선택, 목록이 다시 그려져도 검색어 유지'
   ];
   console.log(`%c글답 학습기 ${APP_VERSION}`, 'font-weight:bold; font-size:14px; color:#0d1b4b;');
   console.groupCollapsed('%c버전 기록 (클릭해서 펼치기)', 'color:#888; font-size:11px;');
@@ -13451,6 +13452,76 @@ type은 항상 "choice"여야 합니다. 단답형(short)은 절대 만들지 �
     saveLrLocal();
     renderSpMaterialList();
   }
+</script>
+
+<script>
+// ===== 학생 이름 검색 (모든 학생 선택 화면 공통) =====
+// 학생 카드가 나오는 모든 목록(.student-grid) 위에 검색창을 자동으로 붙인다. 이름 일부("민규"), 학년("5학년"),
+// 초성("ㅁㄱ")으로 찾을 수 있고, 검색 결과가 한 명이면 Enter로 바로 선택한다. 목록이 다시 그려져도 검색어는 유지된다.
+(function() {
+  var CHO = ['ㄱ','ㄲ','ㄴ','ㄷ','ㄸ','ㄹ','ㅁ','ㅂ','ㅃ','ㅅ','ㅆ','ㅇ','ㅈ','ㅉ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
+  function toChosung(str) {
+    var out = '';
+    for (var i = 0; i < str.length; i++) {
+      var c = str.charCodeAt(i);
+      if (c >= 0xAC00 && c <= 0xD7A3) out += CHO[Math.floor((c - 0xAC00) / 588)];
+      else out += str.charAt(i);
+    }
+    return out;
+  }
+  function isChosungOnly(q) { return /^[ㄱ-ㅎ]+$/.test(q); }
+
+  function applyFilter(grid, input, countEl) {
+    var q = (input.value || '').replace(/\s+/g, '').toLowerCase();
+    var cards = grid.querySelectorAll('.student-card');
+    var shown = 0, total = 0, lastShown = null;
+    for (var i = 0; i < cards.length; i++) {
+      var card = cards[i];
+      var isAction = (card.getAttribute('style') || '').indexOf('dashed') > -1; // "상담 방문자" 같은 기능 카드는 항상 표시
+      if (isAction) { card.style.display = ''; continue; }
+      total++;
+      var nameEl = card.querySelector('.student-name');
+      var name = (nameEl ? nameEl.textContent : card.textContent).replace(/\s+/g, '');
+      var all = card.textContent.replace(/\s+/g, '').toLowerCase();
+      var match = !q || (isChosungOnly(q) ? toChosung(name).indexOf(q) > -1 : all.indexOf(q) > -1);
+      card.style.display = match ? '' : 'none';
+      if (match) { shown++; lastShown = card; }
+    }
+    grid._searchLast = lastShown;
+    grid._searchShown = shown;
+    countEl.textContent = q ? (shown + '명 / 전체 ' + total + '명') : (total ? ('전체 ' + total + '명') : '');
+  }
+
+  function setup(grid) {
+    if (grid._searchReady) return;
+    grid._searchReady = true;
+    var wrap = document.createElement('div');
+    wrap.style.cssText = 'display:flex; align-items:center; gap:8px; margin:0 0 10px 0;';
+    var input = document.createElement('input');
+    input.type = 'search';
+    input.placeholder = '🔍 이름으로 검색 (예: 민규, 5학년, ㅁㄱ)';
+    input.autocomplete = 'off';
+    input.style.cssText = 'flex:1; max-width:340px; padding:8px 12px; border:1px solid #ccc; border-radius:8px; font-size:14px;';
+    var count = document.createElement('span');
+    count.style.cssText = 'font-size:12px; color:#888; white-space:nowrap;';
+    wrap.appendChild(input); wrap.appendChild(count);
+    grid.parentNode.insertBefore(wrap, grid);
+    input.addEventListener('input', function() { applyFilter(grid, input, count); });
+    input.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' && grid._searchShown === 1 && grid._searchLast) { e.preventDefault(); grid._searchLast.click(); }
+      if (e.key === 'Escape') { input.value = ''; applyFilter(grid, input, count); }
+    });
+    var obs = new MutationObserver(function() { applyFilter(grid, input, count); });
+    obs.observe(grid, { childList: true });
+    applyFilter(grid, input, count);
+  }
+
+  function init() {
+    var grids = document.querySelectorAll('.student-grid');
+    for (var i = 0; i < grids.length; i++) setup(grids[i]);
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
+})();
 </script>
 </body>
 </html>
