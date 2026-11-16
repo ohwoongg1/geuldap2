@@ -2346,7 +2346,7 @@
 
 <script>
   // ===== 버전 정보 (콘솔에서 확인: APP_VERSION 또는 페이지 로드시 자동 출력) =====
-  const APP_VERSION = 'v8.57';
+  const APP_VERSION = 'v8.58';
   const APP_VERSION_LOG = [
     'v1.0 — 탭 구조 + UI 껍데기',
     'v1.1 — AI 문제 생성 + 개념 사다리',
@@ -2547,7 +2547,8 @@
     'v8.54 — [개선] 4주 급수향상 커리큘럼을 목표 급수별 "학원 공용" 하나로 통일: 같은 급수로 이미 만든 것이 있으면 AI를 다시 부르지 않고 그대로 사용(학생마다·매번 달라지지 않음). "🔄 이 급수 새로 만들기" 버튼으로만 교체(이미 받은 학생의 저장본은 유지). 쪽지시험 점수는 학생별로 따로 기록. 공용 자료는 낱말을 학생 학습이력으로 거르지 않음',
     'v8.55 — [수정] 수납에서 ✕로 뺀 학생이 다시 들어가면 되살아나던 문제 수정: 수납 목록은 학생 명단으로 매번 새로 만들어져서 기록만 지우면 부활했음 → 학생별로 "이 달 청구 제외"를 저장(billingExcludedMonths), 목록 아래에 "[다시 넣기]" 복원 링크 표시',
     'v8.56 — [개선] 학생 등록·상담일지(문의자 추가/상세) 학년 선택에 초등 1·2학년 추가(기존엔 초등 3학년부터)',
-    'v8.57 — [신규] 학생 이름 검색: 학생을 고르는 모든 화면(학생관리·평가·퀴즈·기록·독서·어휘력·독해 등)의 목록 위에 검색창 자동 추가 — 이름 일부/학년/초성(ㅁㄱ) 검색, 결과가 1명이면 Enter로 바로 선택, 목록이 다시 그려져도 검색어 유지'
+    'v8.57 — [신규] 학생 이름 검색: 학생을 고르는 모든 화면(학생관리·평가·퀴즈·기록·독서·어휘력·독해 등)의 목록 위에 검색창 자동 추가 — 이름 일부/학년/초성(ㅁㄱ) 검색, 결과가 1명이면 Enter로 바로 선택, 목록이 다시 그려져도 검색어 유지',
+    'v8.58 — [신규] 수강료 변경 이력: 학생 수정에서 월 수강료를 바꾸면 "몇 월분 청구부터 적용할지" 묻고 tuitionHistory에 저장 — 그 달 이후 청구(아직 납부 전)는 새 수강료로 바뀌고, 이미 납부된 달과 이전 달은 그대로. 수납 화면의 새 달 기본 청구액·할인 계산도 그 달의 수강료 기준'
   ];
   console.log(`%c글답 학습기 ${APP_VERSION}`, 'font-weight:bold; font-size:14px; color:#0d1b4b;');
   console.groupCollapsed('%c버전 기록 (클릭해서 펼치기)', 'color:#888; font-size:11px;');
@@ -3624,8 +3625,8 @@
         studentName: s.name,
         phone: s.phone || '',
         billingDay: s.billingDay || (s.date ? Number(s.date.split('-')[2]) : 1),
-        baseTuition: s.tuition || 0,
-        amount: ex ? ex.amount : ((pz && pz.full) ? 0 : computeNewMonthAmount(s)),
+        baseTuition: tuitionForMonth(s, monthStr),
+        amount: ex ? ex.amount : ((pz && pz.full) ? 0 : computeNewMonthAmount(s, monthStr)),
         discountApplied: ex ? (ex.discountApplied || '') : '',
         paid: ex ? ex.paid : false,
         paidDate: ex ? (ex.paidDate || null) : null,
@@ -3641,8 +3642,17 @@
 
   // 아직 그 달 청구 기록이 없는 학생의 기본 청구액. 할인은 여기서 처리하지 않고,
   // 수납관리 화면에서 매달 그때그때 할인을 선택해 적용한다(applyRowDiscount 참고).
-  function computeNewMonthAmount(s) {
-    return s.tuition || 0;
+  // 수강료는 중간에 바뀔 수 있어서(수업 과정 변경 등) tuitionHistory([{from:'YYYY-MM', tuition}])에 "몇 월분부터 얼마"를 남겨 두고,
+  // 그 달에 적용되는 수강료를 골라 쓴다. 이력이 없으면 현재 수강료를 그대로 쓴다.
+  function tuitionForMonth(s, monthStr) {
+    const h = (s && s.tuitionHistory) || [];
+    if (!h.length || !monthStr) return (s && s.tuition) || 0;
+    let cur = null;
+    h.slice().sort(function(a, b) { return a.from.localeCompare(b.from); }).forEach(function(x) { if (x.from <= monthStr) cur = x; });
+    return cur ? (cur.tuition || 0) : ((s && s.tuition) || 0);
+  }
+  function computeNewMonthAmount(s, monthStr) {
+    return tuitionForMonth(s, monthStr || payCurrentMonth);
   }
 
   function filterPayments(f) {
@@ -5845,6 +5855,25 @@ ${a.name}`;
     // tuition은 항상 할인 없는 정가로 저장하고, 실제 청구액은 수납관리에서 결정된다.
     const fields = { name, grade, date, schedule, phone, address, courseName, tuition, birthdate, billingDay, billingStartMonth, accessCode };
 
+    // 수강료가 바뀌었으면 "몇 월분부터" 적용할지 물어서 이력으로 남긴다 — 이미 청구·납부된 지난달은 그대로 두고,
+    // 그 달 이후의 청구만 새 수강료로 나오게 하기 위함(수업 과정 변경 등).
+    let tuitionEffMonth = null;
+    if (editingStudentId) {
+      const oldS = _students.find(s=>s.id===editingStudentId);
+      if (oldS && (oldS.tuition || 0) > 0 && (oldS.tuition || 0) !== tuition && tuition > 0) {
+        const nd = new Date(); nd.setDate(1); nd.setMonth(nd.getMonth() + 1);
+        const defMonth = nd.getFullYear() + '-' + String(nd.getMonth()+1).padStart(2,'0');
+        const ans = prompt(oldS.name + ' 학생 수강료가 ' + (oldS.tuition||0).toLocaleString() + '원 → ' + tuition.toLocaleString() + '원으로 바뀝니다.\n\n몇 월분 청구부터 새 수강료를 적용할까요? (예: ' + defMonth + ')\n· 그 달 이후에 아직 납부 전인 청구만 새 금액으로 바뀌고, 이미 납부된 달은 그대로예요.', defMonth);
+        if (ans === null) return;
+        if (!/^\d{4}-\d{2}$/.test(ans.trim())) { alert('월 형식이 올바르지 않아요. ' + defMonth + ' 처럼 입력해주세요. 저장을 취소했어요.'); return; }
+        tuitionEffMonth = ans.trim();
+        let hist = (oldS.tuitionHistory && oldS.tuitionHistory.length) ? oldS.tuitionHistory.slice() : [{ from: '0000-00', tuition: oldS.tuition }];
+        hist = hist.filter(function(h) { return h.from !== tuitionEffMonth; }).concat([{ from: tuitionEffMonth, tuition: tuition }]);
+        hist.sort(function(a, b) { return a.from.localeCompare(b.from); });
+        fields.tuitionHistory = hist;
+      }
+    }
+
     if (editingStudentId) {
       const idx = _students.findIndex(s=>s.id===editingStudentId);
       if (idx > -1) {
@@ -5859,6 +5888,24 @@ ${a.name}`;
       _students.push(s);
       localStorage.setItem('gs', JSON.stringify(_students));
       if (window._fbWriteReady && window._fbWriteReady()) window._add(window._col(window._db,'geuldap_students'), s).catch(console.error);
+    }
+    // 수강료 변경 적용월 이후, 아직 납부 전인 저장된 청구 금액을 새 수강료로 맞춘다(할인 적용분은 같은 비율로 다시 계산)
+    if (tuitionEffMonth && editingStudentId) {
+      const sid = editingStudentId;
+      const rateOf = function(k) { return k === 'sibling10' ? 0.1 : (k === 'sibling20' || k === 'friend20') ? 0.2 : 0; };
+      const changed = [];
+      (window._payments || []).forEach(function(pm) {
+        if (pm.studentId === sid && !pm.paid && !pm.paused && pm.month >= tuitionEffMonth) {
+          const nt = tuitionForMonth(_students.find(function(x) { return x.id === sid; }), pm.month);
+          const r = rateOf(pm.discountApplied);
+          pm.amount = r > 0 ? Math.round(nt * (1 - r) / 1000) * 1000 : nt;
+          changed.push(pm);
+        }
+      });
+      if (changed.length) {
+        localStorage.setItem('gp', JSON.stringify(window._payments));
+        if (window._fbReady) changed.forEach(function(pm) { window._updateByFieldId('geuldap_payments', pm.id, { amount: pm.amount }).catch(console.error); });
+      }
     }
     closeModal();
     renderStudents();
