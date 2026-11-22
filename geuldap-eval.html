@@ -551,6 +551,7 @@
   <div class="tab" onclick="switchTab('payments')">수납 관리</div>
   <div class="tab" onclick="switchTab('learner')" style="color:#2f855a;">📚 학습기</div>
   <div class="tab mobile-keep" onclick="switchTab('vocab')" style="color:#0d6b6b;">🔤 어휘력</div>
+  <div class="tab mobile-keep" onclick="switchTab('literacy')" style="color:#0d6b6b;">📖 문해력</div>
   <div class="mobile-more" onclick="toggleMobileTabs()">⋯ 더보기</div>
   <div class="tab" onclick="switchTab('materials')" style="color:#8b5a2b;">📚 자료실</div>
   <div class="tab" onclick="switchTab('blog')" style="color:#a8710a;">📝 블로그 생성</div>
@@ -742,10 +743,6 @@
 
   <!-- 기록 -->
   <div class="page" id="page-records">
-    <div class="card" style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
-      <div style="font-size:13px; color:#555;">🌟 홈페이지 "학생 글 사례"에 올릴 우수 글을 저장된 평가 기록에서 골라 줍니다.</div>
-      <button class="btn btn-secondary btn-sm" onclick="openShowcasePicker()">🌟 홈페이지용 우수 글 뽑기</button>
-    </div>
     <div class="card">
       <div class="card-title">학생 선택</div>
       <div class="student-grid" id="recordStudentGrid"></div>
@@ -1150,6 +1147,23 @@
 </div>
 
 <!-- 어휘력 -->
+<div class="page" id="page-literacy">
+  <div class="card">
+    <div class="card-title">📖 문해력 진단·관리 <span style="font-size:12px; font-weight:400; color:#888;">(초등 1~6학년 · 12급 · 2개월에 한 번)</span></div>
+    <div style="font-size:12px; color:#888; margin-bottom:14px;">학생을 선택하면 그 학생이 <b>아직 보지 않은 지문</b>으로 시험지를 만들어요(같은 지문은 다시 나오지 않고, 안 본 지문이 없으면 같은 주제의 새 변형 글을 만들어요). 시험지 인쇄 → 학생이 푼 답을 입력 → 급수 자동 진단 → 학부모 보고서까지 이어져요.</div>
+    <div class="student-grid" id="litStudentGrid"></div>
+  </div>
+  <div class="card" id="litDetailSection" style="display:none;">
+    <div class="card-title" id="litDetailTitle">문해력</div>
+    <div id="litStatusBody"></div>
+    <div style="margin-top:12px;"><button class="btn btn-primary btn-sm" onclick="generateLitTest()">📝 새 문해력 시험지 만들기</button></div>
+    <div id="litTestBox"></div>
+    <div id="litResultBox"></div>
+    <div id="litReportBox"></div>
+    <div id="litHistory"></div>
+  </div>
+</div>
+
 <div class="page" id="page-vocab">
   <div class="card">
     <div class="card-title">어휘력 진단·관리</div>
@@ -1930,30 +1944,6 @@
 </div>
 
 <!-- 학부모 보고서 모달 -->
-<div class="modal-bg" id="showcaseModal">
-  <div class="modal" style="max-width:760px; max-height:88vh; overflow-y:auto; text-align:left;">
-    <div class="modal-title">🌟 홈페이지용 우수 글 뽑기</div>
-    <div style="font-size:12px; color:#8a6d00; background:#fff8e1; padding:8px 10px; border-radius:6px; margin-bottom:10px; line-height:1.6;">
-      점수가 높고 분량이 충분한 글을 후보로 보여줍니다(한 학생당 1편). 홈페이지에는 <b>이름 없이 학년만</b> 나가지만, 학부모님께 사용 동의를 받은 글만 선택하세요.
-    </div>
-    <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:10px; font-size:13px;">
-      <select id="showcaseGradeFilter" onchange="renderShowcaseCandidates()" style="width:auto;">
-        <option value="">전체 학년</option><option value="초등">초등만</option><option value="중학">중학만</option>
-      </select>
-      <span style="color:#888;">후보 <b id="showcaseCount">0</b>편 · 선택 <b id="showcaseSelCount">0</b>편</span>
-    </div>
-    <div id="showcaseList"></div>
-    <div style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap;">
-      <button class="btn btn-primary btn-sm" onclick="buildShowcaseHtml()">✨ 선택한 글로 홈페이지용 HTML 만들기</button>
-      <button class="btn btn-secondary btn-sm" onclick="closeShowcaseModal()">닫기</button>
-    </div>
-    <div id="showcaseOutBox" style="display:none; margin-top:14px;">
-      <div style="font-size:13px; font-weight:600; margin-bottom:6px;">완성된 HTML — index.html의 "학생 글 사례" 안에 붙여 넣으세요</div>
-      <textarea id="showcaseOut" rows="12" style="width:100%; font-size:12px; font-family:monospace; padding:10px; border:1px solid #ddd; border-radius:8px;"></textarea>
-      <div style="margin-top:6px;"><button class="btn btn-secondary btn-sm" onclick="copyShowcaseHtml()">📋 복사</button> <span id="showcaseMsg" style="font-size:12px; color:#888;"></span></div>
-    </div>
-  </div>
-</div>
 <div class="modal-bg" id="parentReportModal">
   <div class="modal" style="max-width:600px; max-height:85vh; overflow-y:auto; text-align:left;">
     <div class="modal-title">학부모 보고서</div>
@@ -2374,7 +2364,7 @@
 
 <script>
   // ===== 버전 정보 (콘솔에서 확인: APP_VERSION 또는 페이지 로드시 자동 출력) =====
-  const APP_VERSION = 'v8.59';
+  const APP_VERSION = 'v8.63';
   const APP_VERSION_LOG = [
     'v1.0 — 탭 구조 + UI 껍데기',
     'v1.1 — AI 문제 생성 + 개념 사다리',
@@ -2577,7 +2567,11 @@
     'v8.56 — [개선] 학생 등록·상담일지(문의자 추가/상세) 학년 선택에 초등 1·2학년 추가(기존엔 초등 3학년부터)',
     'v8.57 — [신규] 학생 이름 검색: 학생을 고르는 모든 화면(학생관리·평가·퀴즈·기록·독서·어휘력·독해 등)의 목록 위에 검색창 자동 추가 — 이름 일부/학년/초성(ㅁㄱ) 검색, 결과가 1명이면 Enter로 바로 선택, 목록이 다시 그려져도 검색어 유지',
     'v8.58 — [신규] 수강료 변경 이력: 학생 수정에서 월 수강료를 바꾸면 "몇 월분 청구부터 적용할지" 묻고 tuitionHistory에 저장 — 그 달 이후 청구(아직 납부 전)는 새 수강료로 바뀌고, 이미 납부된 달과 이전 달은 그대로. 수납 화면의 새 달 기본 청구액·할인 계산도 그 달의 수강료 기준',
-    'v8.59 — [신규] 기록 화면에 "🌟 홈페이지용 우수 글 뽑기": 저장된 평가 기록 중 점수 높고 300자 이상인 완성 글을 학생당 1편씩 후보로 보여주고, 선택하면 AI가 원문 그대로 발췌+코멘트를 붙여 홈페이지 "학생 글 사례" 카드 HTML 생성(이름 제외·학년만, 발췌가 원문과 일치하는지 검사)'
+    'v8.59 — [신규] 기록 화면에 "🌟 홈페이지용 우수 글 뽑기": 저장된 평가 기록 중 점수 높고 300자 이상인 완성 글을 학생당 1편씩 후보로 보여주고, 선택하면 AI가 원문 그대로 발췌+코멘트를 붙여 홈페이지 "학생 글 사례" 카드 HTML 생성(이름 제외·학년만, 발췌가 원문과 일치하는지 검사)',
+    'v8.60 — [개선] 홈페이지용 우수 글 뽑기가 만드는 카드에 글 전문(숨김 텍스트)도 함께 넣음 — 홈페이지에서 카드를 누르면 전문이 모바일 화면으로 열림(index.html v1.6)',
+    'v8.61 — [신규] 기록 화면에 "📥 평가 기록 파일로 저장" — 글쓰기 평가 기록(글·교정본·점수·학부모 코멘트)을 JSON 파일로 내려받음(학생 이름은 김○○처럼 가림, 사진 주소 제외). Claude에게 우수 글 선별·분석을 맡길 때 이 파일을 전달',
+    'v8.62 — [취소] 복잡해서 v8.59~v8.61의 "홈페이지용 우수 글 뽑기"·"평가 기록 파일로 저장" 기능을 제거(기록 화면은 이전 상태로 복원)',
+    'v8.63 — [신규] (AI 자동 검토+원장님 요청 시 다시 검토, 표지 포함, 정기 주기 전 재진단 가능, 지문 3개×5문제=15문항, 제한 30분) 📖 문해력 탭: 초등 전용 12급, 2개월 주기, EBS 평가 형식(지문 상자·5지선다·정답/해설·제한시간), 이미 본 지문 재출제 방지(안 본 지문 없으면 같은 주제 변형 지문 새로 생성), 답 입력 채점·급수 진단·학부모 보고서'
   ];
   console.log(`%c글답 학습기 ${APP_VERSION}`, 'font-weight:bold; font-size:14px; color:#0d1b4b;');
   console.groupCollapsed('%c버전 기록 (클릭해서 펼치기)', 'color:#888; font-size:11px;');
@@ -3789,97 +3783,6 @@
     setTimeout(()=>w.print(), 300);
   }
 
-
-  // ===== 홈페이지용 우수 글 뽑기 =====
-  // 저장된 글쓰기 평가 기록(_records) 중 점수가 높고 분량이 충분한 글을 후보로 보여주고, 선택한 글은 AI가 "잘된 부분"만
-  // 원문 그대로 발췌(이하 중략)하고 한 줄 코멘트를 붙여 홈페이지 "학생 글 사례" 카드 HTML로 만들어 준다.
-  // 이름은 절대 내보내지 않고 학년만 표시한다. AI가 고른 발췌 문장은 원문에 실제로 있는 문장인지 검사해서 고쳐 쓰는 것을 막는다.
-  let _showcaseCands = [];
-  const _showcaseSel = new Set();
-
-  function showcaseCandidates() {
-    const best = {}; // 학생별 최고점 1편
-    (_records || []).forEach(function(r) {
-      if (!r || r.readingOnly || !r.content) return;
-      if (r.completionStatus && r.completionStatus !== '완성') return;
-      const len = r.content.replace(/\s+/g, '').length;
-      if (len < 300) return;
-      const sc = Number(r.totalScore) || 0;
-      if (!best[r.studentId] || sc > (Number(best[r.studentId].totalScore) || 0)) best[r.studentId] = r;
-    });
-    return Object.keys(best).map(function(k) { return best[k]; }).sort(function(a, b) { return (Number(b.totalScore) || 0) - (Number(a.totalScore) || 0); });
-  }
-
-  function openShowcasePicker() {
-    _showcaseSel.clear();
-    document.getElementById('showcaseOutBox').style.display = 'none';
-    document.getElementById('showcaseModal').classList.add('open');
-    renderShowcaseCandidates();
-  }
-  function closeShowcaseModal() { document.getElementById('showcaseModal').classList.remove('open'); }
-
-  function renderShowcaseCandidates() {
-    const f = document.getElementById('showcaseGradeFilter').value;
-    _showcaseCands = showcaseCandidates().filter(function(r) { return !f || (r.grade || '').indexOf(f) === 0; }).slice(0, 40);
-    document.getElementById('showcaseCount').textContent = _showcaseCands.length;
-    const box = document.getElementById('showcaseList');
-    if (!_showcaseCands.length) { box.innerHTML = '<div class="empty" style="padding:20px 0;">조건에 맞는 글이 없어요(완성된 글, 공백 제외 300자 이상).</div>'; updateShowcaseSelCount(); return; }
-    box.innerHTML = _showcaseCands.map(function(r, i) {
-      const preview = escapeHtml(r.content.replace(/\s+/g, ' ').slice(0, 160)) + '…';
-      return '<label style="display:flex; gap:10px; padding:10px 0; border-bottom:1px solid #eee; cursor:pointer; font-weight:400; align-items:flex-start;">' +
-        '<input type="checkbox" ' + (_showcaseSel.has(r.id) ? 'checked' : '') + ' onchange="toggleShowcase(\'' + r.id + '\', this.checked)" style="margin-top:4px;">' +
-        '<div style="flex:1; min-width:0;"><div style="font-size:13px; font-weight:700;">' + escapeHtml(r.grade || '') + ' · ' + escapeHtml(r.studentName || '') + ' <span style="color:#0d6b6b;">' + (r.totalScore || '') + '점</span> <span style="color:#888; font-weight:400;">' + escapeHtml(r.type || '') + ' · ' + escapeHtml(r.date || '') + '</span></div>' +
-        '<div style="font-size:13px; font-weight:600;">' + escapeHtml(r.title || r.topic || '(제목 없음)') + '</div>' +
-        '<div style="font-size:12px; color:#666; line-height:1.5;">' + preview + '</div></div></label>';
-    }).join('');
-    updateShowcaseSelCount();
-  }
-  function toggleShowcase(id, on) { if (on) _showcaseSel.add(id); else _showcaseSel.delete(id); updateShowcaseSelCount(); }
-  function updateShowcaseSelCount() { document.getElementById('showcaseSelCount').textContent = _showcaseSel.size; }
-
-  async function buildShowcaseHtml() {
-    const picks = (_records || []).filter(function(r) { return _showcaseSel.has(r.id); });
-    if (!picks.length) { alert('글을 하나 이상 선택해주세요.'); return; }
-    const msg = document.getElementById('showcaseMsg'); msg.textContent = '';
-    const outBox = document.getElementById('showcaseOutBox'); outBox.style.display = '';
-    const ta = document.getElementById('showcaseOut'); ta.value = 'AI가 발췌와 코멘트를 만들고 있어요... (' + picks.length + '편)';
-    const cards = [];
-    for (let k = 0; k < picks.length; k++) {
-      const r = picks[k];
-      let quotes = [], comment = '';
-      try {
-        const prompt = '당신은 22년 경력의 국어 교사입니다. 아래 학생 글에서 홈페이지에 소개할 "잘 쓴 부분"을 2~3군데 골라 주세요.\n' +
-          '규칙:\n- 발췌 문장은 원문에서 한 글자도 바꾸지 말고 그대로 복사할 것(띄어쓰기·맞춤법도 고치지 말 것). 각 발췌는 1~3문장, 원문에 연속으로 있는 문장이어야 함.\n' +
-          '- 글쓴이 이름, 학교, 가족 이름 등 개인을 알아볼 수 있는 정보가 든 문장은 고르지 말 것.\n' +
-          '- 코멘트는 교사가 쓴 1~2문장(존댓말, 80자 안팎)으로, 글의 어떤 점(표현·경험과의 연결·관찰 등)이 좋은지 구체적인 표현을 짚어서 쓸 것. 과장 금지.\n' +
-          '- 반드시 아래 JSON으로만 응답:\n{"quotes":["발췌1","발췌2"],"comment":"코멘트"}\n\n' +
-          '학년: ' + r.grade + '\n제목: ' + (r.title || r.topic || '') + '\n글:\n' + r.content;
-        const raw = await callGemini(prompt);
-        const j = JSON.parse(raw.replace(/```json|```/g, '').trim());
-        const norm = function(s) { return String(s).replace(/\s+/g, ''); };
-        const body = norm(r.content);
-        quotes = (j.quotes || []).filter(function(q) { return q && norm(q).length >= 15 && body.indexOf(norm(q)) > -1; }).slice(0, 3);
-        comment = String(j.comment || '').trim();
-      } catch (e) { console.error('발췌 생성 오류', e); }
-      if (!quotes.length) { // 실패하면 글의 앞부분을 그대로 쓴다
-        const first = r.content.replace(/\s+/g, ' ').trim();
-        quotes = [first.slice(0, 160)];
-        comment = comment || '(코멘트를 직접 입력해주세요)';
-      }
-      const sentences = '"' + quotes.map(function(q) { return escapeHtml(q.trim()); }).join('\n        <span class="ellipsis">(이하 중략)</span>\n        ') + '"';
-      cards.push('    <div class="sample-card">\n      <div class="sample-header">\n        <span class="sample-grade-badge">' + escapeHtml(r.grade || '') + '</span>\n        <span class="sample-book">' + escapeHtml(r.topic || r.type || '') + '</span>\n      </div>\n' +
-        '      <div class="sample-title">제목: ' + escapeHtml(r.title || r.topic || '') + '</div>\n      <div class="sample-quote">\n        ' + sentences + '\n      </div>\n' +
-        '      <div class="sample-comment"><strong>→ ' + escapeHtml(comment) + '</strong></div>\n    </div>\n');
-      ta.value = 'AI가 발췌와 코멘트를 만들고 있어요... (' + (k + 1) + '/' + picks.length + ')';
-    }
-    ta.value = cards.join('\n');
-    msg.textContent = '발췌 문장이 원문과 일치하는지 검사했어요. 이름은 포함되지 않았어요. 붙여넣기 전에 한 번 읽어 보세요.';
-  }
-  async function copyShowcaseHtml() {
-    const ta = document.getElementById('showcaseOut');
-    try { await navigator.clipboard.writeText(ta.value); document.getElementById('showcaseMsg').textContent = '복사했어요!'; }
-    catch (e) { ta.select(); document.getElementById('showcaseMsg').textContent = '자동 복사가 안 돼서 선택해 두었어요 — Ctrl+C로 복사해주세요.'; }
-  }
 
   // 이 학생을 이번 달 청구 목록에서 완전히 뺀다(화면에서도, 저장된 기록에서도).
   // 등록을 미리 해뒀거나 실수로 만들어진 달의 청구 기록을 지울 때 쓴다.
@@ -5585,7 +5488,7 @@ ${a.name}`;
   }
 
   function switchTab(tab) {
-    document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', ['students','upload','records','reading','attendance','quiz','leads','timetable','payments','learner','vocab','materials','blog','legal'][i]===tab));
+    document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', ['students','upload','records','reading','attendance','quiz','leads','timetable','payments','learner','vocab','literacy','materials','blog','legal'][i]===tab));
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.getElementById('page-'+tab).classList.add('active');
     if (tab==='upload') renderUploadStudents();
@@ -5598,6 +5501,7 @@ ${a.name}`;
     if (tab==='payments') { const m = document.getElementById('payMonth'); if (!m.value) m.value = todayLocalDateStr().slice(0,7); loadPayments(m.value); }
     if (tab==='learner') renderLearnerTab();
     if (tab==='vocab') renderVocabTab();
+    if (tab==='literacy') renderLitTab();
     if (tab==='materials') renderMaterialsTab();
     if (tab==='blog') renderBlogGenerate();
     if (tab==='legal') renderLegalDocs();
@@ -6542,6 +6446,630 @@ ${a.name}`;
     const recs = vocabRecordsFor(s.id).filter(r=>r.status!=='pending');
     if (recs.length===0) return VOCAB_GRADE_START_LEVEL[s.grade] || 1;
     return recs[recs.length-1].newLevel;
+  }
+
+  // ===== 문해력 진단 (초등 1~6학년 전용, 12급) =====
+  // 어휘력 진단과 같은 틀: 기준 급수 앞뒤 3개 급수의 지문(급수당 지문 1개 + 문제 4개)을 풀고, 급수별 70% 이상 맞히면 통과로 보아
+  // 실제 급수를 진단한다. 2개월에 한 번 보는 것을 기본으로 한다. 지문은 모두 AI가 새로 쓴 창작문(교재 지문 사용 안 함)이며,
+  // 급수별 "지문 창고"(geuldap_settings/literacy_pool_N)에 쌓아 두고 같은 급수 학생끼리 공유한다.
+  // 같은 학생에게는 이미 본 지문을 다시 내지 않는다 — 안 본 지문이 없으면 같은 주제의 변형 지문을 새로 만든다.
+  const LIT_MAX_LEVEL = 12;
+  const LIT_LEVEL_DEFS = [
+    {level:1,  band:'초1', sub:'상', chars:[100,150], genre:'그림일기·아주 짧은 이야기', desc:'쉬운 낱말로 된 짧은 글(문장 3~6개)에서 누가·무엇을·어디서를 찾는 글 읽기'},
+    {level:2,  band:'초1', sub:'하', chars:[150,210], genre:'짧은 이야기·생활 글', desc:'일어난 일의 순서와 인물의 행동을 알아보는 짧은 글 읽기'},
+    {level:3,  band:'초2', sub:'상', chars:[210,280], genre:'생활 이야기', desc:'인물의 마음과 까닭을 찾으며 읽는 글'},
+    {level:4,  band:'초2', sub:'하', chars:[280,350], genre:'동물·식물 설명문 입문', desc:'낱말의 뜻을 알고 설명하는 글의 내용을 정리하는 글 읽기'},
+    {level:5,  band:'초3', sub:'상', chars:[350,430], genre:'이야기글·쉬운 설명문', desc:'일이 일어난 까닭과 중심 문장을 찾는 글 읽기'},
+    {level:6,  band:'초3', sub:'하', chars:[430,510], genre:'과학·사회 쉬운 설명문', desc:'문단별 중심 내용을 파악하며 읽는 글'},
+    {level:7,  band:'초4', sub:'상', chars:[510,590], genre:'이야기글·설명문', desc:'인물의 성격을 짐작하고 낱말 뜻을 문맥에서 알아내는 글 읽기'},
+    {level:8,  band:'초4', sub:'하', chars:[590,670], genre:'설명문·생활 논설', desc:'글의 짜임(처음-가운데-끝)을 알고 내용을 요약하는 글 읽기'},
+    {level:9,  band:'초5', sub:'상', chars:[670,750], genre:'비문학 설명문', desc:'주장과 근거를 구분하고 숨은 뜻을 추론하는 글 읽기'},
+    {level:10, band:'초5', sub:'하', chars:[750,830], genre:'논설문 입문·인물 이야기', desc:'비교·대조하며 읽고 글쓴이의 의도를 파악하는 글 읽기'},
+    {level:11, band:'초6', sub:'상', chars:[830,910], genre:'사회·과학 설명문', desc:'원인과 결과를 이해하고 자료의 의미를 해석하는 글 읽기'},
+    {level:12, band:'초6', sub:'하', chars:[910,1000], genre:'논설문·시사 설명문', desc:'주장의 타당성을 따져 보는 비판적 읽기, 중학 국어 대비'}
+  ];
+  const LIT_GRADE_START = {'초등 1학년':1,'초등 2학년':3,'초등 3학년':5,'초등 4학년':7,'초등 5학년':9,'초등 6학년':11};
+  const LIT_QUESTIONS_PER_PASSAGE = 5;
+  const LIT_PASS_RATE = 0.7;      // 급수별 통과 기준(어휘력과 같음 — 5문제 중 4문제, 3.5 이상이므로 4문제)
+  const LIT_CYCLE_DAYS = 60;      // 정기 진단 주기(2개월)
+  const LIT_TIME_LIMIT_MIN = 30;   // 수능 기준 약 27분 + 초등 여유
+  window._litPool = window._litPool || (function() { try { return JSON.parse(localStorage.getItem('glp') || '{}'); } catch(e) { return {}; } })();
+  const _litPoolLoaded = {};
+  let selectedLitStudent = null;
+  let litCurrentTest = null;
+  let litAnswers = {};
+  const LIT_OPT = ['①','②','③','④','⑤'];
+
+  function litLevelDef(level) {
+    level = Math.max(1, Math.min(LIT_MAX_LEVEL, level));
+    return LIT_LEVEL_DEFS.find(function(d) { return d.level === level; }) || LIT_LEVEL_DEFS[0];
+  }
+  function litRecordsFor(s) { return (s.literacyRecords || []).slice().sort(function(a, b) { return String(a.date).localeCompare(String(b.date)); }); }
+  function currentLitLevel(s) {
+    const r = litRecordsFor(s);
+    return r.length ? r[r.length - 1].newLevel : (LIT_GRADE_START[s.grade] || 1);
+  }
+  // 이 학생이 이미 본(또는 시험지로 뽑아 둔) 지문 id 모음
+  function litSeenPids(s) {
+    const seen = [];
+    (s.literacyRecords || []).forEach(function(r) { (r.passageIds || (r.passages || []).map(function(p) { return p.pid; })).forEach(function(id) { seen.push(id); }); });
+    if (s.literacyPending && s.literacyPending.passages) s.literacyPending.passages.forEach(function(p) { seen.push(p.pid); });
+    return seen;
+  }
+  function litTestLevels(base) {
+    if (base <= 1) return [1, 2, 3];
+    if (base >= LIT_MAX_LEVEL) return [LIT_MAX_LEVEL - 2, LIT_MAX_LEVEL - 1, LIT_MAX_LEVEL];
+    return [base - 1, base, base + 1];
+  }
+  function diagnoseLitLevel(breakdown) {
+    const sorted = breakdown.slice().sort(function(a, b) { return a.level - b.level; });
+    let diagnosed = sorted.length ? sorted[0].level - 1 : 1;
+    let toppedOut = false;
+    for (let i = 0; i < sorted.length; i++) {
+      const b = sorted[i];
+      if (b.total > 0 && (b.correct / b.total) >= LIT_PASS_RATE) {
+        diagnosed = b.level;
+        if (b.level === sorted[sorted.length - 1].level) toppedOut = true;
+      } else break;
+    }
+    if (diagnosed < 1) diagnosed = 1;
+    return { diagnosed: diagnosed, toppedOut: toppedOut };
+  }
+  function litDaysSince(dateStr) {
+    if (!dateStr) return null;
+    const d = new Date(dateStr + 'T00:00:00');
+    const t = new Date(todayLocalDateStr() + 'T00:00:00');
+    return Math.round((t - d) / 86400000);
+  }
+
+  // ----- 지문 창고(서버 공유) -----
+  async function loadLitPool(level) {
+    const key = String(level);
+    if (_litPoolLoaded[key]) return;
+    try {
+      if (window._fbReady && window._getDoc) {
+        const d = await window._getDoc(window._doc(window._db, 'geuldap_settings', 'literacy_pool_' + key));
+        if (d.exists() && d.data().passages) {
+          const map = {};
+          (window._litPool[key] || []).forEach(function(p) { map[p.pid] = p; });
+          d.data().passages.forEach(function(p) { map[p.pid] = p; });
+          window._litPool[key] = Object.keys(map).map(function(k) { return map[k]; }).sort(function(a, b) { return String(a.createdAt).localeCompare(String(b.createdAt)) || a.pid.localeCompare(b.pid); });
+        }
+      }
+    } catch (e) { console.log('문해력 지문 로드:', e); }
+    _litPoolLoaded[key] = true;
+    try { localStorage.setItem('glp', JSON.stringify(window._litPool)); } catch (e) {}
+  }
+  async function saveLitPool(level) {
+    const key = String(level);
+    try { localStorage.setItem('glp', JSON.stringify(window._litPool)); } catch (e) {}
+    if (!(window._fbWriteReady && window._fbWriteReady())) return;
+    try {
+      const ref = window._doc(window._db, 'geuldap_settings', 'literacy_pool_' + key);
+      const d = await window._getDoc(ref);
+      const map = {};
+      if (d.exists() && d.data().passages) d.data().passages.forEach(function(p) { map[p.pid] = p; });
+      (window._litPool[key] || []).forEach(function(p) { map[p.pid] = p; });
+      const merged = Object.keys(map).map(function(k) { return map[k]; }).sort(function(a, b) { return String(a.createdAt).localeCompare(String(b.createdAt)) || a.pid.localeCompare(b.pid); });
+      window._litPool[key] = merged;
+      await window._setDoc(ref, { level: Number(key), passages: merged });
+    } catch (e) {
+      console.error('지문 저장 오류', e);
+      alert('⚠️ 문해력 지문을 서버에 저장하지 못했어요(이 컴퓨터에는 저장됨).\n원인: ' + (e && (e.code || e.message) || e));
+    }
+  }
+
+  // ----- AI 지문 생성 -----
+  function litValidPassage(j, level) {
+    if (!j || typeof j.text !== 'string' || j.text.replace(/\s+/g, '').length < 60) return false;
+    if (!Array.isArray(j.questions) || j.questions.length < LIT_QUESTIONS_PER_PASSAGE) return false;
+    for (let i = 0; i < LIT_QUESTIONS_PER_PASSAGE; i++) {
+      const q = j.questions[i];
+      if (!q || !q.question || !Array.isArray(q.options) || q.options.length !== 5) return false;
+      if (typeof q.answerIndex !== 'number' || q.answerIndex < 0 || q.answerIndex > 4) return false;
+    }
+    return true;
+  }
+  async function generateLitPassage(level, existing) {
+    const def = litLevelDef(level);
+    const avoid = (existing || []).map(function(p) { return '"' + (p.title || '') + '"(' + (p.topic || '') + ')'; }).slice(-12);
+    const prompt = '당신은 22년 경력의 국어 교사이자 초등 문해력 평가 문항 출제자입니다. 아래 조건으로 초등학생용 문해력 평가 지문 1개와 문제 ' + LIT_QUESTIONS_PER_PASSAGE + '개를 새로 만들어 주세요.\n\n' +
+      '난이도: ' + level + '급 (' + def.band + ' ' + def.sub + ')\n글 종류: ' + def.genre + '\n이 급수에서 보는 힘: ' + def.desc + '\n' +
+      '지문 길이: 공백 포함 ' + def.chars[0] + '~' + def.chars[1] + '자 (문단은 줄바꿈(\\n)으로 구분)\n\n' +
+      '규칙:\n- 지문은 직접 지어낸 창작문이어야 함(교재·기사·책의 글을 옮기지 말 것). 실제 인물·학교·상표 이름은 쓰지 말 것.\n' +
+      '- ' + def.band + ' 학생이 이해할 수 있는 낱말과 문장 길이로 쓰되, 글의 짜임이 분명할 것. 한글로만 쓰고 한자·영어 단어는 쓰지 말 것(꼭 필요한 숫자는 허용).\n' +
+      '- 문제 ' + LIT_QUESTIONS_PER_PASSAGE + '개는 5지선다(보기 5개)이고, 아래 유형을 순서대로 하나씩 사용: ①사실 이해 ②낱말·표현의 뜻(문맥 속 낱말 뜻) ③추론·적용 ④글의 짜임·표현 방법(또는 인물·관점 파악) ⑤중심 내용·주제·글쓴이의 의도(또는 알맞은 제목)\n' +
+      '- 정답은 지문에 근거해 단 하나로 명확해야 하고, 오답 보기는 그럴듯하되 지문과 어긋나야 함. 보기 길이는 비슷하게.\n' +
+      '- 각 문제에 정답 근거를 한두 문장으로 쓴 explanation 포함.\n' +
+      (avoid.length ? '- 아래는 이미 만들어 둔 지문들이다. 이 글들과 같거나 거의 같은 글은 안 됨. 주제가 비슷하더라도 소재·사례·인물·문장을 바꾼 새 글로 쓸 것: ' + avoid.join(', ') + '\n' : '') +
+      '- 설명이나 코드블록 없이 아래 JSON으로만 응답(answerIndex는 정답의 0~4 인덱스):\n' +
+      '{"title":"지문 제목","topic":"주제 한두 낱말","text":"지문 전체","questions":[{"type":"사실 이해","question":"문제","options":["①보기","②보기","③보기","④보기","⑤보기"],"answerIndex":0,"explanation":"정답 근거"}]}';
+    let lastErr = null;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        const kr = await callGeminiKoreanOnly(prompt);
+        if (kr.hanjaLeft) { lastErr = new Error('한자가 섞여 있어요'); continue; }
+        const j = JSON.parse(kr.text.replace(/```json|```/g, '').trim());
+        if (!litValidPassage(j, level)) { lastErr = new Error('지문 형식이 올바르지 않아요'); continue; }
+        const qs = shuffleVocabQuestionOptions(j.questions.slice(0, LIT_QUESTIONS_PER_PASSAGE).map(function(q) {
+          return { type: q.type || '', question: String(q.question), options: q.options.map(function(o) { return String(o).replace(/^[①②③④⑤1-5][.)]?\s*/, ''); }), answerIndex: q.answerIndex, explanation: String(q.explanation || '') };
+        }));
+        const made = { pid: 'L' + level + '_' + Date.now() + '_' + Math.floor(Math.random() * 1000), level: level, title: String(j.title || ''), topic: String(j.topic || ''), text: String(j.text).trim(), questions: qs, status: 'draft', createdAt: todayLocalDateStr() };
+        return await litAiReview(made, '');
+      } catch (e) { lastErr = e; }
+    }
+    throw new Error(level + '급 지문 생성 실패: ' + (lastErr && lastErr.message));
+  }
+  // ----- AI 검토(만든 직후 자동 + 원장님이 이상하다고 느낄 때 다시) -----
+  // 1단계: 정답을 모르는 채로 문제를 풀어 보게 해서(블라인드 풀이) 저장된 정답과 비교한다.
+  // 2단계: 풀이 결과·원장님 메모를 참고해 정답이 하나뿐인지, 지시어·표현이 모호한지, 해설이 맞는지 점검하고 고친 문제를 돌려받는다.
+  async function litAiReview(p, note) {
+    const qText = p.questions.map(function(q, i) { return (i + 1) + '. ' + q.question + '\n' + q.options.map(function(o, k) { return LIT_OPT[k] + ' ' + o; }).join('\n'); }).join('\n\n');
+    const def = litLevelDef(p.level);
+    let blind = [];
+    try {
+      const a = await callGeminiKoreanOnly('아래 글을 읽고 각 문제의 정답 번호(1~5)만 고르세요. 설명 없이 JSON으로만 답하세요: {"answers":[1,2,3,4,5]}\n\n[글]\n' + p.text + '\n\n[문제]\n' + qText);
+      const j = JSON.parse(a.text.replace(/```json|```/g, '').trim());
+      blind = j.answers || [];
+    } catch (e) { blind = []; }
+    const mism = [];
+    p.questions.forEach(function(q, i) { if (blind[i] !== undefined && Number(blind[i]) - 1 !== q.answerIndex) mism.push((i + 1) + '번(저장된 정답 ' + LIT_OPT[q.answerIndex] + ', 다시 풀어 본 답 ' + (LIT_OPT[Number(blind[i]) - 1] || '?') + ')'); });
+    const withAns = p.questions.map(function(q, i) { return (i + 1) + '. [' + (q.type || '') + '] ' + q.question + '\n' + q.options.map(function(o, k) { return LIT_OPT[k] + ' ' + o; }).join('\n') + '\n정답: ' + LIT_OPT[q.answerIndex] + '\n해설: ' + (q.explanation || ''); }).join('\n\n');
+    const prompt = '당신은 초등 문해력 평가 문항을 검수하는 국어 교사입니다. 아래 지문과 문제(' + def.band + ' ' + def.sub + ' · ' + p.level + '급 수준)를 엄격하게 검토하고, 문제가 있으면 고친 최종본을 돌려주세요.\n\n' +
+      '점검 항목: (1) 정답이 지문 근거로 단 하나만 성립하는가 (2) 오답 보기가 정답으로 해석될 여지는 없는가 (3) "이것·여기·그" 같은 지시어나 표현이 가리키는 대상이 분명한가, 문제가 묻는 것과 문제 유형 표기가 맞는가 (4) 해설이 정답과 일치하는가 (5) 학년 수준에 맞는 낱말·길이인가 (6) 보기 길이와 형식이 비슷한가.\n' +
+      (mism.length ? '※ 정답을 가리고 다시 풀어 보니 다음 문제에서 저장된 정답과 달랐습니다. 문제나 보기가 모호할 가능성이 크니 특히 확인하세요: ' + mism.join(', ') + '\n' : '※ 정답을 가리고 다시 풀어 본 결과는 저장된 정답과 모두 일치했습니다(그래도 모호한 표현이 없는지 확인).\n') +
+      (note ? '※ 원장님이 직접 남긴 검토 요청(최우선으로 반영): ' + note + '\n' : '') +
+      '지문 본문은 원장님 요청이 없는 한 바꾸지 마세요. 한자·영어 단어는 쓰지 마세요.\n\n[지문] ' + p.title + '\n' + p.text + '\n\n[문제와 정답]\n' + withAns + '\n\n' +
+      '설명이나 코드블록 없이 아래 JSON으로만 응답(answerIndex는 0~4, questions는 반드시 ' + p.questions.length + '개 모두):\n{"issues":["발견한 문제와 고친 내용을 한 줄씩(없으면 빈 배열)"],"title":"지문 제목","text":"지문 본문","questions":[{"type":"","question":"","options":["","","","",""],"answerIndex":0,"explanation":""}]}';
+    try {
+      const kr = await callGeminiKoreanOnly(prompt);
+      const j = JSON.parse(kr.text.replace(/```json|```/g, '').trim());
+      if (!Array.isArray(j.questions) || j.questions.length < p.questions.length) throw new Error('검토 형식 오류');
+      const qs = j.questions.slice(0, p.questions.length).map(function(q, i) {
+        if (!q || !q.question || !Array.isArray(q.options) || q.options.length !== 5 || typeof q.answerIndex !== 'number' || q.answerIndex < 0 || q.answerIndex > 4) throw new Error('검토 문제 형식 오류');
+        return { type: q.type || p.questions[i].type || '', question: String(q.question), options: q.options.map(function(o) { return String(o).replace(/^[①②③④⑤1-5][.)]?\s*/, ''); }), answerIndex: q.answerIndex, explanation: String(q.explanation || '') };
+      });
+      const np = JSON.parse(JSON.stringify(p));
+      np.questions = qs;
+      if (note && j.text && String(j.text).replace(/\s+/g, '').length >= 60) { np.text = String(j.text).trim(); if (j.title) np.title = String(j.title); }
+      const issues = (j.issues || []).map(String).filter(function(x) { return x.trim(); });
+      np.review = { at: todayLocalDateStr(), blindMismatch: mism, issues: issues, note: note || '' };
+      return np;
+    } catch (e) {
+      const np = JSON.parse(JSON.stringify(p));
+      np.review = { at: todayLocalDateStr(), blindMismatch: mism, issues: ['AI 검토를 끝내지 못했어요(' + (e && e.message) + '). 직접 읽어 보고 필요하면 "다시 검토"를 눌러 주세요.'], note: note || '', failed: true };
+      return np;
+    }
+  }
+  async function reviewLitPassage(i) {
+    const s = selectedLitStudent, t = litCurrentTest; if (!s || !t) return;
+    const note = prompt((i + 1) + '번째 지문(' + t.passages[i].level + '급)을 AI가 다시 검토해요.\n이상한 점이 있으면 적어 주세요. (예: "2번 문제 정답이 애매해요", "지문이 너무 어려워요")\n비워 두고 확인을 누르면 전체를 다시 점검해요.', '');
+    if (note === null) return;
+    const box = document.getElementById('litTestBox');
+    box.insertAdjacentHTML('afterbegin', '<div id="litReviewing" style="margin:10px 0; padding:10px; background:#fff8e1; border-radius:8px; font-size:13px;">🔍 AI가 다시 검토하고 있어요... (30초~1분)</div>');
+    try {
+      const np = await litAiReview(t.passages[i], note.trim());
+      np.status = 'draft';
+      t.passages[i] = np;
+      const pool = window._litPool[String(np.level)] || [];
+      const cur = pool.find(function(x) { return x.pid === np.pid; });
+      if (cur) { cur.title = np.title; cur.text = np.text; cur.questions = JSON.parse(JSON.stringify(np.questions)); cur.review = np.review; cur.status = 'draft'; }
+      s.literacyPending = t;
+      await saveLitPool(np.level);
+      await persistLit(s);
+    } catch (e) { alert('다시 검토 실패: ' + e.message); }
+    renderLitTestBox();
+  }
+
+  // 이 학생이 안 본 지문을 고른다 — 창고에 없으면 새로(변형) 만든다. exclude에 든 지문은 제외.
+  async function pickOrCreateLitPassage(s, level, exclude) {
+    await loadLitPool(level);
+    const key = String(level);
+    const seen = new Set(litSeenPids(s).concat(exclude || []));
+    const pool = window._litPool[key] = window._litPool[key] || [];
+    const cand = pool.find(function(p) { return !seen.has(p.pid) && p.status === 'final'; }) || pool.find(function(p) { return !seen.has(p.pid); });
+    if (cand) return cand;
+    const np = await generateLitPassage(level, pool);
+    pool.push(np);
+    await saveLitPool(level);
+    return np;
+  }
+
+  // ----- 학생 저장 -----
+  async function persistLit(s) {
+    const idx = _students.findIndex(function(x) { return x.id === s.id; });
+    if (idx > -1) {
+      _students[idx].literacyRecords = s.literacyRecords || [];
+      _students[idx].literacyPending = s.literacyPending || null;
+      try { localStorage.setItem('gs', JSON.stringify(_students)); } catch (e) {}
+    }
+    if (window._fbWriteReady && window._fbWriteReady()) {
+      try { await window._updateByFieldId('geuldap_students', s.id, { literacyRecords: s.literacyRecords || [], literacyPending: s.literacyPending || null }); }
+      catch (e) { console.error('문해력 기록 저장 오류', e); alert('⚠️ 문해력 기록을 서버에 저장하지 못했어요(이 컴퓨터에는 저장됨).'); }
+    }
+  }
+
+  // ----- 화면 -----
+  function renderLitTab() {
+    const g = document.getElementById('litStudentGrid');
+    if (!g) return;
+    const list = _students.filter(function(s) { return s.active !== false && LIT_GRADE_START[s.grade]; }).sort(function(a, b) { return a.name.localeCompare(b.name, 'ko'); });
+    if (!list.length) { g.innerHTML = '<div class="empty" style="padding:20px 0;">초등 1~6학년 재원생이 없습니다.</div>'; }
+    else g.innerHTML = list.map(function(s) {
+      const lvl = currentLitLevel(s);
+      const recs = litRecordsFor(s);
+      let badge = '<div style="font-size:12px; color:#999; margin-top:4px;">아직 진단 전</div>';
+      if (recs.length) {
+        const days = litDaysSince(recs[recs.length - 1].date);
+        const due = days !== null && days >= LIT_CYCLE_DAYS;
+        badge = '<div style="font-size:12px; color:#0d6b6b; margin-top:4px; font-weight:600;">현재 ' + lvl + '급</div>' +
+          '<div style="font-size:11px; color:' + (due ? '#c0392b' : '#999') + ';">' + (due ? '⏰ 재진단 시기 (' + days + '일 경과)' : days + '일 전 진단') + '</div>';
+      }
+      return '<div class="student-card" onclick="selectLitStudent(\'' + s.id + '\')" style="cursor:pointer;"><div class="student-avatar">' + escapeHtml(s.name.charAt(0)) + '</div><div class="student-name">' + escapeHtml(s.name) + '</div><div class="student-info">' + escapeHtml(s.grade || '') + '</div>' + badge + '</div>';
+    }).join('');
+    if (selectedLitStudent) { document.getElementById('litDetailSection').style.display = ''; renderLitStatus(); renderLitHistory(); }
+    else document.getElementById('litDetailSection').style.display = 'none';
+  }
+  function selectLitStudent(id) {
+    const s = _students.find(function(x) { return x.id === id; });
+    if (!s) return;
+    selectedLitStudent = s; litCurrentTest = null; litAnswers = {};
+    document.getElementById('litTestBox').innerHTML = '';
+    document.getElementById('litResultBox').innerHTML = '';
+    document.getElementById('litReportBox').innerHTML = '';
+    document.getElementById('litDetailSection').style.display = '';
+    renderLitStatus(); renderLitHistory();
+    if (s.literacyPending && s.literacyPending.passages && s.literacyPending.passages.length) {
+      litCurrentTest = JSON.parse(JSON.stringify(s.literacyPending));
+      renderLitTestBox();
+    }
+    document.getElementById('litDetailSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  function renderLitStatus() {
+    const s = selectedLitStudent; if (!s) return;
+    const lvl = currentLitLevel(s), def = litLevelDef(lvl), recs = litRecordsFor(s);
+    document.getElementById('litDetailTitle').textContent = s.name + ' · ' + (s.grade || '') + ' 문해력';
+    let next = '';
+    if (recs.length) {
+      const last = recs[recs.length - 1];
+      const d = new Date(last.date + 'T00:00:00'); d.setDate(d.getDate() + LIT_CYCLE_DAYS);
+      const nd = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+      const days = litDaysSince(last.date);
+      next = ' · 마지막 진단 ' + last.date + ' · 다음 진단 권장일 <b>' + nd + '</b>' + (days >= LIT_CYCLE_DAYS ? ' <span style="color:#c0392b; font-weight:700;">(재진단 시기)</span>' : '');
+    }
+    document.getElementById('litStatusBody').innerHTML = '<div style="font-size:14px;">현재 <b style="color:#0d6b6b; font-size:18px;">' + lvl + '급</b> <span style="color:#888;">(' + def.band + ' ' + def.sub + ' · 교사용 표기)</span>' + next + '</div>' +
+      '<div style="font-size:12px; color:#888; margin-top:4px;">이 급수에서 보는 글: ' + escapeHtml(def.desc) + '</div>' +
+      (recs.length ? '' : '<div style="font-size:12px; color:#888; margin-top:4px;">첫 진단은 학년 기준 ' + lvl + '급부터 시작해요.</div>');
+  }
+  function litPassageRange(test) {
+    const nums = []; let n = 1;
+    test.passages.forEach(function(p) { const a = n; n += p.questions.length; nums.push([a, n - 1]); });
+    return nums;
+  }
+
+  async function generateLitTest() {
+    const s = selectedLitStudent; if (!s) return;
+    if (s.literacyPending && !s._litSkipConfirm) {
+      if (!confirm('이미 만들어 둔 시험지가 있어요(아직 결과 입력 전). 다시 만들면 그 시험지는 사라지고 새 지문으로 바뀌어요.\n\n이미 인쇄해서 나눠줬다면 다시 만들지 마세요.')) return;
+    }
+    const recs = litRecordsFor(s);
+    if (recs.length) {
+      const days = litDaysSince(recs[recs.length - 1].date);
+      if (days !== null && days < LIT_CYCLE_DAYS && !confirm('마지막 진단이 ' + days + '일 전이에요(정기 주기는 2개월). 정기 시기 전이지만 원하면 언제든 다시 볼 수 있어요.\n이 학생의 새 시험지를 만들까요?\n(이미 본 지문은 다시 나오지 않아요.)')) return;
+    }
+    const box = document.getElementById('litTestBox');
+    box.innerHTML = '<div style="color:#888; font-size:13px;">이 학생이 아직 보지 않은 지문을 고르고, 없으면 새로 만들고 있어요... (처음 만들 땐 1~2분 걸릴 수 있어요)</div>';
+    try {
+      s.literacyPending = null; // 이전 대기 시험지는 "본 지문"에서 빠지게
+      const base = currentLitLevel(s);
+      const levels = litTestLevels(base);
+      const passages = [];
+      for (let i = 0; i < levels.length; i++) passages.push(await pickOrCreateLitPassage(s, levels[i], []));
+      litCurrentTest = { id: Date.now().toString(), studentId: s.id, baseLevel: base, levels: levels, createdAt: todayLocalDateStr(), passages: JSON.parse(JSON.stringify(passages)) };
+      s.literacyPending = litCurrentTest;
+      litAnswers = {};
+      await persistLit(s);
+      document.getElementById('litResultBox').innerHTML = '';
+      renderLitTestBox();
+    } catch (e) { box.innerHTML = '<div style="color:#c00; font-size:13px;">시험지 생성 실패: ' + escapeHtml(e.message) + '</div>'; }
+  }
+
+  function litParagraphsHtml(text, style) {
+    return String(text || '').split(/\n+/).filter(function(p) { return p.trim(); }).map(function(p) { return '<p style="' + (style || '') + '">' + escapeHtml(p.trim()) + '</p>'; }).join('');
+  }
+  const LIT_NUM_COLOR = { '초1': '#e07a8f', '초2': '#e07a8f', '초3': '#6fae5c', '초4': '#6fae5c', '초5': '#5c8fd0', '초6': '#5c8fd0' };
+
+  // 화면·인쇄 공용: 시험지 한 지문(= 한 페이지) HTML. EBS 문해력 평가처럼 지문 상자 + 번호 붙은 5지선다 문제 형식.
+  function litPassageBlockHtml(test, pi, opts) {
+    opts = opts || {};
+    const p = test.passages[pi];
+    const nums = litPassageRange(test)[pi];
+    const color = LIT_NUM_COLOR[litLevelDef(p.level).band] || '#6a9ad6';
+    const rangeText = nums[0] === nums[1] ? '[' + nums[0] + ']' : '[' + nums[0] + '~' + nums[1] + ']';
+    const qHtml = p.questions.map(function(q, qi) {
+      const n = nums[0] + qi;
+      const ans = opts.answers ? opts.answers[n] : undefined;
+      const optHtml = q.options.map(function(o, oi) {
+        let mark = '';
+        if (opts.graded) {
+          if (oi === q.answerIndex) mark = ' <span style="color:#0d6b6b; font-weight:700;">✔ 정답</span>';
+          if (ans === oi && oi !== q.answerIndex) mark = ' <span style="color:#c0392b; font-weight:700;">✖ 학생 답</span>';
+          if (ans === oi && oi === q.answerIndex) mark = ' <span style="color:#0d6b6b; font-weight:700;">✔ 학생 답(정답)</span>';
+        } else if (opts.showAnswer && oi === q.answerIndex) mark = ' <span style="color:#0d6b6b; font-weight:700;">← 정답</span>';
+        return '<div style="margin:3px 0; line-height:1.6;">' + LIT_OPT[oi] + ' ' + escapeHtml(o) + mark + '</div>';
+      }).join('');
+      const expl = (opts.showAnswer || opts.graded) && q.explanation ? '<div style="font-size:12px; color:#666; background:#f7f5ee; padding:6px 10px; border-radius:6px; margin-top:4px;">해설: ' + escapeHtml(q.explanation) + '</div>' : '';
+      return '<div style="margin:16px 0 20px; break-inside:avoid; page-break-inside:avoid;"><div style="display:flex; gap:12px;"><div style="font-size:24px; font-weight:800; color:' + color + '; min-width:34px; line-height:1.1;">' + n + '</div><div style="flex:1; font-size:14px;"><div style="font-weight:700; margin-bottom:6px; line-height:1.55;">' + escapeHtml(q.question) + '</div>' + optHtml + expl + '</div></div></div>';
+    }).join('');
+    return '<div class="lit-passage-block" style="max-width:800px; ' + (opts.pageBreak ? 'break-after:page; page-break-after:always;' : '') + ' margin-bottom:20px;">' +
+      vocabPrintFrameOpen('초등 문해력 등급 평가') +
+      '<div style="display:flex; justify-content:space-between; align-items:center; font-size:13px; margin-bottom:10px; flex-wrap:wrap; gap:6px;"><span>이름: ' + escapeHtml(opts.studentName || '') + '</span><span>날짜: ' + (opts.date ? escapeHtml(opts.date) : '______________') + '</span><span>제한 시간 | ' + LIT_TIME_LIMIT_MIN + '분</span><span>점수: ______ / 100</span></div>' +
+      '<div style="font-size:13px; color:#555; margin-bottom:8px;"><b style="color:' + color + ';">' + rangeText + '</b> 다음 글을 읽고 물음에 답하세요.</div>' +
+      '<div style="border:1.5px solid #333; padding:16px 18px; font-family:\'Noto Serif KR\', serif; font-size:14px; line-height:1.95; background:#fff;">' +
+      '<div style="text-align:center; font-weight:700; margin-bottom:8px;">' + escapeHtml(p.title) + '</div>' + litParagraphsHtml(p.text, 'margin:0 0 6px; text-indent:0.8em;') + '</div>' +
+      qHtml + VOCAB_PRINT_FRAME_CLOSE + '</div>';
+  }
+
+  function renderLitTestBox() {
+    const s = selectedLitStudent, t = litCurrentTest;
+    const box = document.getElementById('litTestBox');
+    if (!s || !t) { box.innerHTML = ''; return; }
+    const total = t.passages.reduce(function(a, p) { return a + p.questions.length; }, 0);
+    const drafts = t.passages.filter(function(p) { const cur = ((window._litPool[String(p.level)] || []).find(function(x) { return x.pid === p.pid; }) || p); return cur.status !== 'final'; }).length;
+    const blocks = t.passages.map(function(p, i) { return litPassageBlockHtml(t, i, { studentName: s.name, showAnswer: !!window._litShowAnswer, pageBreak: i < t.passages.length - 1 }); }).join('');
+    const swapBtns = t.passages.map(function(p, i) { return '<button class="btn btn-secondary btn-sm" onclick="swapLitPassage(' + i + ')">🔄 ' + p.level + '급 지문 바꾸기</button> <button class="btn btn-secondary btn-sm" onclick="reviewLitPassage(' + i + ')">🔍 ' + p.level + '급 AI 다시 검토</button>'; }).join(' ');
+    const reviewNotes = t.passages.map(function(p) {
+      const rv = p.review; if (!rv) return '';
+      const body = rv.issues && rv.issues.length ? '<ul style="margin:4px 0 0 18px; padding:0;">' + rv.issues.map(function(x) { return '<li>' + escapeHtml(x) + '</li>'; }).join('') + '</ul>' : '문제점이 발견되지 않았어요.';
+      return '<div style="font-size:12px; color:#555; background:#fffdf3; border:1px solid #efe3b0; border-radius:6px; padding:6px 10px; margin-bottom:6px;">🔍 <b>' + p.level + '급 AI 검토</b> (' + escapeHtml(rv.at || '') + ')' + (rv.blindMismatch && rv.blindMismatch.length ? ' · 다시 풀어 보니 정답이 달랐던 문제: ' + escapeHtml(rv.blindMismatch.join(', ')) : ' · 다시 풀어 본 답과 일치') + body + '</div>';
+    }).join('');
+    box.innerHTML = '<div style="margin:14px 0 8px; padding:10px 14px; background:#f3f8f8; border:1px solid #cfe5e5; border-radius:8px; font-size:13px;">기준 <b>' + t.baseLevel + '급</b> → 출제 범위 <b>' + t.levels.join('·') + '급</b> · 지문 ' + t.passages.length + '개 · 총 ' + total + '문항 · ' + LIT_TIME_LIMIT_MIN + '분' +
+      (drafts ? '<div style="color:#8a6d00; margin-top:4px;">📝 아직 확인 전(초안) 지문이 ' + drafts + '개 있어요. 읽어 보고 필요하면 수정한 뒤 "✅ 지문 확정"을 눌러 주세요.</div>' : '<div style="color:#0d6b6b; margin-top:4px;">✅ 모든 지문이 확정된 상태예요.</div>') + '</div>' +
+      '<div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px;">' +
+      '<button class="btn btn-secondary btn-sm" onclick="printLitTest()">🖨️ 시험지 인쇄</button>' +
+      '<button class="btn btn-secondary btn-sm" onclick="printLitAnswerKey()">🖨️ 정답·해설 인쇄</button>' +
+      '<button class="btn btn-secondary btn-sm" onclick="toggleLitAnswer()">' + (window._litShowAnswer ? '정답 가리기' : '정답·해설 보기') + '</button>' +
+      '<button class="btn btn-secondary btn-sm" onclick="openLitEditor()">✏️ 지문·문제 수정</button>' +
+      '<button class="btn btn-primary btn-sm" onclick="finalizeLitPassages()">✅ 지문 확정</button>' +
+      '<button class="btn btn-primary btn-sm" onclick="openLitResultForm()">✅ 시험 결과 입력(채점)</button></div>' +
+      '<div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px;">' + swapBtns + '</div>' + reviewNotes + blocks;
+  }
+  function toggleLitAnswer() { window._litShowAnswer = !window._litShowAnswer; renderLitTestBox(); }
+
+  async function swapLitPassage(i) {
+    const s = selectedLitStudent, t = litCurrentTest; if (!s || !t) return;
+    if (!confirm((i + 1) + '번째 지문(' + t.passages[i].level + '급)을 다른 지문으로 바꿀까요?\n이미 인쇄해서 나눠줬다면 바꾸지 마세요.')) return;
+    try {
+      const exclude = t.passages.map(function(p) { return p.pid; });
+      const np = await pickOrCreateLitPassage(s, t.passages[i].level, exclude);
+      t.passages[i] = JSON.parse(JSON.stringify(np));
+      s.literacyPending = t; litAnswers = {};
+      await persistLit(s);
+      renderLitTestBox();
+    } catch (e) { alert('지문 교체 실패: ' + e.message); }
+  }
+  async function finalizeLitPassages() {
+    const t = litCurrentTest; if (!t) return;
+    t.passages.forEach(function(p) {
+      const pool = window._litPool[String(p.level)] || [];
+      const cur = pool.find(function(x) { return x.pid === p.pid; });
+      if (cur) { cur.status = 'final'; cur.title = p.title; cur.topic = p.topic; cur.text = p.text; cur.questions = JSON.parse(JSON.stringify(p.questions)); }
+      p.status = 'final';
+    });
+    for (let i = 0; i < t.levels.length; i++) await saveLitPool(t.levels[i]);
+    selectedLitStudent.literacyPending = t;
+    await persistLit(selectedLitStudent);
+    renderLitTestBox();
+    alert('지문을 확정했어요. 다른 학생에게도 이 지문이 먼저 쓰여요(이미 본 학생은 제외).');
+  }
+
+  // ----- 지문·문제 수정 -----
+  function openLitEditor() {
+    const t = litCurrentTest; if (!t) return;
+    const nums = litPassageRange(t);
+    const html = t.passages.map(function(p, pi) {
+      const qs = p.questions.map(function(q, qi) {
+        return '<div style="border:1px solid #e8e0cc; border-radius:8px; padding:10px; margin:8px 0; background:#fff;"><div style="font-size:12px; color:#888; margin-bottom:4px;">' + (nums[pi][0] + qi) + '번 · ' + escapeHtml(q.type || '') + '</div>' +
+          '<textarea id="litEdQ_' + pi + '_' + qi + '" rows="2" style="width:100%; font-size:13px;">' + escapeHtml(q.question) + '</textarea>' +
+          q.options.map(function(o, oi) { return '<div style="display:flex; gap:6px; align-items:center; margin-top:4px;"><span>' + LIT_OPT[oi] + '</span><input type="text" id="litEdO_' + pi + '_' + qi + '_' + oi + '" value="' + escapeHtml(o) + '" style="flex:1; font-size:13px;"></div>'; }).join('') +
+          '<div style="margin-top:6px; font-size:13px;">정답: <select id="litEdA_' + pi + '_' + qi + '" style="width:auto;">' + LIT_OPT.map(function(l, oi) { return '<option value="' + oi + '"' + (q.answerIndex === oi ? ' selected' : '') + '>' + l + '</option>'; }).join('') + '</select></div>' +
+          '<textarea id="litEdE_' + pi + '_' + qi + '" rows="2" placeholder="해설" style="width:100%; font-size:12px; margin-top:6px;">' + escapeHtml(q.explanation || '') + '</textarea></div>';
+      }).join('');
+      return '<div style="border:2px solid #cfe5e5; border-radius:10px; padding:12px; margin-bottom:14px; background:#fafdfd;"><div style="font-weight:700; margin-bottom:6px;">' + p.level + '급 지문</div>' +
+        '<input type="text" id="litEdT_' + pi + '" value="' + escapeHtml(p.title) + '" style="width:100%; font-size:14px; font-weight:700; margin-bottom:6px;">' +
+        '<textarea id="litEdX_' + pi + '" rows="10" style="width:100%; font-size:14px; line-height:1.7;">' + escapeHtml(p.text) + '</textarea>' + qs + '</div>';
+    }).join('');
+    document.getElementById('litTestBox').innerHTML = '<div style="margin:14px 0;"><div style="font-weight:700; margin-bottom:8px;">✏️ 지문·문제 수정</div>' + html +
+      '<button class="btn btn-primary btn-sm" onclick="saveLitEditor()">💾 수정 저장</button> <button class="btn btn-secondary btn-sm" onclick="renderLitTestBox()">취소</button></div>';
+  }
+  async function saveLitEditor() {
+    const t = litCurrentTest; if (!t) return;
+    t.passages.forEach(function(p, pi) {
+      p.title = document.getElementById('litEdT_' + pi).value.trim();
+      p.text = document.getElementById('litEdX_' + pi).value.trim();
+      p.questions.forEach(function(q, qi) {
+        q.question = document.getElementById('litEdQ_' + pi + '_' + qi).value.trim();
+        q.options = q.options.map(function(o, oi) { return document.getElementById('litEdO_' + pi + '_' + qi + '_' + oi).value.trim(); });
+        q.answerIndex = parseInt(document.getElementById('litEdA_' + pi + '_' + qi).value, 10);
+        q.explanation = document.getElementById('litEdE_' + pi + '_' + qi).value.trim();
+      });
+      const pool = window._litPool[String(p.level)] || [];
+      const cur = pool.find(function(x) { return x.pid === p.pid; });
+      if (cur) { cur.title = p.title; cur.text = p.text; cur.questions = JSON.parse(JSON.stringify(p.questions)); }
+    });
+    for (let i = 0; i < t.levels.length; i++) await saveLitPool(t.levels[i]);
+    selectedLitStudent.literacyPending = t;
+    await persistLit(selectedLitStudent);
+    renderLitTestBox();
+  }
+
+  // ----- 인쇄 -----
+  function litOpenPrint(html) {
+    const w = window.open('', '_blank');
+    w.document.write('<html><head><meta charset="utf-8"><title>문해력 등급 평가</title><style>body{font-family:"Noto Sans KR","Apple SD Gothic Neo",sans-serif; margin:0; padding:12px;} ' + VOCAB_PRINT_FRAME_FILL_CSS + '</style></head><body>' + html + '</body></html>');
+    w.document.close();
+    setTimeout(function() { w.print(); }, 400);
+  }
+  function litCoverHtml(s, t) {
+    const total = litTotalQuestions(t);
+    const row = function(k, v) { return '<tr><td style="padding:14px 18px; border:1px solid #bbb; background:#f3f8f8; width:28%; font-weight:700; text-align:center;">' + k + '</td><td style="padding:14px 18px; border:1px solid #bbb;">' + v + '</td></tr>'; };
+    return '<div class="lit-cover" style="max-width:800px; break-after:page; page-break-after:always; margin-bottom:20px;">' + vocabPrintFrameOpen('') +
+      '<div style="text-align:center; margin:60px 0 40px;"><div style="font-size:15px; color:#0d6b6b; letter-spacing:6px; margin-bottom:14px;">LITERACY LEVEL TEST</div><div style="font-size:34px; font-weight:800; line-height:1.3;">초등 문해력<br>등급 평가</div></div>' +
+      '<table style="width:100%; border-collapse:collapse; font-size:16px; margin-bottom:32px;">' + row('이 름', escapeHtml(s.name)) + row('학 년', escapeHtml(s.grade || '')) + row('평가일', escapeHtml(todayLocalDateStr())) + row('문항 수 / 시간', total + '문항 · ' + LIT_TIME_LIMIT_MIN + '분') + row('점 수', '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;/ 100') + '</table>' +
+      '<div style="border:1.5px solid #333; padding:18px 22px; font-size:14px; line-height:2;"><div style="font-weight:700; margin-bottom:6px;">[ 유의 사항 ]</div>' +
+      '<div>1. 시작 신호가 있을 때까지 시험지를 넘기지 않습니다.</div><div>2. 글을 꼼꼼히 읽고, 각 문제에서 알맞은 답을 하나만 고릅니다.</div><div>3. 모르는 문제는 표시해 두고 다음 문제로 넘어갑니다.</div><div>4. 정해진 시간 안에 모든 문제를 풀고, 마지막에 한 번 더 확인합니다.</div><div>5. 시험지의 글은 시험 후에 다시 가져가지 않습니다.</div></div>' +
+      '<div style="text-align:center; margin-top:40px; font-size:13px; color:#888;">이 평가는 글 읽는 힘을 알아보기 위한 것으로, 점수보다 자신의 읽기 습관을 돌아보는 데 목적이 있어요.</div>' +
+      VOCAB_PRINT_FRAME_CLOSE + '</div>';
+  }
+  function printLitTest() {
+    const s = selectedLitStudent, t = litCurrentTest; if (!s || !t) return;
+    litOpenPrint(litCoverHtml(s, t) + t.passages.map(function(p, i) { return litPassageBlockHtml(t, i, { studentName: s.name, pageBreak: i < t.passages.length - 1 }); }).join(''));
+  }
+  function printLitAnswerKey() {
+    const s = selectedLitStudent, t = litCurrentTest; if (!s || !t) return;
+    const nums = litPassageRange(t);
+    const blocks = t.passages.map(function(p, pi) {
+      return '<div style="border:1px solid #ccc; border-radius:6px; padding:10px 14px; margin-bottom:12px;"><div style="font-weight:700; color:#0d6b6b; margin-bottom:6px;">' + p.level + '급 지문 · ' + escapeHtml(p.title) + '</div>' +
+        p.questions.map(function(q, qi) { return '<div style="font-size:13px; margin-bottom:6px; line-height:1.6;"><b>' + (nums[pi][0] + qi) + '번 ' + LIT_OPT[q.answerIndex] + '</b> <span style="color:#666;">(' + escapeHtml(q.type || '') + ')</span><br><span style="color:#555;">' + escapeHtml(q.explanation || '') + '</span></div>'; }).join('') + '</div>';
+    }).join('');
+    litOpenPrint('<div style="max-width:800px;">' + vocabPrintFrameOpen('초등 문해력 등급 평가 — 정답 및 해설') + '<div style="text-align:center; font-size:12px; color:#888; margin-bottom:10px;">' + escapeHtml(s.name) + ' 학생 · 기준 ' + t.baseLevel + '급 · 출제 범위 ' + t.levels.join('·') + '급</div>' + blocks + VOCAB_PRINT_FRAME_CLOSE + '</div>');
+  }
+
+  // ----- 채점·급수 진단 -----
+  function openLitResultForm() {
+    const t = litCurrentTest; if (!t) { alert('먼저 시험지를 만들어 주세요.'); return; }
+    litAnswers = {};
+    const nums = litPassageRange(t);
+    const rows = t.passages.map(function(p, pi) {
+      return '<div style="margin-bottom:10px;"><div style="font-size:12px; color:#0d6b6b; font-weight:700; margin-bottom:4px;">' + p.level + '급 지문</div>' +
+        p.questions.map(function(q, qi) {
+          const n = nums[pi][0] + qi;
+          return '<div style="display:flex; align-items:center; gap:8px; padding:5px 0; border-bottom:1px solid #f0f0f0;"><span style="width:32px; font-weight:700;">' + n + '번</span>' +
+            LIT_OPT.map(function(l, oi) { return '<button type="button" class="btn btn-secondary btn-sm" id="litAns_' + n + '_' + oi + '" onclick="setLitAnswer(' + n + ',' + oi + ')" style="min-width:38px;">' + l + '</button>'; }).join('') + '</div>';
+        }).join('') + '</div>';
+    }).join('');
+    document.getElementById('litResultBox').innerHTML = '<div style="margin:14px 0; padding:12px; border:1px solid #cfe5e5; border-radius:8px; background:#fafdfd;"><div style="font-weight:700; margin-bottom:8px;">✅ 학생이 고른 답을 눌러 입력하세요</div>' + rows +
+      '<div style="margin-top:8px;"><button class="btn btn-primary btn-sm" onclick="saveLitResult()">💾 저장 및 급수 진단</button> <span id="litAnsCount" style="font-size:12px; color:#888;">0 / ' + litTotalQuestions(t) + ' 입력</span></div></div>';
+    document.getElementById('litResultBox').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  function litTotalQuestions(t) { return t.passages.reduce(function(a, p) { return a + p.questions.length; }, 0); }
+  function setLitAnswer(n, oi) {
+    litAnswers[n] = oi;
+    for (let k = 0; k < 5; k++) {
+      const b = document.getElementById('litAns_' + n + '_' + k);
+      if (b) { b.classList.toggle('btn-primary', k === oi); b.classList.toggle('btn-secondary', k !== oi); }
+    }
+    const c = document.getElementById('litAnsCount');
+    if (c) c.textContent = Object.keys(litAnswers).length + ' / ' + litTotalQuestions(litCurrentTest) + ' 입력';
+  }
+  async function saveLitResult() {
+    const s = selectedLitStudent, t = litCurrentTest; if (!s || !t) return;
+    const total = litTotalQuestions(t), answered = Object.keys(litAnswers).length;
+    if (answered < total && !confirm('답을 ' + (total - answered) + '문항 입력하지 않았어요. 입력하지 않은 문항은 틀린 것으로 처리돼요. 저장할까요?')) return;
+    const nums = litPassageRange(t);
+    const breakdown = t.passages.map(function(p, pi) {
+      let correct = 0;
+      p.questions.forEach(function(q, qi) { if (litAnswers[nums[pi][0] + qi] === q.answerIndex) correct++; });
+      return { level: p.level, correct: correct, total: p.questions.length };
+    });
+    const correctAll = breakdown.reduce(function(a, b) { return a + b.correct; }, 0);
+    const diag = diagnoseLitLevel(breakdown);
+    const oldLevel = currentLitLevel(s);
+    const rec = {
+      id: Date.now().toString(), date: todayLocalDateStr(), month: todayLocalDateStr().slice(0, 7),
+      baseLevel: t.baseLevel, oldLevel: oldLevel, newLevel: diag.diagnosed, toppedOut: diag.toppedOut,
+      resultLabel: diag.diagnosed > oldLevel ? '상승' : (diag.diagnosed < oldLevel ? '하락' : '유지'),
+      correct: correctAll, total: total, score: Math.round(correctAll / total * 100), breakdown: breakdown,
+      answers: JSON.parse(JSON.stringify(litAnswers)), passages: JSON.parse(JSON.stringify(t.passages)),
+      passageIds: t.passages.map(function(p) { return p.pid; })
+    };
+    s.literacyRecords = (s.literacyRecords || []).concat([rec]);
+    s.literacyPending = null;
+    await persistLit(s);
+    litCurrentTest = null; litAnswers = {};
+    document.getElementById('litTestBox').innerHTML = ''; document.getElementById('litResultBox').innerHTML = '';
+    renderLitStatus(); renderLitHistory(); renderLitTab();
+    alert(s.name + ' 학생: ' + diag.diagnosed + '급으로 진단되었어요 (' + correctAll + '/' + total + '문항, ' + rec.score + '점). 아래 "진단 보고서 생성"으로 학부모 안내문을 만들 수 있어요.');
+  }
+
+  // ----- 기록·보고서 -----
+  function renderLitHistory() {
+    const s = selectedLitStudent; const box = document.getElementById('litHistory'); if (!s || !box) return;
+    const recs = litRecordsFor(s).slice().reverse();
+    if (!recs.length) { box.innerHTML = '<div style="font-size:13px; color:#aaa; margin-top:14px;">아직 진단 기록이 없어요.</div>'; return; }
+    box.innerHTML = '<div style="font-weight:700; margin:16px 0 8px; font-size:14px;">📋 문해력 진단 기록</div><table style="width:100%; font-size:13px; border-collapse:collapse;"><tr style="background:#f7f5ee;"><th style="padding:6px; border:1px solid #eee;">날짜</th><th style="padding:6px; border:1px solid #eee;">급수</th><th style="padding:6px; border:1px solid #eee;">점수</th><th style="padding:6px; border:1px solid #eee;">결과</th><th style="padding:6px; border:1px solid #eee;"></th></tr>' +
+      recs.map(function(r) {
+        return '<tr><td style="padding:6px; border:1px solid #eee; text-align:center;">' + escapeHtml(r.date) + '</td><td style="padding:6px; border:1px solid #eee; text-align:center;"><b>' + r.oldLevel + '급 → ' + r.newLevel + '급</b></td><td style="padding:6px; border:1px solid #eee; text-align:center;">' + r.correct + '/' + r.total + ' (' + r.score + '점)</td><td style="padding:6px; border:1px solid #eee; text-align:center;">' + escapeHtml(r.resultLabel || '') + '</td>' +
+          '<td style="padding:6px; border:1px solid #eee; white-space:nowrap;"><button class="btn btn-secondary btn-sm" onclick="viewLitRecord(\'' + r.id + '\')">시험지 보기</button> <button class="btn btn-secondary btn-sm" onclick="generateLitReport(\'' + r.id + '\')">' + (r.report ? '보고서 보기' : '👨‍👩‍👧 보고서 생성') + '</button> <button class="btn btn-secondary btn-sm" style="color:#b3261e;" onclick="deleteLitRecord(\'' + r.id + '\')">삭제</button></td></tr>';
+      }).join('') + '</table>';
+  }
+  function viewLitRecord(id) {
+    const s = selectedLitStudent; const r = (s.literacyRecords || []).find(function(x) { return x.id === id; }); if (!r) return;
+    const t = { passages: r.passages };
+    document.getElementById('litTestBox').innerHTML = '<div style="margin:14px 0 8px; font-size:13px; background:#f3f8f8; padding:10px 14px; border-radius:8px;">' + escapeHtml(r.date) + ' 진단 · ' + r.oldLevel + '급 → <b>' + r.newLevel + '급</b> · ' + r.correct + '/' + r.total + '문항</div>' +
+      r.passages.map(function(p, i) { return litPassageBlockHtml(t, i, { studentName: s.name, date: r.date, graded: true, answers: r.answers, pageBreak: false }); }).join('');
+    document.getElementById('litTestBox').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  async function deleteLitRecord(id) {
+    const s = selectedLitStudent; if (!confirm('이 진단 기록을 삭제할까요? 삭제하면 이 학생은 그 시험의 지문을 다시 볼 수 있게 돼요.')) return;
+    s.literacyRecords = (s.literacyRecords || []).filter(function(r) { return r.id !== id; });
+    await persistLit(s); renderLitStatus(); renderLitHistory(); renderLitTab();
+  }
+
+  async function generateLitReport(recId) {
+    const s = selectedLitStudent; if (!s) return;
+    const rec = (s.literacyRecords || []).find(function(r) { return r.id === recId; }); if (!rec) return;
+    const box = document.getElementById('litReportBox');
+    if (rec.report) { showLitReport(rec); return; }
+    box.innerHTML = '<div style="color:#888; font-size:13px; margin-top:12px;">보고서를 작성하고 있어요...</div>';
+    const def = litLevelDef(rec.newLevel);
+    const gradeStart = LIT_GRADE_START[s.grade];
+    let gradeGuide;
+    if (gradeStart && rec.newLevel >= gradeStart) {
+      const studentBand = litLevelDef(gradeStart).band;
+      gradeGuide = (def.band === studentBand)
+        ? rec.newLevel + '급은 ' + def.band + ' ' + def.sub + ' 과정에 해당하며 현재 학년(' + s.grade + ')에 맞는 수준임을 알려주세요. 이 급수에서 읽는 글이 어떤 글인지 설명하고 구체적으로 풀어 쓰세요.'
+        : '이 학생은 ' + s.grade + '이지만 ' + rec.newLevel + '급은 ' + def.band + ' 과정에 해당합니다. "' + s.grade + '인데 ' + def.band + ' 과정의 급수"라는 점을 분명히 알려주고, 이 급수에서 읽는 글이 어떤 글인지 구체적으로 설명하며 자연스럽게 칭찬하세요.';
+    } else {
+      gradeGuide = '학년 이야기는 절대 하지 말고(어떤 학년 과정에 해당하는지, 학년 표준과의 비교 모두 금지), "' + rec.newLevel + '급"이라는 급수와 이 급수에서 읽는 글의 특징, 앞으로 다음 급수로 올라가기 위해 무엇을 연습하면 좋은지만 이야기하세요. "부족하다/낮다/뒤처진다/아쉽다" 같은 표현은 쓰지 말고, 글 읽는 힘의 기초를 단단히 다지고 있는 단계이며 꾸준히 읽고 이야기 나누면 충분히 올라갈 수 있다는 차분하고 격려하는 어조로 쓰세요. 단, 학년 수준에 도달했다는 등 사실이 아닌 표현은 쓰지 마세요.';
+    }
+    const prev = litRecordsFor(s).filter(function(r) { return r.date < rec.date; }).pop();
+    const purposeText = '문해력 진단은 단순히 등급을 매기기 위한 시험이 아닙니다. 글을 정확하게 읽고 생각하는 힘은 중·고등학교 모든 과목 공부의 바탕이 되므로, 아이와 학부모님께서 함께 관심을 가지시고 글 읽는 힘을 차근차근 키워 가도록 돕기 위한 과정입니다.';
+    const prompt = '당신은 "글답국어독서논술" 학원 원장을 대신해 학부모에게 보낼 카카오톡/문자 안내문을 작성하는 AI입니다. 아래 데이터를 바탕으로 문해력 진단 결과 안내문을 작성해주세요.\n\n' +
+      '학생: ' + s.name + ' (' + s.grade + ')\n이번 진단(' + rec.date + '): 총 ' + rec.correct + '/' + rec.total + '문항 정답(' + rec.score + '점), 급수별 정답 현황: ' + rec.breakdown.map(function(b) { return b.level + '급: ' + b.correct + '/' + b.total; }).join(', ') + '\n' +
+      '진단 결과: ' + rec.oldLevel + '급 기준 → ' + rec.newLevel + '급으로 판정(' + rec.resultLabel + ')\n이 급수에서 읽는 글: ' + def.genre + ' — ' + def.desc + '\n학년 안내 지침: ' + gradeGuide + '\n' +
+      (prev ? '직전 평가(' + prev.date + '): 급수 ' + prev.newLevel + '급' : '직전 평가 기록 없음(이번이 첫 진단)') + '\n\n' +
+      '아래 형식과 어조를 그대로 따라 작성하세요(실제 예시):\n\n[글답국어독서논술] ' + s.name + ' 학생 문해력 진단 결과 안내\n\n안녕하세요, 학부모님.\n' + s.name + ' 학생의 이번 문해력 진단 결과를 안내드립니다.\n\n' +
+      '(여기에 진단 급수와 그 급수에서 읽는 글의 특징을 담백하고 부담 없는 어조로 한 문단 또는 두 문단. 위 "학년 안내 지침"을 반드시 따를 것. 직전 평가 기록이 있으면 "○급에서 ○급으로"처럼 급수 숫자만 짚어 변화를 격려하는 말로 덧붙임.)\n\n' +
+      purposeText + '\n\n저희 학원은 두 달에 한 번 정도 문해력 레벨테스트를 진행하며 아이의 글 읽는 힘의 성장 추이를 지속적으로 확인하고 있으니, 다음 결과와 비교해서 또 안내드리겠습니다. 가정에서도 책을 함께 읽고 읽은 내용을 이야기 나누는 시간을 가져주시면 큰 도움이 되겠습니다.\n\n궁금하신 점 있으면 언제든 편하게 연락주세요. 감사합니다.\n\n' +
+      '작성 지침:\n- 위 예시의 문단 구성을 그대로 따르고, 제목 줄과 "문해력 진단은 단순히..." 문단, "저희 학원은 두 달에 한 번..."부터 마무리 인사까지는 예시 문구를 그대로 사용하며 진단 결과 설명 문단만 이번 데이터에 맞게 새로 작성\n' +
+      '- 급수 변화는 "11급에서 13급으로"처럼 급수 숫자만 쓰고 "한 단계", "n단계 상승/하락" 같은 표현과 급수 차이 계산은 쓰지 말 것\n- 존댓말과 담백한 어조, 과장된 감탄 금지\n' +
+      '- 학년과 관련된 말은 "학년 안내 지침"이 허용한 경우에만 쓸 것(금지된 경우 "초2 수준", 또래와의 비교 등 일절 금지)\n- 한자·일본어·중국어 글자는 쓰지 말고 모두 한글로만 표기\n- 마크다운 기호(#, *, ** 등) 없이 일반 문장으로만 작성';
+    try {
+      const kr = await callGeminiKoreanOnly(prompt);
+      if (kr.hanjaLeft) alert('보고서에 한자나 일본어 글자가 남아 있어요. 내용을 확인해서 고쳐 주세요.');
+      rec.report = kr.text.trim();
+      await persistLit(s);
+      showLitReport(rec); renderLitHistory();
+    } catch (e) { box.innerHTML = '<div style="color:#c00; font-size:13px;">보고서 생성 실패: ' + escapeHtml(e.message) + '</div>'; }
+  }
+  function showLitReport(rec) {
+    const box = document.getElementById('litReportBox');
+    box.innerHTML = '<div style="margin-top:16px;"><div style="font-weight:700; margin-bottom:6px;">👨‍👩‍👧 학부모 보고서 (' + escapeHtml(rec.date) + ')</div><textarea id="litReportText" rows="14" style="width:100%; font-size:14px; line-height:1.7; padding:12px; border:1px solid #ddd; border-radius:8px;" onchange="saveLitReportEdit(\'' + rec.id + '\')">' + escapeHtml(rec.report) + '</textarea>' +
+      '<div style="margin-top:6px; display:flex; gap:6px; flex-wrap:wrap;"><button class="btn btn-primary btn-sm" onclick="copyLitReport()">📋 카톡용 복사</button> <button class="btn btn-secondary btn-sm" onclick="regenerateLitReport(\'' + rec.id + '\')">🔄 다시 작성</button> <span id="litReportMsg" style="font-size:12px; color:#888;"></span></div></div>';
+    box.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  async function saveLitReportEdit(id) {
+    const s = selectedLitStudent; const rec = (s.literacyRecords || []).find(function(r) { return r.id === id; }); if (!rec) return;
+    rec.report = document.getElementById('litReportText').value; await persistLit(s);
+  }
+  async function regenerateLitReport(id) {
+    const s = selectedLitStudent; const rec = (s.literacyRecords || []).find(function(r) { return r.id === id; }); if (!rec) return;
+    rec.report = ''; await generateLitReport(id);
+  }
+  async function copyLitReport() {
+    const ta = document.getElementById('litReportText'); const msg = document.getElementById('litReportMsg');
+    try { await navigator.clipboard.writeText(ta.value); msg.textContent = '복사했어요!'; } catch (e) { ta.select(); msg.textContent = '자동 복사가 안 돼서 선택해 두었어요 — Ctrl+C로 복사해 주세요.'; }
   }
 
   let selectedVocabStudent = null;
