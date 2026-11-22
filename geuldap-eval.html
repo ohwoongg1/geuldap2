@@ -742,6 +742,10 @@
 
   <!-- 기록 -->
   <div class="page" id="page-records">
+    <div class="card" style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+      <div style="font-size:13px; color:#555;">🌟 홈페이지 "학생 글 사례"에 올릴 우수 글을 저장된 평가 기록에서 골라 줍니다.</div>
+      <button class="btn btn-secondary btn-sm" onclick="openShowcasePicker()">🌟 홈페이지용 우수 글 뽑기</button>
+    </div>
     <div class="card">
       <div class="card-title">학생 선택</div>
       <div class="student-grid" id="recordStudentGrid"></div>
@@ -1926,6 +1930,30 @@
 </div>
 
 <!-- 학부모 보고서 모달 -->
+<div class="modal-bg" id="showcaseModal">
+  <div class="modal" style="max-width:760px; max-height:88vh; overflow-y:auto; text-align:left;">
+    <div class="modal-title">🌟 홈페이지용 우수 글 뽑기</div>
+    <div style="font-size:12px; color:#8a6d00; background:#fff8e1; padding:8px 10px; border-radius:6px; margin-bottom:10px; line-height:1.6;">
+      점수가 높고 분량이 충분한 글을 후보로 보여줍니다(한 학생당 1편). 홈페이지에는 <b>이름 없이 학년만</b> 나가지만, 학부모님께 사용 동의를 받은 글만 선택하세요.
+    </div>
+    <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:10px; font-size:13px;">
+      <select id="showcaseGradeFilter" onchange="renderShowcaseCandidates()" style="width:auto;">
+        <option value="">전체 학년</option><option value="초등">초등만</option><option value="중학">중학만</option>
+      </select>
+      <span style="color:#888;">후보 <b id="showcaseCount">0</b>편 · 선택 <b id="showcaseSelCount">0</b>편</span>
+    </div>
+    <div id="showcaseList"></div>
+    <div style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap;">
+      <button class="btn btn-primary btn-sm" onclick="buildShowcaseHtml()">✨ 선택한 글로 홈페이지용 HTML 만들기</button>
+      <button class="btn btn-secondary btn-sm" onclick="closeShowcaseModal()">닫기</button>
+    </div>
+    <div id="showcaseOutBox" style="display:none; margin-top:14px;">
+      <div style="font-size:13px; font-weight:600; margin-bottom:6px;">완성된 HTML — index.html의 "학생 글 사례" 안에 붙여 넣으세요</div>
+      <textarea id="showcaseOut" rows="12" style="width:100%; font-size:12px; font-family:monospace; padding:10px; border:1px solid #ddd; border-radius:8px;"></textarea>
+      <div style="margin-top:6px;"><button class="btn btn-secondary btn-sm" onclick="copyShowcaseHtml()">📋 복사</button> <span id="showcaseMsg" style="font-size:12px; color:#888;"></span></div>
+    </div>
+  </div>
+</div>
 <div class="modal-bg" id="parentReportModal">
   <div class="modal" style="max-width:600px; max-height:85vh; overflow-y:auto; text-align:left;">
     <div class="modal-title">학부모 보고서</div>
@@ -2346,7 +2374,7 @@
 
 <script>
   // ===== 버전 정보 (콘솔에서 확인: APP_VERSION 또는 페이지 로드시 자동 출력) =====
-  const APP_VERSION = 'v8.58';
+  const APP_VERSION = 'v8.59';
   const APP_VERSION_LOG = [
     'v1.0 — 탭 구조 + UI 껍데기',
     'v1.1 — AI 문제 생성 + 개념 사다리',
@@ -2548,7 +2576,8 @@
     'v8.55 — [수정] 수납에서 ✕로 뺀 학생이 다시 들어가면 되살아나던 문제 수정: 수납 목록은 학생 명단으로 매번 새로 만들어져서 기록만 지우면 부활했음 → 학생별로 "이 달 청구 제외"를 저장(billingExcludedMonths), 목록 아래에 "[다시 넣기]" 복원 링크 표시',
     'v8.56 — [개선] 학생 등록·상담일지(문의자 추가/상세) 학년 선택에 초등 1·2학년 추가(기존엔 초등 3학년부터)',
     'v8.57 — [신규] 학생 이름 검색: 학생을 고르는 모든 화면(학생관리·평가·퀴즈·기록·독서·어휘력·독해 등)의 목록 위에 검색창 자동 추가 — 이름 일부/학년/초성(ㅁㄱ) 검색, 결과가 1명이면 Enter로 바로 선택, 목록이 다시 그려져도 검색어 유지',
-    'v8.58 — [신규] 수강료 변경 이력: 학생 수정에서 월 수강료를 바꾸면 "몇 월분 청구부터 적용할지" 묻고 tuitionHistory에 저장 — 그 달 이후 청구(아직 납부 전)는 새 수강료로 바뀌고, 이미 납부된 달과 이전 달은 그대로. 수납 화면의 새 달 기본 청구액·할인 계산도 그 달의 수강료 기준'
+    'v8.58 — [신규] 수강료 변경 이력: 학생 수정에서 월 수강료를 바꾸면 "몇 월분 청구부터 적용할지" 묻고 tuitionHistory에 저장 — 그 달 이후 청구(아직 납부 전)는 새 수강료로 바뀌고, 이미 납부된 달과 이전 달은 그대로. 수납 화면의 새 달 기본 청구액·할인 계산도 그 달의 수강료 기준',
+    'v8.59 — [신규] 기록 화면에 "🌟 홈페이지용 우수 글 뽑기": 저장된 평가 기록 중 점수 높고 300자 이상인 완성 글을 학생당 1편씩 후보로 보여주고, 선택하면 AI가 원문 그대로 발췌+코멘트를 붙여 홈페이지 "학생 글 사례" 카드 HTML 생성(이름 제외·학년만, 발췌가 원문과 일치하는지 검사)'
   ];
   console.log(`%c글답 학습기 ${APP_VERSION}`, 'font-weight:bold; font-size:14px; color:#0d1b4b;');
   console.groupCollapsed('%c버전 기록 (클릭해서 펼치기)', 'color:#888; font-size:11px;');
@@ -3758,6 +3787,98 @@
     </body></html>`);
     w.document.close();
     setTimeout(()=>w.print(), 300);
+  }
+
+
+  // ===== 홈페이지용 우수 글 뽑기 =====
+  // 저장된 글쓰기 평가 기록(_records) 중 점수가 높고 분량이 충분한 글을 후보로 보여주고, 선택한 글은 AI가 "잘된 부분"만
+  // 원문 그대로 발췌(이하 중략)하고 한 줄 코멘트를 붙여 홈페이지 "학생 글 사례" 카드 HTML로 만들어 준다.
+  // 이름은 절대 내보내지 않고 학년만 표시한다. AI가 고른 발췌 문장은 원문에 실제로 있는 문장인지 검사해서 고쳐 쓰는 것을 막는다.
+  let _showcaseCands = [];
+  const _showcaseSel = new Set();
+
+  function showcaseCandidates() {
+    const best = {}; // 학생별 최고점 1편
+    (_records || []).forEach(function(r) {
+      if (!r || r.readingOnly || !r.content) return;
+      if (r.completionStatus && r.completionStatus !== '완성') return;
+      const len = r.content.replace(/\s+/g, '').length;
+      if (len < 300) return;
+      const sc = Number(r.totalScore) || 0;
+      if (!best[r.studentId] || sc > (Number(best[r.studentId].totalScore) || 0)) best[r.studentId] = r;
+    });
+    return Object.keys(best).map(function(k) { return best[k]; }).sort(function(a, b) { return (Number(b.totalScore) || 0) - (Number(a.totalScore) || 0); });
+  }
+
+  function openShowcasePicker() {
+    _showcaseSel.clear();
+    document.getElementById('showcaseOutBox').style.display = 'none';
+    document.getElementById('showcaseModal').classList.add('open');
+    renderShowcaseCandidates();
+  }
+  function closeShowcaseModal() { document.getElementById('showcaseModal').classList.remove('open'); }
+
+  function renderShowcaseCandidates() {
+    const f = document.getElementById('showcaseGradeFilter').value;
+    _showcaseCands = showcaseCandidates().filter(function(r) { return !f || (r.grade || '').indexOf(f) === 0; }).slice(0, 40);
+    document.getElementById('showcaseCount').textContent = _showcaseCands.length;
+    const box = document.getElementById('showcaseList');
+    if (!_showcaseCands.length) { box.innerHTML = '<div class="empty" style="padding:20px 0;">조건에 맞는 글이 없어요(완성된 글, 공백 제외 300자 이상).</div>'; updateShowcaseSelCount(); return; }
+    box.innerHTML = _showcaseCands.map(function(r, i) {
+      const preview = escapeHtml(r.content.replace(/\s+/g, ' ').slice(0, 160)) + '…';
+      return '<label style="display:flex; gap:10px; padding:10px 0; border-bottom:1px solid #eee; cursor:pointer; font-weight:400; align-items:flex-start;">' +
+        '<input type="checkbox" ' + (_showcaseSel.has(r.id) ? 'checked' : '') + ' onchange="toggleShowcase(\'' + r.id + '\', this.checked)" style="margin-top:4px;">' +
+        '<div style="flex:1; min-width:0;"><div style="font-size:13px; font-weight:700;">' + escapeHtml(r.grade || '') + ' · ' + escapeHtml(r.studentName || '') + ' <span style="color:#0d6b6b;">' + (r.totalScore || '') + '점</span> <span style="color:#888; font-weight:400;">' + escapeHtml(r.type || '') + ' · ' + escapeHtml(r.date || '') + '</span></div>' +
+        '<div style="font-size:13px; font-weight:600;">' + escapeHtml(r.title || r.topic || '(제목 없음)') + '</div>' +
+        '<div style="font-size:12px; color:#666; line-height:1.5;">' + preview + '</div></div></label>';
+    }).join('');
+    updateShowcaseSelCount();
+  }
+  function toggleShowcase(id, on) { if (on) _showcaseSel.add(id); else _showcaseSel.delete(id); updateShowcaseSelCount(); }
+  function updateShowcaseSelCount() { document.getElementById('showcaseSelCount').textContent = _showcaseSel.size; }
+
+  async function buildShowcaseHtml() {
+    const picks = (_records || []).filter(function(r) { return _showcaseSel.has(r.id); });
+    if (!picks.length) { alert('글을 하나 이상 선택해주세요.'); return; }
+    const msg = document.getElementById('showcaseMsg'); msg.textContent = '';
+    const outBox = document.getElementById('showcaseOutBox'); outBox.style.display = '';
+    const ta = document.getElementById('showcaseOut'); ta.value = 'AI가 발췌와 코멘트를 만들고 있어요... (' + picks.length + '편)';
+    const cards = [];
+    for (let k = 0; k < picks.length; k++) {
+      const r = picks[k];
+      let quotes = [], comment = '';
+      try {
+        const prompt = '당신은 22년 경력의 국어 교사입니다. 아래 학생 글에서 홈페이지에 소개할 "잘 쓴 부분"을 2~3군데 골라 주세요.\n' +
+          '규칙:\n- 발췌 문장은 원문에서 한 글자도 바꾸지 말고 그대로 복사할 것(띄어쓰기·맞춤법도 고치지 말 것). 각 발췌는 1~3문장, 원문에 연속으로 있는 문장이어야 함.\n' +
+          '- 글쓴이 이름, 학교, 가족 이름 등 개인을 알아볼 수 있는 정보가 든 문장은 고르지 말 것.\n' +
+          '- 코멘트는 교사가 쓴 1~2문장(존댓말, 80자 안팎)으로, 글의 어떤 점(표현·경험과의 연결·관찰 등)이 좋은지 구체적인 표현을 짚어서 쓸 것. 과장 금지.\n' +
+          '- 반드시 아래 JSON으로만 응답:\n{"quotes":["발췌1","발췌2"],"comment":"코멘트"}\n\n' +
+          '학년: ' + r.grade + '\n제목: ' + (r.title || r.topic || '') + '\n글:\n' + r.content;
+        const raw = await callGemini(prompt);
+        const j = JSON.parse(raw.replace(/```json|```/g, '').trim());
+        const norm = function(s) { return String(s).replace(/\s+/g, ''); };
+        const body = norm(r.content);
+        quotes = (j.quotes || []).filter(function(q) { return q && norm(q).length >= 15 && body.indexOf(norm(q)) > -1; }).slice(0, 3);
+        comment = String(j.comment || '').trim();
+      } catch (e) { console.error('발췌 생성 오류', e); }
+      if (!quotes.length) { // 실패하면 글의 앞부분을 그대로 쓴다
+        const first = r.content.replace(/\s+/g, ' ').trim();
+        quotes = [first.slice(0, 160)];
+        comment = comment || '(코멘트를 직접 입력해주세요)';
+      }
+      const sentences = '"' + quotes.map(function(q) { return escapeHtml(q.trim()); }).join('\n        <span class="ellipsis">(이하 중략)</span>\n        ') + '"';
+      cards.push('    <div class="sample-card">\n      <div class="sample-header">\n        <span class="sample-grade-badge">' + escapeHtml(r.grade || '') + '</span>\n        <span class="sample-book">' + escapeHtml(r.topic || r.type || '') + '</span>\n      </div>\n' +
+        '      <div class="sample-title">제목: ' + escapeHtml(r.title || r.topic || '') + '</div>\n      <div class="sample-quote">\n        ' + sentences + '\n      </div>\n' +
+        '      <div class="sample-comment"><strong>→ ' + escapeHtml(comment) + '</strong></div>\n    </div>\n');
+      ta.value = 'AI가 발췌와 코멘트를 만들고 있어요... (' + (k + 1) + '/' + picks.length + ')';
+    }
+    ta.value = cards.join('\n');
+    msg.textContent = '발췌 문장이 원문과 일치하는지 검사했어요. 이름은 포함되지 않았어요. 붙여넣기 전에 한 번 읽어 보세요.';
+  }
+  async function copyShowcaseHtml() {
+    const ta = document.getElementById('showcaseOut');
+    try { await navigator.clipboard.writeText(ta.value); document.getElementById('showcaseMsg').textContent = '복사했어요!'; }
+    catch (e) { ta.select(); document.getElementById('showcaseMsg').textContent = '자동 복사가 안 돼서 선택해 두었어요 — Ctrl+C로 복사해주세요.'; }
   }
 
   // 이 학생을 이번 달 청구 목록에서 완전히 뺀다(화면에서도, 저장된 기록에서도).
