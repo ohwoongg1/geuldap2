@@ -104,6 +104,10 @@
     .why-card.highlight { background: #0d1b4b; border-color: #0d1b4b; grid-column: 1/-1; }
     .why-card.highlight h3 { color: #e8c96a; font-size: 20px; }
     .why-card.highlight p { color: rgba(255,255,255,0.78); }
+    /* 글답 프로그램: 위 3칸 + 아래 2칸(넓게) */
+    .program-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 14px; }
+    .program-grid .why-card { grid-column: span 2; }
+    .program-grid .why-card:nth-child(n+4) { grid-column: span 3; }
 
     /* ===== 5단계 ===== */
     .steps { display: flex; flex-direction: column; }
@@ -138,6 +142,8 @@
     .sample-quote .ellipsis { color: #bbb; font-size: 13px; display: block; margin: 6px 0; }
     .sample-comment { font-size: 15px; color: #777; line-height: 1.65; padding-top: 12px; border-top: 1px dashed #e8e0cc; }
     .sample-comment strong { color: #0d1b4b; }
+    .btn-more-samples { background: #0d1b4b; color: #e8c96a; border: none; border-radius: 24px; padding: 13px 30px; font-size: 15px; font-weight: 700; cursor: pointer; font-family: inherit; }
+    .btn-more-samples:hover { background: #1a2f6b; }
 
     /* ===== 원장 ===== */
     .teacher-card { background: #0d1b4b; border-radius: 16px; padding: 32px 28px; display: flex; gap: 24px; align-items: flex-start; }
@@ -192,6 +198,8 @@
       .section-sub { font-size: 15px; }
 
       .why-grid { grid-template-columns: 1fr; }
+      .program-grid { grid-template-columns: 1fr; }
+      .program-grid .why-card, .program-grid .why-card:nth-child(n+4) { grid-column: 1; }
       .why-card.highlight { grid-column: 1; }
       .why-card h3 { font-size: 16px; }
       .why-card p { font-size: 14px; }
@@ -241,6 +249,7 @@
   </div>
   <div class="navbar-menu">
     <a href="#why">글답이 다른 이유</a>
+    <a href="#program">글답 프로그램</a>
     <a href="#method">수업 방법론</a>
     <a href="#curriculum">커리큘럼</a>
     <a href="#student">학생 글</a>
@@ -255,6 +264,7 @@
 <!-- 모바일 드롭다운 -->
 <div class="navbar-dropdown" id="dropdown">
   <a href="#why" onclick="closeMenu()">글답이 다른 이유</a>
+  <a href="#program" onclick="closeMenu()">글답 프로그램</a>
   <a href="#method" onclick="closeMenu()">수업 방법론</a>
   <a href="#curriculum" onclick="closeMenu()">커리큘럼</a>
   <a href="#student" onclick="closeMenu()">학생 글</a>
@@ -285,8 +295,8 @@
           </div>
         </div>
         <div id="heroTextSwap" style="transition: opacity 0.5s;">
-          <h1>읽고, 쓰고, 생각하는 힘<br><span>평생 흔들리지 않습니다</span></h1>
-          <p>22년 공교육 경력의 국어 전문가가<br>초등학생부터 중학생까지 함께합니다</p>
+          <h1>초등학교 시기 글쓰기와<br><span>독서, 안 하면 언제 하지?</span></h1>
+          <p>중학교 국어 교사 22년 경력 원장이 직접 가르칩니다<br>중·고등 내신 수행평가, 초등 때 쌓은 글쓰기가 좌우합니다</p>
         </div>
         <div class="hero-cta">
           <a class="btn-gold" href="free-test.html">🎁 무료 어휘력 테스트</a>
@@ -363,6 +373,42 @@
         <div class="icon">🏫</div>
         <h3>중학 내신·수행평가 연계</h3>
         <p>중학교 국어 내신, 수행평가, 서술형 답안까지 체계적으로 지도합니다. 초등학생부터 중학생까지 연속 커리큘럼을 운영합니다.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="gold-line"></div>
+
+  <!-- 글답 프로그램 (전단지 내용 반영) -->
+  <div class="section fade-up">
+    <div id="program" class="section-label">PROGRAM</div>
+    <div class="section-title">글답 프로그램</div>
+    <div class="section-sub">중·고등 내신 수행평가는 논술·서술형 비중이 큽니다. 초등 시기에 꼭 갖춰야 할 다섯 가지를 함께 키웁니다.</div>
+    <div class="program-grid">
+      <div class="why-card">
+        <div class="icon">✍️</div>
+        <h3>1. 글쓰기</h3>
+        <p>A4 한 장 이상 완결된 긴 글을 쓰고, 스스로 다시 보며 고쳐 쓰는 퇴고까지 이어집니다.</p>
+      </div>
+      <div class="why-card">
+        <div class="icon">📖</div>
+        <h3>2. 독서</h3>
+        <p>매 수업 40분 몰입 독서. 깊이 읽는 힘이 이해력과 집중력의 바탕이 됩니다.</p>
+      </div>
+      <div class="why-card">
+        <div class="icon">📝</div>
+        <h3>3. 문제집 풀이</h3>
+        <p>국어 문제집을 풀며 읽은 내용을 정확히 이해했는지 점검하고, 틀린 이유를 짚어 봅니다.</p>
+      </div>
+      <div class="why-card">
+        <div class="icon">🔤</div>
+        <h3>4. 어휘력</h3>
+        <p>관용어 · 속담 · 사자성어를 책 속 문맥에서 익힙니다. <a href="free-test.html" style="color:#0d6b6b; font-weight:600;">무료 어휘력 테스트</a>로 현재 급수를 확인해 보세요.</p>
+      </div>
+      <div class="why-card highlight">
+        <div class="icon">🏫</div>
+        <h3>5. 중등 내신 대비 프로그램 운영 중</h3>
+        <p>중학교 국어 내신·수행평가·서술형 답안까지 이어지는 연속 커리큘럼을 운영합니다.</p>
       </div>
     </div>
   </div>
@@ -515,6 +561,115 @@
       </div>
       <div class="sample-comment"><strong>→ "벚꽃잎이 내 머리 위에 앉았다"</strong> — 보통 아이들은 "떨어졌다"라고 쓰는 자리에 "앉았다"를 골랐습니다. 꽃잎을 살아있는 존재처럼 느끼는 감수성이 담긴 표현이에요. 나무라는 하나의 소재를 계절별 경험으로 구조적으로 풀어낸 완성도 높은 글입니다.</div>
     </div>
+
+    <!-- 더 많은 학생 글 (7편): 처음에는 접어 두고 버튼으로 펼침 -->
+    <div id="moreSamples" style="display:none;">
+    <div class="sample-card">
+      <div class="sample-header">
+        <span class="sample-grade-badge">초등 5학년</span>
+        <span class="sample-book">세금 내는 아이들</span>
+      </div>
+      <div class="sample-title">제목: 세금 내는 아이들</div>
+      <div class="sample-quote">
+        "이 책을 읽기 전에 나는 제목을 보고 '아이들이 세금을 왜 내지?'라는 생각을 했다.
+        <span class="ellipsis">(이하 중략)</span>
+        내가 가장 인상 깊었던 사건은 시우와 항상 기싸움을 하던 세윤이가 경제활동을 어려워하던 시우에게 도움이 되는 조언을 해주고 팁을 알려 주며 서로를 알면서 우정이 쌓이는 사건이다. 왜냐하면 서로 맨날 싸우고 질투하던 사이였는데 서로서로 도우며 사이가 좋아지는 모습을 보며 너무 멋지고 대단하다는 생각을 했기 때문이다.
+        <span class="ellipsis">(이하 중략)</span>
+        만약 내가 그반의 학생이었다면 나는 경찰을 하고 싶었을 것 같다. 왜냐하면 벌금 관리하는 것이 조금 어려울 것 같기도 하고 재밌기도 할 것 같기 때문이다. 하지만 필요한 자격은 진단평가 국어 또는 사회 70점 이상이 좀 곤란하기도 할 것 같다."
+      </div>
+      <div class="sample-comment"><strong>→ 책을 읽기 전의 솔직한 호기심부터 인물 간의 관계 변화에 대한 공감, 자신이 그 교실의 학생이라면 어땠을지 구체적인 자격 조건까지 고려해 본 몰입감이 돋보입니다.</strong></div>
+    </div>
+
+    <div class="sample-card">
+      <div class="sample-header">
+        <span class="sample-grade-badge">초등 5학년</span>
+        <span class="sample-book">주제글쓰기</span>
+      </div>
+      <div class="sample-title">제목: 청소년 SNS 및 스마트폰 사용 규제에 대한 글</div>
+      <div class="sample-quote">
+        "학교에서 1년에 한번 이상은 '스마트폰 사용 예절 교육'이나 '스마트폰 올바르게 사용하는 교육'을 한다. 하지만 아이들은 수업시간에만 "네"라고 답하고 실제 생활에서는 제대로 실천하지 않는다.
+        <span class="ellipsis">(이하 중략)</span>
+        지난번에는 내가 친구와 밥을 먹으러 갔는데, 친구가 친구 아버지께 게임시간을 늘려달라고 온갖 말도 안 되는 이유들을 들어서 설득을 하는 것을 보았다. 그래서 친구 아버지도 설득에 넘어 가버렸다."
+      </div>
+      <div class="sample-comment"><strong>→ 수업 시간의 현실적인 모습과 친구의 실생활 경험을 생생하게 짚어 내어 스마트폰 규제가 필요한 이유를 설득력 있게 전달했습니다.</strong></div>
+    </div>
+
+    <div class="sample-card">
+      <div class="sample-header">
+        <span class="sample-grade-badge">초등 3학년</span>
+        <span class="sample-book">꼴찌 기러기에게 박수를</span>
+      </div>
+      <div class="sample-title">제목: 꼴찌 기러기에게 박수를</div>
+      <div class="sample-quote">
+        "그런 말을 들어도 막내 기러기는   "나도 언젠가는 다른 기러기들에게 도움이 될지 몰라."라고 생각했다. 남들이 무시하는 상황에서도 막내 기러기가 이렇게 생각한 걸 보면 막내 기러기는 참 긍정적이다.
+        <span class="ellipsis">(이하 중략)</span>
+        나는 앞으로 누가 아무리 뭐라고 해도 포기하지 않고 긍정적으로 생각할 것이다."
+      </div>
+      <div class="sample-comment"><strong>→ 막내 기러기의 말을 통해 '긍정적'이라는 성격을 이끌어내고, 이를 바탕으로 스스로 포기하지 않겠다는 다짐을 당차게 표현한 점이 훌륭합니다.</strong></div>
+    </div>
+
+    <div class="sample-card">
+      <div class="sample-header">
+        <span class="sample-grade-badge">초등 6학년</span>
+        <span class="sample-book">독후감</span>
+      </div>
+      <div class="sample-title">제목: 가을비</div>
+      <div class="sample-quote">
+        "빗소리 때문에  시끄러운 소리가 묻힌다. 자동차 소리, 주변 수다 소리 등이 다 묻힌다.
+        <span class="ellipsis">(이하 중략)</span>
+        길거리에는 빗물을 머금고 눅눅해진 낙엽뿐이다. 바스락 소리가 나던 낙엽들은 소리도 하나 없다."
+      </div>
+      <div class="sample-comment"><strong>→ 빗소리에 주변 소음이 묻히는 순간이나 젖어 소리를 잃은 낙엽을 시각과 청각을 활용해 섬세하게 관찰하고 표현한 점이 인상적입니다.</strong></div>
+    </div>
+
+    <div class="sample-card">
+      <div class="sample-header">
+        <span class="sample-grade-badge">초등 6학년</span>
+        <span class="sample-book">독후감</span>
+      </div>
+      <div class="sample-title">제목: 새벽에 있었던 일</div>
+      <div class="sample-quote">
+        "다시 자기 위해 눈을 감았지만 잠이 오지 않았다. 꿈을 꾸기 위한 정신은 달아나 버린 모양이다.
+        <span class="ellipsis">(이하 중략)</span>
+        나는 이때까지는 마치 유령이 내 몸속에 들어와 나를 조종하는 듯 아무 생각도 나지 않았다.
+        <span class="ellipsis">(이하 중략)</span>
+        내가 새벽에 조금 일어났었다는 건 아무도 몰랐다. 그날은 하루 종일 기분이 좋았다."
+      </div>
+      <div class="sample-comment"><strong>→ 새벽에 깬 순간의 감각을 '유령이 조종하는 듯'처럼 참신하게 비유하고, 나만의 비밀을 가진 듯한 뿌듯한 감정을 담담하게 잘 표현했습니다.</strong></div>
+    </div>
+
+    <div class="sample-card">
+      <div class="sample-header">
+        <span class="sample-grade-badge">초등 5학년</span>
+        <span class="sample-book">미래가온다 플라스틱</span>
+      </div>
+      <div class="sample-title">제목: 플라스틱 몬스터</div>
+      <div class="sample-quote">
+        "비닐봉지에 플랑크톤이 붙는데 그걸 거북이가 먹어서 비닐봉지에 끼어 버린다. 또 알바트로스가 모래에 버려진 라이터를 먹어서 죽는다.
+        <span class="ellipsis">(이하 중략)</span>
+        바이오 플라스틱은 옥수수, 사탕수수 같은 자연에 있는 것을 사용해 만든 친환경 플라스틱이다. 하지만 물과 땅이 너무 많이 필요하고 온실가스도 내뿜어서 다른 걸 찾는 중이다."
+      </div>
+      <div class="sample-comment"><strong>→ 거북이와 알바트로스의 구체적인 사례로 문제의 심각성을 잘 드러냈고, 바이오 플라스틱의 한계까지 다각도로 조사해 논리적으로 설명한 점이 돋보입니다.</strong></div>
+    </div>
+
+    <div class="sample-card">
+      <div class="sample-header">
+        <span class="sample-grade-badge">초등 6학년</span>
+        <span class="sample-book">주제글쓰기</span>
+      </div>
+      <div class="sample-title">제목: 나의 보물 1호, 곰 인형</div>
+      <div class="sample-quote">
+        "그 곰 인형은 금색을 띈 노란색 계열의 털을 가지고 있다. 키는 내 허리 조금 아래까지 온다. 그 곰 인형은 털이 완전 부드럽고, 눈과 코는 딱딱하다.
+        <span class="ellipsis">(이하 중략)</span>
+        내가 3학년 때, 이사 온 지 2일째 되던 밤에 그 집이 익숙하지 않아서 잠이 잘 오지 않았다. 이 생각 저 생각하면서 침대를 뒹굴거리고 있어도 잠이 오지 않았는데. 이 곰 인형을 꼭 끌어안고 있었더니 잠이 잘 왔었던 기억이 있다."
+      </div>
+      <div class="sample-comment"><strong>→ 곰 인형의 생김새와 감촉을 구체적으로 관찰하여 쓴 점이 인상적입니다. 이사 후 잠 못 이루던 밤의 솔직한 경험이 어우러져 글의 진정성이 잘 드러납니다.</strong></div>
+    </div>
+
+    </div>
+    <div style="text-align:center; margin-top:6px;">
+      <button type="button" id="moreSamplesBtn" class="btn-more-samples" onclick="toggleMoreSamples()">학생 글 더 보기 (7편) ▾</button>
+    </div>
   </div>
 
   <div class="gold-line"></div>
@@ -583,7 +738,7 @@
 
   <!-- 푸터 -->
   <div class="footer">
-    <p>글답국어독서논술학원 · 옥길동<br>070-4324-7175 · geuldap.co.kr</p>
+    <p>글답국어독서논술학원 · 옥길동<br>교육청 등록번호 6511<br>경기도 부천시 소사구 양지로 208, 5층 506호<br>070-4324-7175 · geuldap.co.kr</p>
     <p style="margin-top:10px;"><a href="geuldap-eval.html?student=1" style="font-size:12px;color:rgba(255,255,255,0.3);text-decoration:none;">📚 AI학습기</a></p>
     <p style="margin-top:4px;"><a href="geuldap-eval.html" style="font-size:11px;color:rgba(255,255,255,0.15);text-decoration:none;">관리자</a></p>
   </div>
@@ -612,6 +767,15 @@
     entries.forEach(entry => { if (entry.isIntersecting) entry.target.classList.add('visible'); });
   }, { threshold: 0.1 });
   document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+
+  // 학생 글 더 보기 / 접기
+  function toggleMoreSamples() {
+    var box = document.getElementById('moreSamples');
+    var btn = document.getElementById('moreSamplesBtn');
+    var open = box.style.display === 'none';
+    box.style.display = open ? 'block' : 'none';
+    btn.textContent = open ? '학생 글 접기 ▴' : '학생 글 더 보기 (7편) ▾';
+  }
 
   // 커리큘럼 탭
   const currData = {
@@ -656,7 +820,9 @@
   });
 </script>
 <script>
-  console.log('%c글답 홈페이지 (초등 페이지) v1.2', 'font-weight:bold; font-size:14px; color:#0d1b4b;');
+  console.log('v1.5 — [학생 글 추가] 평가 기록에서 뽑은 학생 글 7편을 "더 보기" 버튼으로 펼쳐 볼 수 있게 추가');
+  console.log('v1.4 — [전단지 반영] 히어로 헤드라인을 전단지 문구로 변경, "글답 프로그램" 5가지 섹션 추가, 푸터에 교육청 등록번호·주소 표기');
+  console.log('%c글답 홈페이지 (초등 페이지) v1.5', 'font-weight:bold; font-size:14px; color:#0d1b4b;');
   console.log('v1.0 — 학년 선택 배너 추가(🎒 초등학생 / 🎓 중학생), 중학생 전용 페이지(middle.html) 신설 및 상호 링크');
   console.log('v1.1 — "글답 이야기" 학습 칼럼 게시판(geuldap-story.html) 신설, 네비게이션·CTA에 링크 추가');
   console.log('v1.2 — [디자인 개선] 히어로가 텍스트만 있어 밋밋하다는 지적(경쟁 학원 홈페이지와 비교) — 히어로를 텍스트+일러스트 2단 구성으로 변경, 책에서 자라나는 나무(펼쳐진 책 → 자라는 줄기·잎 → 꼭대기 별) 커스텀 SVG 일러스트 추가(범용 인물 일러스트 대신 "읽고 쓰고 생각하는 힘, 평생 흔들리지 않습니다" 문구와 맞닿는 학원 고유 시각 요소로 구성). 데스크탑은 텍스트 좌/일러스트 우, 모바일은 CTA 버튼까지 먼저 보이고 일러스트가 그 아래로 자연스럽게 쌓이도록 반응형 처리');
@@ -667,7 +833,7 @@
   // 텍스트와 상단 탭 색상만 부드럽게 번갈아 바꿔서, 가만히 있어도 두 학년 메시지를 다 보여준다.
   (function () {
     const variants = [
-      { tab: 0, html: '<h1>읽고, 쓰고, 생각하는 힘<br><span>평생 흔들리지 않습니다</span></h1><p>22년 공교육 경력의 국어 전문가가<br>초등학생부터 중학생까지 함께합니다</p>' },
+      { tab: 0, html: '<h1>초등학교 시기 글쓰기와<br><span>독서, 안 하면 언제 하지?</span></h1><p>중학교 국어 교사 22년 경력 원장이 직접 가르칩니다<br>중·고등 내신 수행평가, 초등 때 쌓은 글쓰기가 좌우합니다</p>' },
       { tab: 1, html: '<h1>모든 과목의 성적은<br><span>결국 문해력이 좌우합니다</span></h1><p>22년 공교육 경력의 국어 전문가가<br>초등학생부터 중학생까지 함께합니다</p>' }
     ];
     let i = 0;
