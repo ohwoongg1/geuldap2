@@ -1149,14 +1149,16 @@
 <!-- 어휘력 -->
 <div class="page" id="page-literacy">
   <div class="card">
-    <div class="card-title">📖 문해력 진단·관리 <span style="font-size:12px; font-weight:400; color:#888;">(초등 1~6학년 · 12급 · 2개월에 한 번)</span></div>
+    <div class="card-title">📖 문해력 진단·관리 <span style="font-size:12px; font-weight:400; color:#888;">(초등 1~6학년 대상 · 1~18급 · 2개월에 한 번)</span></div>
     <div style="font-size:12px; color:#888; margin-bottom:14px;">학생을 선택하면 그 학생이 <b>아직 보지 않은 지문</b>으로 시험지를 만들어요(같은 지문은 다시 나오지 않고, 안 본 지문이 없으면 같은 주제의 새 변형 글을 만들어요). 시험지 인쇄 → 학생이 푼 답을 입력 → 급수 자동 진단 → 학부모 보고서까지 이어져요.</div>
     <div class="student-grid" id="litStudentGrid"></div>
   </div>
   <div class="card" id="litDetailSection" style="display:none;">
     <div class="card-title" id="litDetailTitle">문해력</div>
     <div id="litStatusBody"></div>
-    <div style="margin-top:12px;"><button class="btn btn-primary btn-sm" onclick="generateLitTest()">📝 새 문해력 시험지 만들기</button></div>
+    <div style="margin-top:12px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;"><span style="font-size:13px;">시험 기준 급수</span><select id="litBaseSelect" style="width:auto; font-size:13px;"></select><button class="btn btn-primary btn-sm" onclick="generateLitTest()">📝 새 문해력 시험지 만들기</button></div>
+    <div style="font-size:11px; color:#999; margin-top:4px;">"자동"은 이 학생의 현재 급수를 기준으로, 앞뒤 급수 지문까지 3개가 나와요. 원장님이 직접 급수를 고르면 그 급수 기준으로 출제돼요(결과 급수는 시험 결과대로 기록).</div>
+    <div id="litProgress"></div>
     <div id="litTestBox"></div>
     <div id="litResultBox"></div>
     <div id="litReportBox"></div>
@@ -6448,12 +6450,12 @@ ${a.name}`;
     return recs[recs.length-1].newLevel;
   }
 
-  // ===== 문해력 진단 (초등 1~6학년 전용, 12급) =====
+  // ===== 문해력 진단 (대상: 초등 1~6학년 / 급수: 1~18급 — 12급까지 초등, 13~18급은 중1~중3 과정으로 상위 동기부여용) =====
   // 어휘력 진단과 같은 틀: 기준 급수 앞뒤 3개 급수의 지문(급수당 지문 1개 + 문제 4개)을 풀고, 급수별 70% 이상 맞히면 통과로 보아
   // 실제 급수를 진단한다. 2개월에 한 번 보는 것을 기본으로 한다. 지문은 모두 AI가 새로 쓴 창작문(교재 지문 사용 안 함)이며,
   // 급수별 "지문 창고"(geuldap_settings/literacy_pool_N)에 쌓아 두고 같은 급수 학생끼리 공유한다.
   // 같은 학생에게는 이미 본 지문을 다시 내지 않는다 — 안 본 지문이 없으면 같은 주제의 변형 지문을 새로 만든다.
-  const LIT_MAX_LEVEL = 12;
+  const LIT_MAX_LEVEL = 18;
   const LIT_LEVEL_DEFS = [
     {level:1,  band:'초1', sub:'상', chars:[100,150], genre:'그림일기·아주 짧은 이야기', desc:'쉬운 낱말로 된 짧은 글(문장 3~6개)에서 누가·무엇을·어디서를 찾는 글 읽기'},
     {level:2,  band:'초1', sub:'하', chars:[150,210], genre:'짧은 이야기·생활 글', desc:'일어난 일의 순서와 인물의 행동을 알아보는 짧은 글 읽기'},
@@ -6466,13 +6468,23 @@ ${a.name}`;
     {level:9,  band:'초5', sub:'상', chars:[670,750], genre:'비문학 설명문', desc:'주장과 근거를 구분하고 숨은 뜻을 추론하는 글 읽기'},
     {level:10, band:'초5', sub:'하', chars:[750,830], genre:'논설문 입문·인물 이야기', desc:'비교·대조하며 읽고 글쓴이의 의도를 파악하는 글 읽기'},
     {level:11, band:'초6', sub:'상', chars:[830,910], genre:'사회·과학 설명문', desc:'원인과 결과를 이해하고 자료의 의미를 해석하는 글 읽기'},
+    {level:13, band:'중1', sub:'상', chars:[1000,1100], genre:'중등 설명문·수필', desc:'글의 구조와 전개 방식을 파악하고 핵심 개념을 정리하며 읽는 글'},
+    {level:14, band:'중1', sub:'하', chars:[1100,1200], genre:'사회·과학 설명문·소설 일부', desc:'인물과 갈등, 사건의 흐름을 파악하며 표현 효과를 이해하는 글'},
+    {level:15, band:'중2', sub:'상', chars:[1200,1300], genre:'인문·사회 설명문, 논설문', desc:'주장과 근거의 관계를 분석하고 글쓴이의 관점을 파악하는 글'},
+    {level:16, band:'중2', sub:'하', chars:[1300,1400], genre:'과학·기술 설명문, 수필', desc:'정보를 종합해 추론하고 글의 의도와 맥락을 해석하는 글'},
+    {level:17, band:'중3', sub:'상', chars:[1400,1500], genre:'시사 논설문, 인문 칼럼', desc:'관점을 비교하며 비판적으로 읽고 타당성을 평가하는 글'},
+    {level:18, band:'중3', sub:'하', chars:[1500,1600], genre:'비문학 종합(인문·사회·과학)', desc:'고등 국어 대비 수준의 복합 지문을 분석하고 종합하는 글'},
     {level:12, band:'초6', sub:'하', chars:[910,1000], genre:'논설문·시사 설명문', desc:'주장의 타당성을 따져 보는 비판적 읽기, 중학 국어 대비'}
   ];
   const LIT_GRADE_START = {'초등 1학년':1,'초등 2학년':3,'초등 3학년':5,'초등 4학년':7,'초등 5학년':9,'초등 6학년':11};
   const LIT_QUESTIONS_PER_PASSAGE = 5;
   const LIT_PASS_RATE = 0.7;      // 급수별 통과 기준(어휘력과 같음 — 5문제 중 4문제, 3.5 이상이므로 4문제)
   const LIT_CYCLE_DAYS = 60;      // 정기 진단 주기(2개월)
-  const LIT_TIME_LIMIT_MIN = 30;   // 수능 기준 약 27분 + 초등 여유
+  const LIT_TIME_LIMIT_MIN = 30;   // 기본(12급 이하). 중등 과정 지문이 섞이면 litTimeLimit()가 늘려 줌
+  function litTimeLimit(t) {
+    const mx = Math.max.apply(null, (t && t.passages || []).map(function(p) { return p.level; }).concat([1]));
+    return mx >= 16 ? 40 : (mx >= 13 ? 35 : LIT_TIME_LIMIT_MIN);
+  }
   window._litPool = window._litPool || (function() { try { return JSON.parse(localStorage.getItem('glp') || '{}'); } catch(e) { return {}; } })();
   const _litPoolLoaded = {};
   let selectedLitStudent = null;
@@ -6559,6 +6571,18 @@ ${a.name}`;
     }
   }
 
+  // ----- 진행 상황 표시(AI가 일하는 중임을 눈에 보이게) -----
+  const _litProg = { start: 0, msg: '', timer: null };
+  function litProgPaint() {
+    const el = document.getElementById('litProgress'); if (!el) return;
+    if (!_litProg.timer) { el.innerHTML = ''; return; }
+    const sec = Math.floor((Date.now() - _litProg.start) / 1000);
+    el.innerHTML = '<div style="margin:12px 0; padding:12px 14px; background:#fff8e1; border:1px solid #f0d98a; border-radius:8px; font-size:13px; display:flex; align-items:center; gap:10px;"><span style="display:inline-block; width:16px; height:16px; border:3px solid #e3c35a; border-top-color:transparent; border-radius:50%; animation:litspin 0.9s linear infinite;"></span><span><b>AI가 작업 중이에요</b> — ' + escapeHtml(_litProg.msg) + ' <span style="color:#999;">(경과 ' + sec + '초 · 창을 닫지 말고 기다려 주세요)</span></span></div><style>@keyframes litspin{to{transform:rotate(360deg)}}</style>';
+  }
+  function litProgStart(msg) { _litProg.start = Date.now(); _litProg.msg = msg; if (_litProg.timer) clearInterval(_litProg.timer); _litProg.timer = setInterval(litProgPaint, 1000); litProgPaint(); }
+  function litProgSet(msg) { _litProg.msg = msg; litProgPaint(); }
+  function litProgEnd() { if (_litProg.timer) clearInterval(_litProg.timer); _litProg.timer = null; litProgPaint(); }
+
   // ----- AI 지문 생성 -----
   function litValidPassage(j, level) {
     if (!j || typeof j.text !== 'string' || j.text.replace(/\s+/g, '').length < 60) return false;
@@ -6587,6 +6611,7 @@ ${a.name}`;
     let lastErr = null;
     for (let attempt = 0; attempt < 3; attempt++) {
       try {
+        litProgSet(level + '급 지문과 문제를 AI가 새로 쓰는 중...' + (attempt ? ' (다시 시도 ' + attempt + '회)' : ''));
         const kr = await callGeminiKoreanOnly(prompt);
         if (kr.hanjaLeft) { lastErr = new Error('한자가 섞여 있어요'); continue; }
         const j = JSON.parse(kr.text.replace(/```json|```/g, '').trim());
@@ -6607,6 +6632,7 @@ ${a.name}`;
     const qText = p.questions.map(function(q, i) { return (i + 1) + '. ' + q.question + '\n' + q.options.map(function(o, k) { return LIT_OPT[k] + ' ' + o; }).join('\n'); }).join('\n\n');
     const def = litLevelDef(p.level);
     let blind = [];
+    litProgSet(p.level + '급 지문 검토 1/2 — AI가 정답을 모르는 채로 문제를 풀어 보는 중...');
     try {
       const a = await callGeminiKoreanOnly('아래 글을 읽고 각 문제의 정답 번호(1~5)만 고르세요. 설명 없이 JSON으로만 답하세요: {"answers":[1,2,3,4,5]}\n\n[글]\n' + p.text + '\n\n[문제]\n' + qText);
       const j = JSON.parse(a.text.replace(/```json|```/g, '').trim());
@@ -6621,6 +6647,7 @@ ${a.name}`;
       (note ? '※ 원장님이 직접 남긴 검토 요청(최우선으로 반영): ' + note + '\n' : '') +
       '지문 본문은 원장님 요청이 없는 한 바꾸지 마세요. 한자·영어 단어는 쓰지 마세요.\n\n[지문] ' + p.title + '\n' + p.text + '\n\n[문제와 정답]\n' + withAns + '\n\n' +
       '설명이나 코드블록 없이 아래 JSON으로만 응답(answerIndex는 0~4, questions는 반드시 ' + p.questions.length + '개 모두):\n{"issues":["발견한 문제와 고친 내용을 한 줄씩(없으면 빈 배열)"],"title":"지문 제목","text":"지문 본문","questions":[{"type":"","question":"","options":["","","","",""],"answerIndex":0,"explanation":""}]}';
+    litProgSet(p.level + '급 지문 검토 2/2 — 정답·표현이 애매한지 점검하고 고치는 중...');
     try {
       const kr = await callGeminiKoreanOnly(prompt);
       const j = JSON.parse(kr.text.replace(/```json|```/g, '').trim());
@@ -6645,8 +6672,7 @@ ${a.name}`;
     const s = selectedLitStudent, t = litCurrentTest; if (!s || !t) return;
     const note = prompt((i + 1) + '번째 지문(' + t.passages[i].level + '급)을 AI가 다시 검토해요.\n이상한 점이 있으면 적어 주세요. (예: "2번 문제 정답이 애매해요", "지문이 너무 어려워요")\n비워 두고 확인을 누르면 전체를 다시 점검해요.', '');
     if (note === null) return;
-    const box = document.getElementById('litTestBox');
-    box.insertAdjacentHTML('afterbegin', '<div id="litReviewing" style="margin:10px 0; padding:10px; background:#fff8e1; border-radius:8px; font-size:13px;">🔍 AI가 다시 검토하고 있어요... (30초~1분)</div>');
+    litProgStart(t.passages[i].level + '급 지문을 AI가 다시 검토하는 중...');
     try {
       const np = await litAiReview(t.passages[i], note.trim());
       np.status = 'draft';
@@ -6658,6 +6684,7 @@ ${a.name}`;
       await saveLitPool(np.level);
       await persistLit(s);
     } catch (e) { alert('다시 검토 실패: ' + e.message); }
+    litProgEnd();
     renderLitTestBox();
   }
 
@@ -6729,6 +6756,8 @@ ${a.name}`;
     const s = selectedLitStudent; if (!s) return;
     const lvl = currentLitLevel(s), def = litLevelDef(lvl), recs = litRecordsFor(s);
     document.getElementById('litDetailTitle').textContent = s.name + ' · ' + (s.grade || '') + ' 문해력';
+    const sel = document.getElementById('litBaseSelect');
+    if (sel) { const keep = sel.value; sel.innerHTML = '<option value="">자동 (현재 ' + lvl + '급)</option>' + LIT_LEVEL_DEFS.slice().sort(function(x, y) { return x.level - y.level; }).map(function(d) { return '<option value="' + d.level + '">' + d.level + '급 (' + d.band + ' ' + d.sub + ')</option>'; }).join(''); sel.value = keep || ''; }
     let next = '';
     if (recs.length) {
       const last = recs[recs.length - 1];
@@ -6758,26 +6787,30 @@ ${a.name}`;
       if (days !== null && days < LIT_CYCLE_DAYS && !confirm('마지막 진단이 ' + days + '일 전이에요(정기 주기는 2개월). 정기 시기 전이지만 원하면 언제든 다시 볼 수 있어요.\n이 학생의 새 시험지를 만들까요?\n(이미 본 지문은 다시 나오지 않아요.)')) return;
     }
     const box = document.getElementById('litTestBox');
-    box.innerHTML = '<div style="color:#888; font-size:13px;">이 학생이 아직 보지 않은 지문을 고르고, 없으면 새로 만들고 있어요... (처음 만들 땐 1~2분 걸릴 수 있어요)</div>';
+    box.innerHTML = '';
+    litProgStart('이 학생이 아직 보지 않은 지문을 고르는 중... (새로 만들어야 하면 지문 하나에 1~2분 걸려요)');
     try {
       s.literacyPending = null; // 이전 대기 시험지는 "본 지문"에서 빠지게
-      const base = currentLitLevel(s);
+      const selEl = document.getElementById('litBaseSelect');
+      const manual = selEl && selEl.value ? parseInt(selEl.value, 10) : 0;
+      const base = manual || currentLitLevel(s);
       const levels = litTestLevels(base);
       const passages = [];
-      for (let i = 0; i < levels.length; i++) passages.push(await pickOrCreateLitPassage(s, levels[i], []));
-      litCurrentTest = { id: Date.now().toString(), studentId: s.id, baseLevel: base, levels: levels, createdAt: todayLocalDateStr(), passages: JSON.parse(JSON.stringify(passages)) };
+      for (let i = 0; i < levels.length; i++) { litProgSet('(' + (i + 1) + '/' + levels.length + ') ' + levels[i] + '급 지문을 고르는 중...'); passages.push(await pickOrCreateLitPassage(s, levels[i], [])); }
+      litProgEnd();
+      litCurrentTest = { id: Date.now().toString(), studentId: s.id, manualBase: !!manual, baseLevel: base, levels: levels, createdAt: todayLocalDateStr(), passages: JSON.parse(JSON.stringify(passages)) };
       s.literacyPending = litCurrentTest;
       litAnswers = {};
       await persistLit(s);
       document.getElementById('litResultBox').innerHTML = '';
       renderLitTestBox();
-    } catch (e) { box.innerHTML = '<div style="color:#c00; font-size:13px;">시험지 생성 실패: ' + escapeHtml(e.message) + '</div>'; }
+    } catch (e) { litProgEnd(); box.innerHTML = '<div style="color:#c00; font-size:13px;">시험지 생성 실패: ' + escapeHtml(e.message) + '</div>'; }
   }
 
   function litParagraphsHtml(text, style) {
     return String(text || '').split(/\n+/).filter(function(p) { return p.trim(); }).map(function(p) { return '<p style="' + (style || '') + '">' + escapeHtml(p.trim()) + '</p>'; }).join('');
   }
-  const LIT_NUM_COLOR = { '초1': '#e07a8f', '초2': '#e07a8f', '초3': '#6fae5c', '초4': '#6fae5c', '초5': '#5c8fd0', '초6': '#5c8fd0' };
+  const LIT_NUM_COLOR = { '초1': '#e07a8f', '초2': '#e07a8f', '초3': '#6fae5c', '초4': '#6fae5c', '초5': '#5c8fd0', '초6': '#5c8fd0', '중1': '#8e6fc9', '중2': '#8e6fc9', '중3': '#8e6fc9' };
 
   // 화면·인쇄 공용: 시험지 한 지문(= 한 페이지) HTML. EBS 문해력 평가처럼 지문 상자 + 번호 붙은 5지선다 문제 형식.
   function litPassageBlockHtml(test, pi, opts) {
@@ -6802,8 +6835,8 @@ ${a.name}`;
       return '<div style="margin:16px 0 20px; break-inside:avoid; page-break-inside:avoid;"><div style="display:flex; gap:12px;"><div style="font-size:24px; font-weight:800; color:' + color + '; min-width:34px; line-height:1.1;">' + n + '</div><div style="flex:1; font-size:14px;"><div style="font-weight:700; margin-bottom:6px; line-height:1.55;">' + escapeHtml(q.question) + '</div>' + optHtml + expl + '</div></div></div>';
     }).join('');
     return '<div class="lit-passage-block" style="max-width:800px; ' + (opts.pageBreak ? 'break-after:page; page-break-after:always;' : '') + ' margin-bottom:20px;">' +
-      vocabPrintFrameOpen('초등 문해력 등급 평가') +
-      '<div style="display:flex; justify-content:space-between; align-items:center; font-size:13px; margin-bottom:10px; flex-wrap:wrap; gap:6px;"><span>이름: ' + escapeHtml(opts.studentName || '') + '</span><span>날짜: ' + (opts.date ? escapeHtml(opts.date) : '______________') + '</span><span>제한 시간 | ' + LIT_TIME_LIMIT_MIN + '분</span><span>점수: ______ / 100</span></div>' +
+      vocabPrintFrameOpen('문해력 등급 평가') +
+      '<div style="display:flex; justify-content:space-between; align-items:center; font-size:13px; margin-bottom:10px; flex-wrap:wrap; gap:6px;"><span>이름: ' + escapeHtml(opts.studentName || '') + '</span><span>날짜: ' + (opts.date ? escapeHtml(opts.date) : '______________') + '</span><span>제한 시간 | ' + litTimeLimit(test) + '분</span><span>점수: ______ / 100</span></div>' +
       '<div style="font-size:13px; color:#555; margin-bottom:8px;"><b style="color:' + color + ';">' + rangeText + '</b> 다음 글을 읽고 물음에 답하세요.</div>' +
       '<div style="border:1.5px solid #333; padding:16px 18px; font-family:\'Noto Serif KR\', serif; font-size:14px; line-height:1.95; background:#fff;">' +
       '<div style="text-align:center; font-weight:700; margin-bottom:8px;">' + escapeHtml(p.title) + '</div>' + litParagraphsHtml(p.text, 'margin:0 0 6px; text-indent:0.8em;') + '</div>' +
@@ -6823,7 +6856,7 @@ ${a.name}`;
       const body = rv.issues && rv.issues.length ? '<ul style="margin:4px 0 0 18px; padding:0;">' + rv.issues.map(function(x) { return '<li>' + escapeHtml(x) + '</li>'; }).join('') + '</ul>' : '문제점이 발견되지 않았어요.';
       return '<div style="font-size:12px; color:#555; background:#fffdf3; border:1px solid #efe3b0; border-radius:6px; padding:6px 10px; margin-bottom:6px;">🔍 <b>' + p.level + '급 AI 검토</b> (' + escapeHtml(rv.at || '') + ')' + (rv.blindMismatch && rv.blindMismatch.length ? ' · 다시 풀어 보니 정답이 달랐던 문제: ' + escapeHtml(rv.blindMismatch.join(', ')) : ' · 다시 풀어 본 답과 일치') + body + '</div>';
     }).join('');
-    box.innerHTML = '<div style="margin:14px 0 8px; padding:10px 14px; background:#f3f8f8; border:1px solid #cfe5e5; border-radius:8px; font-size:13px;">기준 <b>' + t.baseLevel + '급</b> → 출제 범위 <b>' + t.levels.join('·') + '급</b> · 지문 ' + t.passages.length + '개 · 총 ' + total + '문항 · ' + LIT_TIME_LIMIT_MIN + '분' +
+    box.innerHTML = '<div style="margin:14px 0 8px; padding:10px 14px; background:#f3f8f8; border:1px solid #cfe5e5; border-radius:8px; font-size:13px;">기준 <b>' + t.baseLevel + '급</b>' + (t.manualBase ? ' <span style="color:#8a6d00;">(원장님이 직접 선택)</span>' : '') + ' → 출제 범위 <b>' + t.levels.join('·') + '급</b> · 지문 ' + t.passages.length + '개 · 총 ' + total + '문항 · ' + litTimeLimit(t) + '분' +
       (drafts ? '<div style="color:#8a6d00; margin-top:4px;">📝 아직 확인 전(초안) 지문이 ' + drafts + '개 있어요. 읽어 보고 필요하면 수정한 뒤 "✅ 지문 확정"을 눌러 주세요.</div>' : '<div style="color:#0d6b6b; margin-top:4px;">✅ 모든 지문이 확정된 상태예요.</div>') + '</div>' +
       '<div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px;">' +
       '<button class="btn btn-secondary btn-sm" onclick="printLitTest()">🖨️ 시험지 인쇄</button>' +
@@ -6839,14 +6872,16 @@ ${a.name}`;
   async function swapLitPassage(i) {
     const s = selectedLitStudent, t = litCurrentTest; if (!s || !t) return;
     if (!confirm((i + 1) + '번째 지문(' + t.passages[i].level + '급)을 다른 지문으로 바꿀까요?\n이미 인쇄해서 나눠줬다면 바꾸지 마세요.')) return;
+    litProgStart(t.passages[i].level + '급 다른 지문을 고르는 중...');
     try {
       const exclude = t.passages.map(function(p) { return p.pid; });
       const np = await pickOrCreateLitPassage(s, t.passages[i].level, exclude);
       t.passages[i] = JSON.parse(JSON.stringify(np));
       s.literacyPending = t; litAnswers = {};
       await persistLit(s);
+      litProgEnd();
       renderLitTestBox();
-    } catch (e) { alert('지문 교체 실패: ' + e.message); }
+    } catch (e) { litProgEnd(); alert('지문 교체 실패: ' + e.message); }
   }
   async function finalizeLitPassages() {
     const t = litCurrentTest; if (!t) return;
@@ -6914,8 +6949,8 @@ ${a.name}`;
     const total = litTotalQuestions(t);
     const row = function(k, v) { return '<tr><td style="padding:14px 18px; border:1px solid #bbb; background:#f3f8f8; width:28%; font-weight:700; text-align:center;">' + k + '</td><td style="padding:14px 18px; border:1px solid #bbb;">' + v + '</td></tr>'; };
     return '<div class="lit-cover" style="max-width:800px; break-after:page; page-break-after:always; margin-bottom:20px;">' + vocabPrintFrameOpen('') +
-      '<div style="text-align:center; margin:60px 0 40px;"><div style="font-size:15px; color:#0d6b6b; letter-spacing:6px; margin-bottom:14px;">LITERACY LEVEL TEST</div><div style="font-size:34px; font-weight:800; line-height:1.3;">초등 문해력<br>등급 평가</div></div>' +
-      '<table style="width:100%; border-collapse:collapse; font-size:16px; margin-bottom:32px;">' + row('이 름', escapeHtml(s.name)) + row('학 년', escapeHtml(s.grade || '')) + row('평가일', escapeHtml(todayLocalDateStr())) + row('문항 수 / 시간', total + '문항 · ' + LIT_TIME_LIMIT_MIN + '분') + row('점 수', '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;/ 100') + '</table>' +
+      '<div style="text-align:center; margin:60px 0 40px;"><div style="font-size:15px; color:#0d6b6b; letter-spacing:6px; margin-bottom:14px;">LITERACY LEVEL TEST</div><div style="font-size:34px; font-weight:800; line-height:1.3;">문해력<br>등급 평가</div></div>' +
+      '<table style="width:100%; border-collapse:collapse; font-size:16px; margin-bottom:32px;">' + row('이 름', escapeHtml(s.name)) + row('학 년', escapeHtml(s.grade || '')) + row('평가일', escapeHtml(todayLocalDateStr())) + row('문항 수 / 시간', total + '문항 · ' + litTimeLimit(t) + '분') + row('점 수', '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;/ 100') + '</table>' +
       '<div style="border:1.5px solid #333; padding:18px 22px; font-size:14px; line-height:2;"><div style="font-weight:700; margin-bottom:6px;">[ 유의 사항 ]</div>' +
       '<div>1. 시작 신호가 있을 때까지 시험지를 넘기지 않습니다.</div><div>2. 글을 꼼꼼히 읽고, 각 문제에서 알맞은 답을 하나만 고릅니다.</div><div>3. 모르는 문제는 표시해 두고 다음 문제로 넘어갑니다.</div><div>4. 정해진 시간 안에 모든 문제를 풀고, 마지막에 한 번 더 확인합니다.</div><div>5. 시험지의 글은 시험 후에 다시 가져가지 않습니다.</div></div>' +
       '<div style="text-align:center; margin-top:40px; font-size:13px; color:#888;">이 평가는 글 읽는 힘을 알아보기 위한 것으로, 점수보다 자신의 읽기 습관을 돌아보는 데 목적이 있어요.</div>' +
@@ -6932,7 +6967,7 @@ ${a.name}`;
       return '<div style="border:1px solid #ccc; border-radius:6px; padding:10px 14px; margin-bottom:12px;"><div style="font-weight:700; color:#0d6b6b; margin-bottom:6px;">' + p.level + '급 지문 · ' + escapeHtml(p.title) + '</div>' +
         p.questions.map(function(q, qi) { return '<div style="font-size:13px; margin-bottom:6px; line-height:1.6;"><b>' + (nums[pi][0] + qi) + '번 ' + LIT_OPT[q.answerIndex] + '</b> <span style="color:#666;">(' + escapeHtml(q.type || '') + ')</span><br><span style="color:#555;">' + escapeHtml(q.explanation || '') + '</span></div>'; }).join('') + '</div>';
     }).join('');
-    litOpenPrint('<div style="max-width:800px;">' + vocabPrintFrameOpen('초등 문해력 등급 평가 — 정답 및 해설') + '<div style="text-align:center; font-size:12px; color:#888; margin-bottom:10px;">' + escapeHtml(s.name) + ' 학생 · 기준 ' + t.baseLevel + '급 · 출제 범위 ' + t.levels.join('·') + '급</div>' + blocks + VOCAB_PRINT_FRAME_CLOSE + '</div>');
+    litOpenPrint('<div style="max-width:800px;">' + vocabPrintFrameOpen('문해력 등급 평가 — 정답 및 해설') + '<div style="text-align:center; font-size:12px; color:#888; margin-bottom:10px;">' + escapeHtml(s.name) + ' 학생 · 기준 ' + t.baseLevel + '급 · 출제 범위 ' + t.levels.join('·') + '급</div>' + blocks + VOCAB_PRINT_FRAME_CLOSE + '</div>');
   }
 
   // ----- 채점·급수 진단 -----
