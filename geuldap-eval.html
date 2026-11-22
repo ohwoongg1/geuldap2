@@ -6577,11 +6577,18 @@ ${a.name}`;
     const el = document.getElementById('litProgress'); if (!el) return;
     if (!_litProg.timer) { el.innerHTML = ''; return; }
     const sec = Math.floor((Date.now() - _litProg.start) / 1000);
-    el.innerHTML = '<div style="margin:12px 0; padding:12px 14px; background:#fff8e1; border:1px solid #f0d98a; border-radius:8px; font-size:13px; display:flex; align-items:center; gap:10px;"><span style="display:inline-block; width:16px; height:16px; border:3px solid #e3c35a; border-top-color:transparent; border-radius:50%; animation:litspin 0.9s linear infinite;"></span><span><b>AI가 작업 중이에요</b> — ' + escapeHtml(_litProg.msg) + ' <span style="color:#999;">(경과 ' + sec + '초 · 창을 닫지 말고 기다려 주세요)</span></span></div><style>@keyframes litspin{to{transform:rotate(360deg)}}</style>';
+    el.innerHTML = '<div style="position:fixed; top:14px; left:50%; transform:translateX(-50%); z-index:99999; width:min(92vw,640px); box-shadow:0 6px 24px rgba(0,0,0,0.25); padding:14px 16px; background:#fff8e1; border:2px solid #e3c35a; border-radius:10px; font-size:14px; display:flex; align-items:center; gap:10px;"><span style="display:inline-block; width:16px; height:16px; border:3px solid #e3c35a; border-top-color:transparent; border-radius:50%; animation:litspin 0.9s linear infinite;"></span><span><b>AI가 작업 중이에요</b> — ' + escapeHtml(_litProg.msg) + ' <span style="color:#999;">(경과 ' + sec + '초 · 창을 닫지 말고 기다려 주세요)</span></span></div><style>@keyframes litspin{to{transform:rotate(360deg)}}</style>';
   }
   function litProgStart(msg) { _litProg.start = Date.now(); _litProg.msg = msg; if (_litProg.timer) clearInterval(_litProg.timer); _litProg.timer = setInterval(litProgPaint, 1000); litProgPaint(); }
   function litProgSet(msg) { _litProg.msg = msg; litProgPaint(); }
-  function litProgEnd() { if (_litProg.timer) clearInterval(_litProg.timer); _litProg.timer = null; litProgPaint(); }
+  function litProgEnd(doneMsg) {
+    if (_litProg.timer) clearInterval(_litProg.timer); _litProg.timer = null; litProgPaint();
+    if (doneMsg) {
+      const el = document.getElementById('litProgress'); if (!el) return;
+      el.innerHTML = '<div style="position:fixed; top:14px; left:50%; transform:translateX(-50%); z-index:99999; width:min(92vw,640px); box-shadow:0 6px 24px rgba(0,0,0,0.25); padding:14px 16px; background:#e8f6f0; border:2px solid #7cc4a4; border-radius:10px; font-size:14px;">✅ ' + escapeHtml(doneMsg) + '</div>';
+      setTimeout(function() { if (!_litProg.timer) el.innerHTML = ''; }, 6000);
+    }
+  }
 
   // ----- AI 지문 생성 -----
   function litValidPassage(j, level) {
@@ -6684,7 +6691,8 @@ ${a.name}`;
       await saveLitPool(np.level);
       await persistLit(s);
     } catch (e) { alert('다시 검토 실패: ' + e.message); }
-    litProgEnd();
+    const rv = t.passages[i] && t.passages[i].review;
+    litProgEnd(rv ? (rv.failed ? '검토를 끝내지 못했어요. 아래 노란 칸의 안내를 확인해 주세요.' : (rv.issues && rv.issues.length ? '검토 완료 — 고친 내용 ' + rv.issues.length + '건이 아래 노란 칸에 적혀 있어요. 지문을 읽어 보고 ✅ 지문 확정을 눌러 주세요.' : '검토 완료 — 고칠 문제를 찾지 못했어요.')) : '');
     renderLitTestBox();
   }
 
@@ -6797,7 +6805,7 @@ ${a.name}`;
       const levels = litTestLevels(base);
       const passages = [];
       for (let i = 0; i < levels.length; i++) { litProgSet('(' + (i + 1) + '/' + levels.length + ') ' + levels[i] + '급 지문을 고르는 중...'); passages.push(await pickOrCreateLitPassage(s, levels[i], [])); }
-      litProgEnd();
+      litProgEnd('시험지를 만들었어요. AI 검토 결과는 시험지 위 노란 칸에 있어요.');
       litCurrentTest = { id: Date.now().toString(), studentId: s.id, manualBase: !!manual, baseLevel: base, levels: levels, createdAt: todayLocalDateStr(), passages: JSON.parse(JSON.stringify(passages)) };
       s.literacyPending = litCurrentTest;
       litAnswers = {};
@@ -6859,7 +6867,8 @@ ${a.name}`;
     box.innerHTML = '<div style="margin:14px 0 8px; padding:10px 14px; background:#f3f8f8; border:1px solid #cfe5e5; border-radius:8px; font-size:13px;">기준 <b>' + t.baseLevel + '급</b>' + (t.manualBase ? ' <span style="color:#8a6d00;">(원장님이 직접 선택)</span>' : '') + ' → 출제 범위 <b>' + t.levels.join('·') + '급</b> · 지문 ' + t.passages.length + '개 · 총 ' + total + '문항 · ' + litTimeLimit(t) + '분' +
       (drafts ? '<div style="color:#8a6d00; margin-top:4px;">📝 아직 확인 전(초안) 지문이 ' + drafts + '개 있어요. 읽어 보고 필요하면 수정한 뒤 "✅ 지문 확정"을 눌러 주세요.</div>' : '<div style="color:#0d6b6b; margin-top:4px;">✅ 모든 지문이 확정된 상태예요.</div>') + '</div>' +
       '<div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px;">' +
-      '<button class="btn btn-secondary btn-sm" onclick="printLitTest()">🖨️ 시험지 인쇄</button>' +
+      '<button class="btn btn-secondary btn-sm" onclick="printLitTest()">🖨️ 시험지 인쇄(표지+지문, 답은 시험지에 표시)</button>' +
+      '<button class="btn btn-secondary btn-sm" onclick="printLitAnswerSheet()">🖨️ (선택) 별도 답안지 인쇄</button>' +
       '<button class="btn btn-secondary btn-sm" onclick="printLitAnswerKey()">🖨️ 정답·해설 인쇄</button>' +
       '<button class="btn btn-secondary btn-sm" onclick="toggleLitAnswer()">' + (window._litShowAnswer ? '정답 가리기' : '정답·해설 보기') + '</button>' +
       '<button class="btn btn-secondary btn-sm" onclick="openLitEditor()">✏️ 지문·문제 수정</button>' +
@@ -6879,7 +6888,7 @@ ${a.name}`;
       t.passages[i] = JSON.parse(JSON.stringify(np));
       s.literacyPending = t; litAnswers = {};
       await persistLit(s);
-      litProgEnd();
+      litProgEnd('지문을 바꿨어요.');
       renderLitTestBox();
     } catch (e) { litProgEnd(); alert('지문 교체 실패: ' + e.message); }
   }
@@ -6956,9 +6965,30 @@ ${a.name}`;
       '<div style="text-align:center; margin-top:40px; font-size:13px; color:#888;">이 평가는 글 읽는 힘을 알아보기 위한 것으로, 점수보다 자신의 읽기 습관을 돌아보는 데 목적이 있어요.</div>' +
       VOCAB_PRINT_FRAME_CLOSE + '</div>';
   }
+  // 학생이 답을 표시하는 답안지(숙제로 내줄 때 시험지 뒤에 붙이거나 따로 인쇄·PDF 저장해서 카톡으로 보낼 수 있음)
+  function litAnswerSheetHtml(s, t) {
+    const total = litTotalQuestions(t);
+    const half = Math.ceil(total / 2);
+    const bubble = function(l) { return '<span style="display:inline-block; width:26px; height:26px; line-height:24px; text-align:center; border:1.5px solid #555; border-radius:50%; margin:0 5px; font-size:13px;">' + l.replace(/[①②③④⑤]/, function(c) { return String(LIT_OPT.indexOf(c) + 1); }) + '</span>'; };
+    const col = function(from, to) {
+      let h = '<table style="width:100%; border-collapse:collapse;">';
+      for (let n = from; n <= to; n++) h += '<tr><td style="padding:9px 4px; border-bottom:1px solid #ddd; width:44px; font-weight:800; font-size:16px; color:#0d6b6b;">' + n + '</td><td style="padding:9px 4px; border-bottom:1px solid #ddd;">' + LIT_OPT.map(bubble).join('') + '</td></tr>';
+      return h + '</table>';
+    };
+    return '<div class="lit-sheet" style="max-width:800px; margin-bottom:20px;">' + vocabPrintFrameOpen('문해력 등급 평가 — 답안지') +
+      '<div style="display:flex; justify-content:space-between; font-size:14px; margin-bottom:14px; flex-wrap:wrap; gap:6px;"><span>이름: ' + escapeHtml(s.name) + '</span><span>학년: ' + escapeHtml(s.grade || '') + '</span><span>푼 날짜: ______________</span><span>걸린 시간: ______ 분</span></div>' +
+      '<div style="font-size:13px; color:#555; margin-bottom:12px;">정답이라고 생각하는 번호 <b>하나만</b> 진하게 칠하세요. (예: 1번 → <span style="display:inline-block; width:18px; height:18px; background:#333; border-radius:50%; vertical-align:middle;"></span>)</div>' +
+      '<div style="display:flex; gap:28px;"><div style="flex:1;">' + col(1, half) + '</div><div style="flex:1;">' + (total > half ? col(half + 1, total) : '') + '</div></div>' +
+      '<div style="margin-top:24px; font-size:12px; color:#888; border-top:1px dashed #bbb; padding-top:10px;">풀이가 끝나면 이 답안지를 사진으로 찍어 학원 카카오톡으로 보내 주세요. (시험지 글은 시간을 정해 두고 한 번에 풀어 주세요.)</div>' +
+      VOCAB_PRINT_FRAME_CLOSE + '</div>';
+  }
+  function printLitAnswerSheet() {
+    const s = selectedLitStudent, t = litCurrentTest; if (!s || !t) return;
+    litOpenPrint(litAnswerSheetHtml(s, t));
+  }
   function printLitTest() {
     const s = selectedLitStudent, t = litCurrentTest; if (!s || !t) return;
-    litOpenPrint(litCoverHtml(s, t) + t.passages.map(function(p, i) { return litPassageBlockHtml(t, i, { studentName: s.name, pageBreak: i < t.passages.length - 1 }); }).join(''));
+    litOpenPrint(litCoverHtml(s, t) + t.passages.map(function(p, i) { return litPassageBlockHtml(t, i, { studentName: s.name, pageBreak: true }); }).join(''));
   }
   function printLitAnswerKey() {
     const s = selectedLitStudent, t = litCurrentTest; if (!s || !t) return;
