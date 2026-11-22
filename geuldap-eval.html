@@ -6849,8 +6849,8 @@ ${a.name}`;
     if (!s || !t) { box.innerHTML = ''; return; }
     const total = t.passages.reduce(function(a, p) { return a + p.questions.length; }, 0);
     const drafts = t.passages.filter(function(p) { const cur = ((window._litPool[String(p.level)] || []).find(function(x) { return x.pid === p.pid; }) || p); return cur.status !== 'final'; }).length;
-    const blocks = t.passages.map(function(p, i) { return litPassageBlockHtml(t, i, { studentName: s.name, showAnswer: !!window._litShowAnswer, pageBreak: i < t.passages.length - 1 }); }).join('');
-    const swapBtns = t.passages.map(function(p, i) { return '<button class="btn btn-secondary btn-sm" onclick="swapLitPassage(' + i + ')">🔄 ' + p.level + '급 지문 바꾸기</button> <button class="btn btn-secondary btn-sm" onclick="reviewLitPassage(' + i + ')">🔍 ' + p.level + '급 AI 다시 검토</button>'; }).join(' ');
+    const blocks = t.passages.map(function(p, i) { return '<div style="margin:18px 0 6px; padding:6px 12px; background:#0d6b6b; color:#fff; border-radius:6px; font-size:13px; font-weight:700; max-width:800px;">📌 ' + (i + 1) + '번째 지문 · ' + p.level + '급 (' + litLevelDef(p.level).band + ' ' + litLevelDef(p.level).sub + ') · ' + escapeHtml(p.title) + ' <span style="font-weight:400; opacity:0.8;">(이 띠는 인쇄되지 않아요)</span></div>' + litPassageBlockHtml(t, i, { studentName: s.name, showAnswer: !!window._litShowAnswer, pageBreak: i < t.passages.length - 1 }); }).join('');
+    const swapBtns = t.passages.map(function(p, i) { return '<button class="btn btn-secondary btn-sm" onclick="swapLitPassage(' + i + ')">🔄 ' + p.level + '급 지문 바꾸기</button> <button class="btn btn-secondary btn-sm" onclick="reviewLitPassage(' + i + ')">🔍 ' + p.level + '급 「' + escapeHtml((p.title || '').slice(0, 10)) + '」 AI 다시 검토</button>'; }).join(' ');
     const reviewNotes = t.passages.map(function(p) {
       const rv = p.review; if (!rv) return '';
       const body = rv.issues && rv.issues.length ? '<ul style="margin:4px 0 0 18px; padding:0;">' + rv.issues.map(function(x) { return '<li>' + escapeHtml(x) + '</li>'; }).join('') + '</ul>' : '문제점이 발견되지 않았어요.';
