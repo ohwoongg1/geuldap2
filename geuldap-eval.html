@@ -3544,7 +3544,7 @@
     };
     const tone = function(g) { return /초/.test(g) ? { bg: '#e6f2ea', fg: '#2f5d41', bd: '#b9d8c4' } : (/고/.test(g) ? { bg: '#efe8f7', fg: '#58398a', bd: '#d5c6ea' } : { bg: '#e5eef9', fg: '#2c4f80', bd: '#bcd0ea' }); };
     const n = times.length;
-    const fs = n <= 5 ? 14 : (n <= 8 ? 12.5 : (n <= 11 ? 11 : 9.5));
+    const fs = n <= 5 ? 14 : (n <= 8 ? 12.5 : 11.5);
     const dayHead = days.map(function(d) { return '<th style="background:#0d6b6b; color:#fff; padding:9px 4px; font-size:' + (fs + 2) + 'px; letter-spacing:2px; border:1px solid #0d6b6b;">' + d + '요일</th>'; }).join('');
     const rows = times.map(function(t, ri) {
       const dur = Math.max.apply(null, withTimeEntries.filter(function(e) { return e.time === t; }).map(function(e) { return e.duration; }));
@@ -3567,14 +3567,13 @@
     const studentCount = new Set(withTimeEntries.map(function(e) { return e.name; })).size;
     const d0 = new Date(); const dateText = d0.getFullYear() + '. ' + (d0.getMonth() + 1) + '. ' + d0.getDate() + '. 기준';
     const H = orient === 'landscape' ? '188mm' : '275mm';
-    const html = '<html><head><meta charset="utf-8"><title>글답 전체 시간표</title><style>@page { size: A4 ' + orient + '; margin: 10mm; } *{ box-sizing:border-box; } body{ font-family:"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif; margin:0; color:#222; -webkit-print-color-adjust:exact; print-color-adjust:exact; } .sheet{ height:' + H + '; display:flex; flex-direction:column; border:2.5px double #0d6b6b; padding:12px 16px; } table{ border-collapse:collapse; width:100%; flex:1; table-layout:fixed; } th:first-child{ width:78px; }</style></head><body><div class="sheet">' +
+    const html = '<html><head><meta charset="utf-8"><title>글답 전체 시간표</title><style>@page { size: A4 ' + orient + '; margin: 10mm; } *{ box-sizing:border-box; } body{ font-family:"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif; margin:0; color:#222; -webkit-print-color-adjust:exact; print-color-adjust:exact; } .wrap{ height:' + H + '; overflow:hidden; } .sheet{ min-height:' + H + '; display:flex; flex-direction:column; border:2.5px double #0d6b6b; padding:12px 16px; transform-origin:0 0; } table{ border-collapse:collapse; width:100%; flex:1; table-layout:fixed; } th:first-child{ width:78px; }</style></head><body><div class="wrap"><div class="sheet" id="sheet">' +
       '<div style="display:flex; justify-content:space-between; align-items:flex-end; border-bottom:2px solid #0d6b6b; padding-bottom:8px; margin-bottom:10px;"><div><div style="font-size:11px; color:#999; letter-spacing:2px;">GEULDAP KOREAN READING &amp; ESSAY ACADEMY</div><div style="font-size:24px; font-weight:800; color:#0d6b6b;">' + escapeHtml(vocabAcademyName()) + ' <span style="font-size:18px; font-weight:700; color:#333;">수업 시간표</span></div></div><div style="text-align:right; font-size:12px; color:#777;">' + dateText + '<br>재원생 ' + studentCount + '명</div></div>' +
       '<table><tr><th style="background:#0d6b6b; color:#fff; border:1px solid #0d6b6b; font-size:' + fs + 'px;">시간</th>' + dayHead + '</tr>' + rows + '</table>' + noTime +
-      '<div style="margin-top:8px; display:flex; justify-content:space-between; font-size:10.5px; color:#999;"><span>' + (showGrade ? '<span style="color:#2f5d41;">● 초등</span>&nbsp; <span style="color:#2c4f80;">● 중등</span>&nbsp; <span style="color:#58398a;">● 고등</span>' : '') + '</span><span>수업 시간 변경은 원장님께 미리 연락 주세요 · ' + escapeHtml(vocabAcademyName()) + '</span></div></div></body></html>';
+      '<div style="margin-top:8px; display:flex; justify-content:space-between; font-size:10.5px; color:#999;"><span>' + (showGrade ? '<span style="color:#2f5d41;">● 초등</span>&nbsp; <span style="color:#2c4f80;">● 중등</span>&nbsp; <span style="color:#58398a;">● 고등</span>' : '') + '</span><span>수업 시간 변경은 원장님께 미리 연락 주세요 · ' + escapeHtml(vocabAcademyName()) + '</span></div></div></div><script>window.onload=function(){var s=document.getElementById(\"sheet\");var H=s.parentNode.clientHeight*0.98;var k=1;for(var i=0;i<10;i++){s.style.width=(100/k)+\"%\";s.style.minHeight=\"0\";var h=s.scrollHeight;var nk=Math.min(1,H/h);if(Math.abs(nk-k)<0.004){k=nk;break;}k=nk;}s.style.width=(100/k)+\"%\";s.style.minHeight=(s.parentNode.clientHeight/k)+\"px\";s.style.transform=\"scale(\"+k+\")\";setTimeout(function(){window.print();},300);};<\/script></body></html>';
     const w = window.open('', '_blank');
     if (!w) { alert('팝업이 차단되어 인쇄 창을 열 수 없어요. 팝업을 허용해 주세요.'); return; }
     w.document.write(html); w.document.close();
-    setTimeout(function() { w.print(); }, 500);
   }
 
   function renderTimetable() {
