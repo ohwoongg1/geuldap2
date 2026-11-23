@@ -1178,10 +1178,13 @@
     <div style="font-size:12px; color:#888; margin-bottom:14px;">재원생을 선택하거나, 상담 방문자는 "＋ 상담자 즉석 테스트"로 이름·학년만 입력해 바로 진단 테스트를 진행할 수 있습니다.</div>
     <div style="margin-bottom:14px;">
       <button class="btn btn-secondary btn-sm" onclick="toggleVocabDashboard()">📊 성취도 현황 보기</button>
+      <button class="btn btn-secondary btn-sm" onclick="openVocabRecalc()">⚖️ 기존 기록 새 방식으로 재계산</button>
       <button class="btn btn-secondary btn-sm" onclick="resetVocabStandardTests()">🔄 표준 시험지 초기화</button>
     </div>
     <div class="student-grid" id="vocabStudentGrid"></div>
   </div>
+
+  <div class="card" id="vocabRecalcCard" style="display:none;"></div>
 
   <div class="card" id="vocabDashboardCard" style="display:none;">
     <div class="card-title">📊 어휘력 성취도 현황</div>
@@ -2579,7 +2582,7 @@
     'v8.60 — [개선] 홈페이지용 우수 글 뽑기가 만드는 카드에 글 전문(숨김 텍스트)도 함께 넣음 — 홈페이지에서 카드를 누르면 전문이 모바일 화면으로 열림(index.html v1.6)',
     'v8.61 — [신규] 기록 화면에 "📥 평가 기록 파일로 저장" — 글쓰기 평가 기록(글·교정본·점수·학부모 코멘트)을 JSON 파일로 내려받음(학생 이름은 김○○처럼 가림, 사진 주소 제외). Claude에게 우수 글 선별·분석을 맡길 때 이 파일을 전달',
     'v8.62 — [취소] 복잡해서 v8.59~v8.61의 "홈페이지용 우수 글 뽑기"·"평가 기록 파일로 저장" 기능을 제거(기록 화면은 이전 상태로 복원)',
-    'v8.63 — [신규] (🖨️ 전체 시간표 A4 인쇄(가로/세로·학년 표시 선택), 📚 주간 숙제: 지문3개·15문제·급수 불변·숙제기록·카톡문구, AI 자동 검토+원장님 요청 시 다시 검토, 표지 포함, 정기 주기 전 재진단 가능, 지문 3개×5문제=15문항, 제한 30분) 📖 문해력 탭: 초등 전용 12급, 2개월 주기, EBS 평가 형식(지문 상자·5지선다·정답/해설·제한시간), 이미 본 지문 재출제 방지(안 본 지문 없으면 같은 주제 변형 지문 새로 생성), 답 입력 채점·급수 진단·학부모 보고서'
+    'v8.63 — [신규] (기존 어휘력 기록 새 방식 재계산(미리보기 후 적용), ⚖️ 어휘력·문해력 가중치(배점) 채점: 높은 급수 문제일수록 배점↑, 점수 구간(등급컷)으로 급수 진단, 🖨️ 전체 시간표 A4 인쇄(가로/세로·학년 표시 선택), 📚 주간 숙제: 지문3개·15문제·급수 불변·숙제기록·카톡문구, AI 자동 검토+원장님 요청 시 다시 검토, 표지 포함, 정기 주기 전 재진단 가능, 지문 3개×5문제=15문항, 제한 30분) 📖 문해력 탭: 초등 전용 12급, 2개월 주기, EBS 평가 형식(지문 상자·5지선다·정답/해설·제한시간), 이미 본 지문 재출제 방지(안 본 지문 없으면 같은 주제 변형 지문 새로 생성), 답 입력 채점·급수 진단·학부모 보고서'
   ];
   console.log(`%c글답 학습기 ${APP_VERSION}`, 'font-weight:bold; font-size:14px; color:#0d1b4b;');
   console.groupCollapsed('%c버전 기록 (클릭해서 펼치기)', 'color:#888; font-size:11px;');
@@ -6508,6 +6511,35 @@ ${a.name}`;
   // 실제 급수를 진단한다. 2개월에 한 번 보는 것을 기본으로 한다. 지문은 모두 AI가 새로 쓴 창작문(교재 지문 사용 안 함)이며,
   // 급수별 "지문 창고"(geuldap_settings/literacy_pool_N)에 쌓아 두고 같은 급수 학생끼리 공유한다.
   // 같은 학생에게는 이미 본 지문을 다시 내지 않는다 — 안 본 지문이 없으면 같은 주제의 변형 지문을 새로 만든다.
+  // ===== 가중치(배점) 채점 — 어휘력·문해력 공용 =====
+  // 수능처럼 어려운 문제(높은 급수)일수록 배점이 커서, 낮은 급수에서 실수로 몇 개 틀려도 높은 급수에서 점수를 얻으면 만회돼요.
+  // 방법: ① 급수별 정답률에 배점 비중(아래 scoringWeights)을 곱해 100점 만점으로 환산 → ② "급수 j까지는 잘 풀고(정답률 90% 가정) 그 위는 찍기 수준(guess)"인
+  //        학생의 예상 점수들을 구하고 → ③ 이웃한 두 급수의 예상 점수 사이 중간값을 '등급컷'으로 삼아, 실제 점수가 어느 구간인지로 급수를 정한다.
+  // (시뮬레이션: 기존 "급수별 70%를 처음 못 넘으면 멈춤" 방식은 낮은 급수에서 1~2개 실수하면 크게 낮게 진단되는 문제가 있었고, 이 방식은 ±1급 이내 정확도가 더 높았음)
+  function scoringWeights(n) {
+    if (n <= 1) return [1];
+    if (n === 2) return [2, 3];
+    if (n === 3) return [2, 3, 5];     // 5문제씩이면 문항당 4점·6점·10점(합 100점)
+    if (n === 4) return [2, 3, 4, 6];
+    if (n === 5) return [3, 4, 5, 6, 7]; // 4문제씩이면 문항당 3·4·5·6·7점(합 100점)
+    const w = []; for (let k = 0; k < n; k++) w.push(k + 2); return w;
+  }
+  function weightedDiagnose(breakdown, guess) {
+    const sorted = breakdown.slice().sort(function(a, b) { return a.level - b.level; });
+    const n = sorted.length;
+    if (!n) return { diagnosed: 1, toppedOut: false, score: 0, weights: [] };
+    const w = scoringWeights(n);
+    const tot = w.reduce(function(a, b) { return a + b; }, 0);
+    const sc = sorted.reduce(function(a, b, k) { return a + w[k] * (b.total > 0 ? b.correct / b.total : 0); }, 0) / tot;
+    const hi = 0.9;
+    const S = [];
+    for (let j = -1; j < n; j++) { let e = 0; for (let k = 0; k < n; k++) e += w[k] * (k <= j ? hi : guess); S.push(e / tot); }
+    let diagnosed = sorted[0].level - 1;
+    for (let j = 0; j < n; j++) { if (sc >= (S[j] + S[j + 1]) / 2) diagnosed = sorted[j].level; }
+    if (diagnosed < 1) diagnosed = 1;
+    return { diagnosed: diagnosed, toppedOut: diagnosed === sorted[n - 1].level, score: Math.round(sc * 100), weights: w };
+  }
+
   const LIT_MAX_LEVEL = 18;
   const LIT_LEVEL_DEFS = [
     {level:1,  band:'초1', sub:'상', chars:[100,150], genre:'그림일기·아주 짧은 이야기', desc:'쉬운 낱말로 된 짧은 글(문장 3~6개)에서 누가·무엇을·어디서를 찾는 글 읽기'},
@@ -6569,20 +6601,7 @@ ${a.name}`;
     if (base >= LIT_MAX_LEVEL) return [LIT_MAX_LEVEL - 2, LIT_MAX_LEVEL - 1, LIT_MAX_LEVEL];
     return [base - 1, base, base + 1];
   }
-  function diagnoseLitLevel(breakdown) {
-    const sorted = breakdown.slice().sort(function(a, b) { return a.level - b.level; });
-    let diagnosed = sorted.length ? sorted[0].level - 1 : 1;
-    let toppedOut = false;
-    for (let i = 0; i < sorted.length; i++) {
-      const b = sorted[i];
-      if (b.total > 0 && (b.correct / b.total) >= LIT_PASS_RATE) {
-        diagnosed = b.level;
-        if (b.level === sorted[sorted.length - 1].level) toppedOut = true;
-      } else break;
-    }
-    if (diagnosed < 1) diagnosed = 1;
-    return { diagnosed: diagnosed, toppedOut: toppedOut };
-  }
+  function diagnoseLitLevel(breakdown) { return weightedDiagnose(breakdown, 0.2); }
   function litDaysSince(dateStr) {
     if (!dateStr) return null;
     const d = new Date(dateStr + 'T00:00:00');
@@ -6839,6 +6858,14 @@ ${a.name}`;
       '<div style="font-size:12px; color:#888; margin-top:4px;">이 급수에서 보는 글: ' + escapeHtml(def.desc) + '</div>' +
       (recs.length ? '' : '<div style="font-size:12px; color:#888; margin-top:4px;">첫 진단은 학년 기준 ' + lvl + '급부터 시작해요.</div>');
   }
+  // 문항 배점(수능처럼 어려운 급수일수록 높게) — 진단 시험지에서 총 100점이 되도록 환산
+  function litPointText(test, pi) {
+    const ps = test.passages; const order = ps.map(function(p, i) { return i; }).sort(function(a, b) { return ps[a].level - ps[b].level; });
+    const w = scoringWeights(ps.length); const rank = order.indexOf(pi);
+    const sum = order.reduce(function(a, idx, k) { return a + w[k] * ps[idx].questions.length; }, 0);
+    const pt = 100 * w[rank] / sum;
+    return (Math.round(pt * 10) / 10).toString().replace(/\.0$/, '');
+  }
   function litPassageRange(test) {
     const nums = []; let n = 1;
     test.passages.forEach(function(p) { const a = n; n += p.questions.length; nums.push([a, n - 1]); });
@@ -6901,7 +6928,8 @@ ${a.name}`;
         return '<div style="margin:3px 0; line-height:1.6;">' + LIT_OPT[oi] + ' ' + escapeHtml(o) + mark + '</div>';
       }).join('');
       const expl = (opts.showAnswer || opts.graded) && q.explanation ? '<div style="font-size:12px; color:#666; background:#f7f5ee; padding:6px 10px; border-radius:6px; margin-top:4px;">해설: ' + escapeHtml(q.explanation) + '</div>' : '';
-      return '<div style="margin:16px 0 20px; break-inside:avoid; page-break-inside:avoid;"><div style="display:flex; gap:12px;"><div style="font-size:24px; font-weight:800; color:' + color + '; min-width:34px; line-height:1.1;">' + n + '</div><div style="flex:1; font-size:14px;"><div style="font-weight:700; margin-bottom:6px; line-height:1.55;">' + escapeHtml(q.question) + '</div>' + optHtml + expl + '</div></div></div>';
+      const pt = opts.hw ? '' : litPointText(test, pi);
+      return '<div style="margin:16px 0 20px; break-inside:avoid; page-break-inside:avoid;"><div style="display:flex; gap:12px;"><div style="font-size:24px; font-weight:800; color:' + color + '; min-width:34px; line-height:1.1;">' + n + '</div><div style="flex:1; font-size:14px;"><div style="font-weight:700; margin-bottom:6px; line-height:1.55;">' + escapeHtml(q.question) + (pt ? ' <span style="font-weight:600; color:#555;">[' + pt + '점]</span>' : '') + '</div>' + optHtml + expl + '</div></div></div>';
     }).join('');
     return '<div class="lit-passage-block" style="max-width:800px; ' + (opts.pageBreak ? 'break-after:page; page-break-after:always;' : '') + ' margin-bottom:20px;">' +
       vocabPrintFrameOpen(opts.hw ? '문해력 숙제' : '문해력 등급 평가') +
@@ -7022,7 +7050,7 @@ ${a.name}`;
       '<div style="text-align:center; margin:60px 0 40px;"><div style="font-size:15px; color:#0d6b6b; letter-spacing:6px; margin-bottom:14px;">LITERACY LEVEL TEST</div><div style="font-size:34px; font-weight:800; line-height:1.3;">문해력<br>등급 평가</div></div>' +
       '<table style="width:100%; border-collapse:collapse; font-size:16px; margin-bottom:32px;">' + row('이 름', escapeHtml(s.name)) + row('학 년', escapeHtml(s.grade || '')) + row('평가일', escapeHtml(todayLocalDateStr())) + row('문항 수 / 시간', total + '문항 · ' + litTimeLimit(t) + '분') + row('점 수', '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;/ 100') + '</table>' +
       '<div style="border:1.5px solid #333; padding:18px 22px; font-size:14px; line-height:2;"><div style="font-weight:700; margin-bottom:6px;">[ 유의 사항 ]</div>' +
-      '<div>1. 시작 신호가 있을 때까지 시험지를 넘기지 않습니다.</div><div>2. 글을 꼼꼼히 읽고, 각 문제에서 알맞은 답을 하나만 고릅니다.</div><div>3. 모르는 문제는 표시해 두고 다음 문제로 넘어갑니다.</div><div>4. 정해진 시간 안에 모든 문제를 풀고, 마지막에 한 번 더 확인합니다.</div><div>5. 시험지의 글은 시험 후에 다시 가져가지 않습니다.</div></div>' +
+      '<div>1. 시작 신호가 있을 때까지 시험지를 넘기지 않습니다.</div><div>2. 글을 꼼꼼히 읽고, 각 문제에서 알맞은 답을 하나만 고릅니다.</div><div>3. 모르는 문제는 표시해 두고 다음 문제로 넘어갑니다.</div><div>4. 정해진 시간 안에 모든 문제를 풀고, 마지막에 한 번 더 확인합니다.</div><div>5. 문제마다 배점이 달라요. 어려운 문제일수록 점수가 높으니, 쉬운 문제에서 실수했더라도 끝까지 포기하지 말고 풀어 보세요.</div></div>' +
       '<div style="text-align:center; margin-top:40px; font-size:13px; color:#888;">이 평가는 글 읽는 힘을 알아보기 위한 것으로, 점수보다 자신의 읽기 습관을 돌아보는 데 목적이 있어요.</div>' +
       VOCAB_PRINT_FRAME_CLOSE + '</div>';
   }
@@ -7105,7 +7133,7 @@ ${a.name}`;
       id: Date.now().toString(), date: todayLocalDateStr(), month: todayLocalDateStr().slice(0, 7),
       baseLevel: t.baseLevel, oldLevel: oldLevel, newLevel: diag.diagnosed, toppedOut: diag.toppedOut,
       resultLabel: diag.diagnosed > oldLevel ? '상승' : (diag.diagnosed < oldLevel ? '하락' : '유지'),
-      correct: correctAll, total: total, score: Math.round(correctAll / total * 100), breakdown: breakdown,
+      correct: correctAll, total: total, score: diag.score, rawScore: Math.round(correctAll / total * 100), breakdown: breakdown,
       answers: JSON.parse(JSON.stringify(litAnswers)), passages: JSON.parse(JSON.stringify(t.passages)),
       passageIds: t.passages.map(function(p) { return p.pid; })
     };
@@ -7115,7 +7143,7 @@ ${a.name}`;
     litCurrentTest = null; litAnswers = {};
     document.getElementById('litTestBox').innerHTML = ''; document.getElementById('litResultBox').innerHTML = '';
     renderLitStatus(); renderLitHistory(); renderLitTab();
-    alert(s.name + ' 학생: ' + diag.diagnosed + '급으로 진단되었어요 (' + correctAll + '/' + total + '문항, ' + rec.score + '점). 아래 "진단 보고서 생성"으로 학부모 안내문을 만들 수 있어요.');
+    alert(s.name + ' 학생: ' + diag.diagnosed + '급으로 진단되었어요 (' + correctAll + '/' + total + '문항 정답, 배점 환산 ' + rec.score + '점/100). 아래 "진단 보고서 생성"으로 학부모 안내문을 만들 수 있어요.');
   }
 
   // ===== 주간 숙제 (지문 3개 · 15문제 · 급수 변동 없음) =====
@@ -8478,21 +8506,57 @@ ${levelDescText}${avoidText}
   // 급수별 정답 수 → 급수별 정답률 계산 → "몇 급까지 통과했는지" 방식으로 실제 급수를 진단한다.
   // 정답률 70% 이상인 급수까지는 통과로 보고, 처음 70% 미만이 나오는 급수에서 진단을 멈춘다
   // (난이도가 순차적으로 올라간다는 가정 — 실제로 위 급수를 다시 통과하는 경우는 드묾).
-  function diagnoseVocabLevel(breakdown) {
-    const sorted = breakdown.slice().sort((a,b)=>a.level-b.level);
-    let diagnosed = sorted.length ? sorted[0].level - 1 : 1;
-    let toppedOut = false;
-    for (const b of sorted) {
-      if (b.total>0 && (b.correct/b.total) >= 0.7) {
-        diagnosed = b.level;
-        if (b.level === sorted[sorted.length-1].level) toppedOut = true;
-      } else {
-        break;
+  // ===== 기존 어휘력 진단 기록을 새(가중치) 방식으로 다시 계산 =====
+  // 기준 급수(oldLevel)·정답 수는 그대로 두고, 진단 급수(newLevel)만 새 방식으로 다시 구한다. 바꾸기 전 값은 legacyNewLevel에 남겨 둔다.
+  function vocabRecalcPlan() {
+    const plan = [];
+    (window._vocabRecords || []).forEach(function(rec) {
+      if (rec.status === 'pending' || !rec.breakdown || !rec.breakdown.length) return;
+      const dg = weightedDiagnose(rec.breakdown, 0.25);
+      const label = dg.diagnosed > rec.oldLevel ? '상승' : (dg.diagnosed < rec.oldLevel ? '하락' : '유지');
+      plan.push({ rec: rec, dg: dg, label: label, changed: dg.diagnosed !== rec.newLevel });
+    });
+    return plan;
+  }
+  function openVocabRecalc() {
+    const plan = vocabRecalcPlan();
+    const ch = plan.filter(function(x) { return x.changed; }).sort(function(a, b) { return String(a.rec.studentName).localeCompare(String(b.rec.studentName), 'ko') || String(a.rec.date).localeCompare(String(b.rec.date)); });
+    const box = document.getElementById('vocabRecalcCard');
+    if (!box) return;
+    box.style.display = '';
+    const rows = ch.map(function(x) {
+      const up = x.dg.diagnosed > x.rec.newLevel;
+      return '<tr><td style="padding:5px 8px; border:1px solid #eee;">' + escapeHtml(x.rec.studentName || '') + (x.rec.isGuest ? ' <span style="color:#999;">(상담)</span>' : '') + '</td><td style="padding:5px 8px; border:1px solid #eee; text-align:center;">' + escapeHtml(x.rec.date || x.rec.month || '') + '</td><td style="padding:5px 8px; border:1px solid #eee; text-align:center;">' + x.rec.newLevel + '급</td><td style="padding:5px 8px; border:1px solid #eee; text-align:center; font-weight:700; color:' + (up ? '#0d6b6b' : '#c0392b') + ';">' + x.dg.diagnosed + '급 ' + (up ? '▲' : '▼') + '</td><td style="padding:5px 8px; border:1px solid #eee; text-align:center;">' + x.dg.score + '점</td></tr>';
+    }).join('');
+    box.innerHTML = '<div class="card-title">⚖️ 기존 기록 재계산 미리보기</div><div style="font-size:13px; color:#555; margin-bottom:10px;">지난 어휘력 진단 ' + plan.length + '건 중 <b>' + ch.length + '건</b>의 진단 급수가 바뀌어요(나머지 ' + (plan.length - ch.length) + '건은 그대로). 문제·정답 수·기준 급수는 바뀌지 않아요. 아직 적용 전이에요.</div>' +
+      (ch.length ? '<div style="max-height:320px; overflow:auto; margin-bottom:10px;"><table style="width:100%; font-size:13px; border-collapse:collapse;"><tr style="background:#f7f5ee;"><th style="padding:5px 8px; border:1px solid #eee;">학생</th><th style="padding:5px 8px; border:1px solid #eee;">진단일</th><th style="padding:5px 8px; border:1px solid #eee;">기존</th><th style="padding:5px 8px; border:1px solid #eee;">새 방식</th><th style="padding:5px 8px; border:1px solid #eee;">가중 점수</th></tr>' + rows + '</table></div>' : '<div style="margin-bottom:10px;">바뀌는 기록이 없어요.</div>') +
+      '<div style="font-size:12px; color:#888; margin-bottom:10px;">적용하면 학생의 "현재 급수"(가장 최근 기록 기준)도 함께 바뀌어요. 이미 만들어서 보낸 학부모 보고서의 급수는 그대로이니, 바뀐 학생은 해당 기록의 "🔄 이 기록 보고서 다시 작성"으로 다시 만들 수 있어요. 바꾸기 전 급수는 기록에 남겨 둬요.</div>' +
+      '<button class="btn btn-primary btn-sm" onclick="applyVocabRecalc()"' + (ch.length ? '' : ' disabled') + '>✅ 이대로 적용</button> <button class="btn btn-secondary btn-sm" onclick="document.getElementById(\'vocabRecalcCard\').style.display=\'none\'">닫기</button>';
+    box.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  async function applyVocabRecalc() {
+    const plan = vocabRecalcPlan().filter(function(x) { return x.changed || x.rec.weightedScore !== x.dg.score; });
+    if (!plan.length) return;
+    if (!confirm(plan.filter(function(x) { return x.changed; }).length + '건의 진단 급수를 새 방식으로 바꿀까요?')) return;
+    let fail = 0;
+    for (let i = 0; i < plan.length; i++) {
+      const x = plan[i], rec = x.rec;
+      if (x.changed && rec.legacyNewLevel === undefined) rec.legacyNewLevel = rec.newLevel;
+      const patch = { newLevel: x.dg.diagnosed, resultLabel: x.label, toppedOut: x.dg.toppedOut, weightedScore: x.dg.score };
+      if (rec.legacyNewLevel !== undefined) patch.legacyNewLevel = rec.legacyNewLevel;
+      rec.newLevel = patch.newLevel; rec.resultLabel = patch.resultLabel; rec.toppedOut = patch.toppedOut; rec.weightedScore = patch.weightedScore;
+      if (window._fbWriteReady && window._fbWriteReady()) {
+        try { await window._updateByFieldId('geuldap_vocab_records', rec.id, patch); } catch (e) { fail++; console.error('재계산 저장 오류', e); }
       }
     }
-    if (diagnosed < 1) diagnosed = 1;
-    return { diagnosed, toppedOut };
+    try { localStorage.setItem('gvr', JSON.stringify(window._vocabRecords)); } catch (e) {}
+    document.getElementById('vocabRecalcCard').style.display = 'none';
+    renderVocabTab(); refreshVocabDashboardIfOpen();
+    if (selectedVocabStudent) { try { renderVocabStatus(); renderVocabHistory(); } catch (e) {} }
+    alert('새 방식으로 다시 계산했어요.' + (fail ? '\n⚠️ ' + fail + '건은 서버 저장에 실패했어요(이 컴퓨터에는 반영됨). 다시 시도해 주세요.' : ''));
   }
+
+  function diagnoseVocabLevel(breakdown) { return weightedDiagnose(breakdown, 0.25); }
 
   async function saveVocabResult() {
     const s = selectedVocabStudent;
@@ -8509,7 +8573,8 @@ ${levelDescText}${avoidText}
       breakdown.push({ level, total: levelTotal, correct: levelCorrect });
       total += levelTotal; correct += levelCorrect;
     });
-    const { diagnosed, toppedOut } = diagnoseVocabLevel(breakdown);
+    const _dg = diagnoseVocabLevel(breakdown);
+    const diagnosed = _dg.diagnosed, toppedOut = _dg.toppedOut, weightedScore = _dg.score;
     const score = total>0 ? Math.round(correct/total*100) : 0;
 
     // 이미 저장된 기록을 "다시 채점" 중이라면(regradeVocabRecordTest로 진입) 새 기록을 만들지 않고
@@ -8520,7 +8585,7 @@ ${levelDescText}${avoidText}
       const idx = _vocabRecords.findIndex(r=>r.id===regradeId);
       if (idx===-1) { alert('다시 채점할 기록을 찾을 수 없습니다.'); s._vocabRegradeRecordId = null; return; }
       const rec = _vocabRecords[idx];
-      rec.total = total; rec.correct = correct; rec.score = score; rec.breakdown = breakdown; rec.toppedOut = toppedOut;
+      rec.total = total; rec.correct = correct; rec.score = score; rec.weightedScore = weightedScore; rec.breakdown = breakdown; rec.toppedOut = toppedOut;
       rec.newLevel = diagnosed;
       rec.resultLabel = diagnosed>rec.oldLevel ? '상승' : diagnosed<rec.oldLevel ? '하락' : '유지';
       if (Object.keys(vocabInteractiveAnswers||{}).length) rec.answers = { ...vocabInteractiveAnswers };
@@ -8547,7 +8612,7 @@ ${levelDescText}${avoidText}
     const rec = {
       id: pendingId || Date.now().toString(), studentId: s.id, studentName: s.name, grade: s.grade, isGuest: !!s.isGuest,
       month, date: todayLocalDateStr(), total, correct, score,
-      oldLevel, newLevel: diagnosed, resultLabel, breakdown, toppedOut,
+      oldLevel, newLevel: diagnosed, resultLabel, breakdown, toppedOut, weightedScore,
       questions: selectedVocabStudent._vocabTestCache || null,
       answers: Object.keys(vocabInteractiveAnswers||{}).length ? { ...vocabInteractiveAnswers } : null
     };
@@ -8565,7 +8630,7 @@ ${levelDescText}${avoidText}
     renderVocabTab();
     refreshVocabDashboardIfOpen();
     const topNote = toppedOut ? ' (범위 내 최고 급수까지 통과 — 다음엔 더 높은 범위로 재진단 권장)' : '';
-    alert(`저장 완료! 진단 급수: ${diagnosed}급 (기준 ${oldLevel}급 대비 ${resultLabel})${topNote}`);
+    alert(`저장 완료! 진단 급수: ${diagnosed}급 (기준 ${oldLevel}급 대비 ${resultLabel}) · 가중 점수 ${weightedScore}점/100${topNote}`);
   }
 
   function renderVocabHistory() {
