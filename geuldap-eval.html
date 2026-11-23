@@ -2582,7 +2582,7 @@
     'v8.60 — [개선] 홈페이지용 우수 글 뽑기가 만드는 카드에 글 전문(숨김 텍스트)도 함께 넣음 — 홈페이지에서 카드를 누르면 전문이 모바일 화면으로 열림(index.html v1.6)',
     'v8.61 — [신규] 기록 화면에 "📥 평가 기록 파일로 저장" — 글쓰기 평가 기록(글·교정본·점수·학부모 코멘트)을 JSON 파일로 내려받음(학생 이름은 김○○처럼 가림, 사진 주소 제외). Claude에게 우수 글 선별·분석을 맡길 때 이 파일을 전달',
     'v8.62 — [취소] 복잡해서 v8.59~v8.61의 "홈페이지용 우수 글 뽑기"·"평가 기록 파일로 저장" 기능을 제거(기록 화면은 이전 상태로 복원)',
-    'v8.63 — [신규] (🔍 어휘력 시험지도 AI 자동 검토(정답 가리고 풀어 보기+애매한 문항 수정)·AI 다시 검토 버튼, 어휘 빈칸 문제의 "빈칸" 글자를 (        ) 로 표시, 기존 어휘력 기록 새 방식 재계산(미리보기 후 적용), ⚖️ 어휘력·문해력 가중치(배점) 채점: 높은 급수 문제일수록 배점↑, 점수 구간(등급컷)으로 급수 진단, 🖨️ 전체 시간표 A4 인쇄(가로/세로·학년 표시 선택), 📚 주간 숙제: 지문3개·15문제·급수 불변·숙제기록·카톡문구, AI 자동 검토+원장님 요청 시 다시 검토, 표지 포함, 정기 주기 전 재진단 가능, 지문 3개×5문제=15문항, 제한 30분) 📖 문해력 탭: 초등 전용 12급, 2개월 주기, EBS 평가 형식(지문 상자·5지선다·정답/해설·제한시간), 이미 본 지문 재출제 방지(안 본 지문 없으면 같은 주제 변형 지문 새로 생성), 답 입력 채점·급수 진단·학부모 보고서'
+    'v8.63 — [신규] (어휘 진단(첫 진단 포함)은 학원 공용 4주 커리큘럼 낱말로 되도록 출제, 🔍 어휘력 시험지도 AI 자동 검토(정답 가리고 풀어 보기+애매한 문항 수정)·AI 다시 검토 버튼, 어휘 빈칸 문제의 "빈칸" 글자를 (        ) 로 표시, 기존 어휘력 기록 새 방식 재계산(미리보기 후 적용), ⚖️ 어휘력·문해력 가중치(배점) 채점: 높은 급수 문제일수록 배점↑, 점수 구간(등급컷)으로 급수 진단, 🖨️ 전체 시간표 A4 인쇄(가로/세로·학년 표시 선택), 📚 주간 숙제: 지문3개·15문제·급수 불변·숙제기록·카톡문구, AI 자동 검토+원장님 요청 시 다시 검토, 표지 포함, 정기 주기 전 재진단 가능, 지문 3개×5문제=15문항, 제한 30분) 📖 문해력 탭: 초등 전용 12급, 2개월 주기, EBS 평가 형식(지문 상자·5지선다·정답/해설·제한시간), 이미 본 지문 재출제 방지(안 본 지문 없으면 같은 주제 변형 지문 새로 생성), 답 입력 채점·급수 진단·학부모 보고서'
   ];
   console.log(`%c글답 학습기 ${APP_VERSION}`, 'font-weight:bold; font-size:14px; color:#0d1b4b;');
   console.groupCollapsed('%c버전 기록 (클릭해서 펼치기)', 'color:#888; font-size:11px;');
@@ -7970,8 +7970,14 @@ ${a.name}`;
     // 처음 진단이든 재진단이든, 같은 급수의 표준 시험지(확정 후 10일 이내 또는 초안)가 있으면 그걸 그대로 쓴다.
     const finalStandard = findVocabStandardFinal(baseLevel);
     const draftStandard = !finalStandard ? findVocabStandardDraft(baseLevel) : null;
-    const existingStandard = finalStandard || draftStandard;
-    s._vocabDraftLevel = draftStandard ? baseLevel : null;
+    // 4주 급수향상 커리큘럼을 이 학생이 받았고(직전 진단 이후 만든 것), 그 목표 급수가 이번 출제 범위 안이면
+    // — 재진단은 학생이 4주 동안 공부한 커리큘럼 낱말로 되도록 출제한다. 이 경우엔 모두에게 같은 표준 시험지를 쓰지 않고 학생별로 만든다.
+    const completedCountNow = vocabRecordsFor(s.id).filter(r=>r.status!=='pending').length;
+    const cs = s.vocabCurriculumSaved;
+    const currWeeks = (cs && cs.weeksData && cs.testCount === completedCountNow && cs.targetLevel >= minLevel && cs.targetLevel <= maxLevel && !isFirstDiagnosis) ? cs.weeksData : null;
+    const useCurr = !!currWeeks;
+    const existingStandard = useCurr ? null : (finalStandard || draftStandard);
+    s._vocabDraftLevel = (!useCurr && draftStandard) ? baseLevel : null;
     s._vocabEditFinalLevel = null;
 
     if (existingStandard && existingStandard.questions) {
@@ -7992,13 +7998,25 @@ ${a.name}`;
       const d = vocabLevelDef(l);
       return `${l}급(${d.band} ${d.sub}): ${d.desc}`;
     }).join('\n');
-    const alreadyStudied = s.vocabStudiedWords || [];
+    // 학원 공용 4주 커리큘럼(목표 급수별)이 이미 만들어져 있는 급수는, 그 낱말들로 되도록 출제한다 — 첫 진단이든 재진단이든 같다.
+    // (이 학생이 직접 받은 커리큘럼이 있으면 그것을 우선)
+    const currWordSet = new Set();
+    const currMap = {};
+    levelsInRange.forEach(function(l) { const sh = (window._vocabCurricula || {})[String(l)]; if (sh && sh.weeksData && sh.weeksData.length) currMap[l] = sh.weeksData; });
+    if (useCurr) currMap[cs.targetLevel] = currWeeks;
+    const currLevels = Object.keys(currMap).map(Number).sort(function(x, y) { return x - y; });
+    let currText = '';
+    if (currLevels.length) {
+      currText = '\n\n※ 학원은 급수를 올리기 위한 4주 커리큘럼으로 아래 낱말들을 가르치고 있어요. 아래 급수들은 해당 급수 문제 ' + VOCAB_QUESTIONS_PER_LEVEL + '개를 되도록 그 급수의 커리큘럼 낱말 중에서 출제하세요(주차별로 골고루 — 한 주차에서 한 문제씩). 낱말은 그대로 쓰되 문제의 문장·보기는 새로 만들어, 단순 암기가 아니라 뜻을 이해했는지 확인하게 하세요. 아래에 없는 급수는 평소처럼 출제:\n' +
+        currLevels.map(function(l) { return '【' + l + '급 커리큘럼 낱말】\n' + currMap[l].map(function(w) { (w.words || []).forEach(function(x) { currWordSet.add(x.word); }); return (w.week || '') + '주차: ' + (w.words || []).map(function(x) { return x.word + '(' + (x.meaning || '') + ')'; }).join(', '); }).join('\n'); }).join('\n');
+    }
+    const alreadyStudied = (s.vocabStudiedWords || []).filter(function(w) { return !currWordSet.has(w); });
     const avoidText = alreadyStudied.length ? `\n\n※ 아래 낱말은 이 학생이 학습지·커리큘럼으로 이미 공부한 적이 있으니, 이번 진단 시험에서는 절대 출제하지 마세요(같은 급수 범위 안의 다른 낱말로 대신 출제 — 외운 단어가 아니라 진짜 실력을 확인하기 위함): ${alreadyStudied.join(', ')}` : '';
     const prompt = `당신은 한국 국어 어휘 교육 전문가입니다. 학생의 실제 어휘력 수준을 정확히 진단하기 위한 4지선다 객관식 시험지를 만들어주세요.
 
 기준 급수: ${baseLevel}급 (학년 표준)
 출제 범위: ${minLevel}급 ~ ${maxLevel}급 (아래 각 급수 기준에서 각각 ${VOCAB_QUESTIONS_PER_LEVEL}문제씩, 총 ${levelsInRange.length*VOCAB_QUESTIONS_PER_LEVEL}문제)
-${levelDescText}${avoidText}
+${levelDescText}${avoidText}${currText}
 
 요구사항:
 - 각 급수마다 정확히 ${VOCAB_QUESTIONS_PER_LEVEL}문제씩, 그 급수 범위를 벗어나지 않는 어휘로 출제
@@ -8029,7 +8047,7 @@ ${levelDescText}${avoidText}
       renderVocabTestBox(qs);
       // 첫 진단이었고 이 급수의 표준 시험지가 아직 없었다면, 방금 만든 걸 표준으로 저장해서
       // 다음부터 같은 급수로 첫 진단받는 학생들이 재사용하게 한다.
-      if (!existingStandard) {
+      if (!existingStandard && !useCurr) {
         await saveVocabStandardTest(baseLevel, qs); // 초안으로 저장 — 확인·수정 후 "확정"해야 다른 학생에게 적용됨
         s._vocabDraftLevel = baseLevel;
         renderVocabTestBox(qs);
