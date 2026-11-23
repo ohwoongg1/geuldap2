@@ -895,7 +895,7 @@
   <div class="page" id="page-timetable">
     <div class="card">
       <div class="card-title" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-        <span>전체 시간표</span>
+        <span>전체 시간표 <button class="btn btn-secondary btn-sm" onclick="printTimetable()" style="margin-left:8px;">🖨️ A4 인쇄</button> <select id="ttPrintOrient" style="width:auto; font-size:12px;"><option value="landscape">가로</option><option value="portrait">세로</option></select> <label style="font-size:12px; font-weight:400;"><input type="checkbox" id="ttPrintGrade" checked> 학년 표시</label></span>
         <span style="font-size:13px; font-weight:400; display:flex; align-items:center; gap:6px;">
           한 시간대 정원
           <input type="number" id="ttCapacityInput" min="1" max="99" style="width:56px; padding:4px 6px; text-align:center;" onchange="saveTimetableCapacity()">
@@ -2579,7 +2579,7 @@
     'v8.60 — [개선] 홈페이지용 우수 글 뽑기가 만드는 카드에 글 전문(숨김 텍스트)도 함께 넣음 — 홈페이지에서 카드를 누르면 전문이 모바일 화면으로 열림(index.html v1.6)',
     'v8.61 — [신규] 기록 화면에 "📥 평가 기록 파일로 저장" — 글쓰기 평가 기록(글·교정본·점수·학부모 코멘트)을 JSON 파일로 내려받음(학생 이름은 김○○처럼 가림, 사진 주소 제외). Claude에게 우수 글 선별·분석을 맡길 때 이 파일을 전달',
     'v8.62 — [취소] 복잡해서 v8.59~v8.61의 "홈페이지용 우수 글 뽑기"·"평가 기록 파일로 저장" 기능을 제거(기록 화면은 이전 상태로 복원)',
-    'v8.63 — [신규] (📚 주간 숙제: 지문3개·15문제·급수 불변·숙제기록·카톡문구, AI 자동 검토+원장님 요청 시 다시 검토, 표지 포함, 정기 주기 전 재진단 가능, 지문 3개×5문제=15문항, 제한 30분) 📖 문해력 탭: 초등 전용 12급, 2개월 주기, EBS 평가 형식(지문 상자·5지선다·정답/해설·제한시간), 이미 본 지문 재출제 방지(안 본 지문 없으면 같은 주제 변형 지문 새로 생성), 답 입력 채점·급수 진단·학부모 보고서'
+    'v8.63 — [신규] (🖨️ 전체 시간표 A4 인쇄(가로/세로·학년 표시 선택), 📚 주간 숙제: 지문3개·15문제·급수 불변·숙제기록·카톡문구, AI 자동 검토+원장님 요청 시 다시 검토, 표지 포함, 정기 주기 전 재진단 가능, 지문 3개×5문제=15문항, 제한 30분) 📖 문해력 탭: 초등 전용 12급, 2개월 주기, EBS 평가 형식(지문 상자·5지선다·정답/해설·제한시간), 이미 본 지문 재출제 방지(안 본 지문 없으면 같은 주제 변형 지문 새로 생성), 답 입력 채점·급수 진단·학부모 보고서'
   ];
   console.log(`%c글답 학습기 ${APP_VERSION}`, 'font-weight:bold; font-size:14px; color:#0d1b4b;');
   console.groupCollapsed('%c버전 기록 (클릭해서 펼치기)', 'color:#888; font-size:11px;');
@@ -3522,11 +3522,59 @@
     const withoutTimeEntries = []; // {name, day}
     active.forEach(s => {
       studentScheduleEntries(s).forEach(e => {
-        if (e.time) withTimeEntries.push({ name: s.name, day: e.day, time: e.time, duration: e.duration });
+        if (e.time) withTimeEntries.push({ name: s.name, grade: s.grade || '', day: e.day, time: e.time, duration: e.duration });
         else withoutTimeEntries.push({ name: s.name, day: e.day });
       });
     });
     return { withTimeEntries, withoutTimeEntries };
+  }
+
+  // 전체 시간표 A4 인쇄 — 시각 × 요일 표, 학생 이름을 칩으로 보여 줌(요일에 수업이 없는 열은 자동으로 뺌)
+  function printTimetable() {
+    const { withTimeEntries, withoutTimeEntries } = getTimetableEntries();
+    if (!withTimeEntries.length) { alert('수업 시각이 입력된 학생이 없어요. 학생 관리에서 수업 시각을 먼저 입력해 주세요.'); return; }
+    const orient = (document.getElementById('ttPrintOrient') || {}).value === 'portrait' ? 'portrait' : 'landscape';
+    const showGrade = !document.getElementById('ttPrintGrade') || document.getElementById('ttPrintGrade').checked;
+    const days = TIMETABLE_DAYS.filter(function(d) { return withTimeEntries.some(function(e) { return e.day === d; }); });
+    const times = Array.from(new Set(withTimeEntries.map(function(e) { return e.time; }))).sort();
+    const shortGrade = function(g) {
+      const m = String(g || '').match(/(초등|중학교|고등|중등)\D*(\d)/);
+      if (!m) return '';
+      return (m[1] === '초등' ? '초' : (m[1] === '고등' ? '고' : '중')) + m[2];
+    };
+    const tone = function(g) { return /초/.test(g) ? { bg: '#e6f2ea', fg: '#2f5d41', bd: '#b9d8c4' } : (/고/.test(g) ? { bg: '#efe8f7', fg: '#58398a', bd: '#d5c6ea' } : { bg: '#e5eef9', fg: '#2c4f80', bd: '#bcd0ea' }); };
+    const n = times.length;
+    const fs = n <= 5 ? 14 : (n <= 8 ? 12.5 : (n <= 11 ? 11 : 9.5));
+    const dayHead = days.map(function(d) { return '<th style="background:#0d6b6b; color:#fff; padding:9px 4px; font-size:' + (fs + 2) + 'px; letter-spacing:2px; border:1px solid #0d6b6b;">' + d + '요일</th>'; }).join('');
+    const rows = times.map(function(t, ri) {
+      const dur = Math.max.apply(null, withTimeEntries.filter(function(e) { return e.time === t; }).map(function(e) { return e.duration; }));
+      const cells = days.map(function(d) {
+        const list = withTimeEntries.filter(function(e) { return e.time === t && e.day === d; }).sort(function(a, b) { return a.name.localeCompare(b.name, 'ko'); });
+        const chips = list.map(function(e) {
+          const sg = shortGrade(e.grade), c = tone(sg);
+          return '<span style="display:inline-block; background:' + c.bg + '; color:' + c.fg + '; border:1px solid ' + c.bd + '; border-radius:12px; padding:2px 9px; margin:2px 2px; font-size:' + fs + 'px; font-weight:600; white-space:nowrap;">' + escapeHtml(e.name) + (showGrade && sg ? ' <span style="font-size:' + Math.max(fs - 3, 8) + 'px; font-weight:400; opacity:0.8;">' + sg + '</span>' : '') + '</span>';
+        }).join('');
+        const cnt = list.length ? '<div style="font-size:' + Math.max(fs - 3, 8) + 'px; color:#aaa; text-align:right; margin-top:1px;">' + list.length + '명</div>' : '';
+        return '<td style="border:1px solid #d9d4c5; padding:5px 6px; vertical-align:top; background:' + (ri % 2 ? '#fcfbf7' : '#fff') + ';">' + chips + cnt + '</td>';
+      }).join('');
+      return '<tr><td style="border:1px solid #d9d4c5; background:#f3f8f8; text-align:center; font-weight:800; color:#0d6b6b; padding:4px 6px; width:78px; font-size:' + (fs + 1) + 'px; line-height:1.3;">' + t + '<div style="font-size:' + Math.max(fs - 3, 8) + 'px; font-weight:400; color:#888;">~ ' + addMinutesToTime(t, dur) + '</div></td>' + cells + '</tr>';
+    }).join('');
+    let noTime = '';
+    if (withoutTimeEntries.length) {
+      const by = {}; withoutTimeEntries.forEach(function(e) { (by[e.name] = by[e.name] || []).push(e.day); });
+      noTime = '<div style="margin-top:8px; font-size:11px; color:#777;"><b>시각 미정:</b> ' + Object.keys(by).map(function(k) { return escapeHtml(k) + '(' + by[k].join('·') + ')'; }).join(', ') + '</div>';
+    }
+    const studentCount = new Set(withTimeEntries.map(function(e) { return e.name; })).size;
+    const d0 = new Date(); const dateText = d0.getFullYear() + '. ' + (d0.getMonth() + 1) + '. ' + d0.getDate() + '. 기준';
+    const H = orient === 'landscape' ? '188mm' : '275mm';
+    const html = '<html><head><meta charset="utf-8"><title>글답 전체 시간표</title><style>@page { size: A4 ' + orient + '; margin: 10mm; } *{ box-sizing:border-box; } body{ font-family:"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif; margin:0; color:#222; -webkit-print-color-adjust:exact; print-color-adjust:exact; } .sheet{ height:' + H + '; display:flex; flex-direction:column; border:2.5px double #0d6b6b; padding:12px 16px; } table{ border-collapse:collapse; width:100%; flex:1; table-layout:fixed; } th:first-child{ width:78px; }</style></head><body><div class="sheet">' +
+      '<div style="display:flex; justify-content:space-between; align-items:flex-end; border-bottom:2px solid #0d6b6b; padding-bottom:8px; margin-bottom:10px;"><div><div style="font-size:11px; color:#999; letter-spacing:2px;">GEULDAP KOREAN READING &amp; ESSAY ACADEMY</div><div style="font-size:24px; font-weight:800; color:#0d6b6b;">' + escapeHtml(vocabAcademyName()) + ' <span style="font-size:18px; font-weight:700; color:#333;">수업 시간표</span></div></div><div style="text-align:right; font-size:12px; color:#777;">' + dateText + '<br>재원생 ' + studentCount + '명</div></div>' +
+      '<table><tr><th style="background:#0d6b6b; color:#fff; border:1px solid #0d6b6b; font-size:' + fs + 'px;">시간</th>' + dayHead + '</tr>' + rows + '</table>' + noTime +
+      '<div style="margin-top:8px; display:flex; justify-content:space-between; font-size:10.5px; color:#999;"><span>' + (showGrade ? '<span style="color:#2f5d41;">● 초등</span>&nbsp; <span style="color:#2c4f80;">● 중등</span>&nbsp; <span style="color:#58398a;">● 고등</span>' : '') + '</span><span>수업 시간 변경은 원장님께 미리 연락 주세요 · ' + escapeHtml(vocabAcademyName()) + '</span></div></div></body></html>';
+    const w = window.open('', '_blank');
+    if (!w) { alert('팝업이 차단되어 인쇄 창을 열 수 없어요. 팝업을 허용해 주세요.'); return; }
+    w.document.write(html); w.document.close();
+    setTimeout(function() { w.print(); }, 500);
   }
 
   function renderTimetable() {
