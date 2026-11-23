@@ -2582,7 +2582,7 @@
     'v8.60 — [개선] 홈페이지용 우수 글 뽑기가 만드는 카드에 글 전문(숨김 텍스트)도 함께 넣음 — 홈페이지에서 카드를 누르면 전문이 모바일 화면으로 열림(index.html v1.6)',
     'v8.61 — [신규] 기록 화면에 "📥 평가 기록 파일로 저장" — 글쓰기 평가 기록(글·교정본·점수·학부모 코멘트)을 JSON 파일로 내려받음(학생 이름은 김○○처럼 가림, 사진 주소 제외). Claude에게 우수 글 선별·분석을 맡길 때 이 파일을 전달',
     'v8.62 — [취소] 복잡해서 v8.59~v8.61의 "홈페이지용 우수 글 뽑기"·"평가 기록 파일로 저장" 기능을 제거(기록 화면은 이전 상태로 복원)',
-    'v8.63 — [신규] (어휘 빈칸 문제의 "빈칸" 글자를 (        ) 로 표시, 기존 어휘력 기록 새 방식 재계산(미리보기 후 적용), ⚖️ 어휘력·문해력 가중치(배점) 채점: 높은 급수 문제일수록 배점↑, 점수 구간(등급컷)으로 급수 진단, 🖨️ 전체 시간표 A4 인쇄(가로/세로·학년 표시 선택), 📚 주간 숙제: 지문3개·15문제·급수 불변·숙제기록·카톡문구, AI 자동 검토+원장님 요청 시 다시 검토, 표지 포함, 정기 주기 전 재진단 가능, 지문 3개×5문제=15문항, 제한 30분) 📖 문해력 탭: 초등 전용 12급, 2개월 주기, EBS 평가 형식(지문 상자·5지선다·정답/해설·제한시간), 이미 본 지문 재출제 방지(안 본 지문 없으면 같은 주제 변형 지문 새로 생성), 답 입력 채점·급수 진단·학부모 보고서'
+    'v8.63 — [신규] (🔍 어휘력 시험지도 AI 자동 검토(정답 가리고 풀어 보기+애매한 문항 수정)·AI 다시 검토 버튼, 어휘 빈칸 문제의 "빈칸" 글자를 (        ) 로 표시, 기존 어휘력 기록 새 방식 재계산(미리보기 후 적용), ⚖️ 어휘력·문해력 가중치(배점) 채점: 높은 급수 문제일수록 배점↑, 점수 구간(등급컷)으로 급수 진단, 🖨️ 전체 시간표 A4 인쇄(가로/세로·학년 표시 선택), 📚 주간 숙제: 지문3개·15문제·급수 불변·숙제기록·카톡문구, AI 자동 검토+원장님 요청 시 다시 검토, 표지 포함, 정기 주기 전 재진단 가능, 지문 3개×5문제=15문항, 제한 30분) 📖 문해력 탭: 초등 전용 12급, 2개월 주기, EBS 평가 형식(지문 상자·5지선다·정답/해설·제한시간), 이미 본 지문 재출제 방지(안 본 지문 없으면 같은 주제 변형 지문 새로 생성), 답 입력 채점·급수 진단·학부모 보고서'
   ];
   console.log(`%c글답 학습기 ${APP_VERSION}`, 'font-weight:bold; font-size:14px; color:#0d1b4b;');
   console.groupCollapsed('%c버전 기록 (클릭해서 펼치기)', 'color:#888; font-size:11px;');
@@ -6648,8 +6648,13 @@ ${a.name}`;
 
   // ----- 진행 상황 표시(AI가 일하는 중임을 눈에 보이게) -----
   const _litProg = { start: 0, msg: '', timer: null };
+  function litProgEl() {
+    let el = document.getElementById('aiProgressFloat');
+    if (!el) { el = document.createElement('div'); el.id = 'aiProgressFloat'; document.body.appendChild(el); }
+    return el;
+  }
   function litProgPaint() {
-    const el = document.getElementById('litProgress'); if (!el) return;
+    const el = litProgEl();
     if (!_litProg.timer) { el.innerHTML = ''; return; }
     const sec = Math.floor((Date.now() - _litProg.start) / 1000);
     el.innerHTML = '<div style="position:fixed; top:14px; left:50%; transform:translateX(-50%); z-index:99999; width:min(92vw,640px); box-shadow:0 6px 24px rgba(0,0,0,0.25); padding:14px 16px; background:#fff8e1; border:2px solid #e3c35a; border-radius:10px; font-size:14px; display:flex; align-items:center; gap:10px;"><span style="display:inline-block; width:16px; height:16px; border:3px solid #e3c35a; border-top-color:transparent; border-radius:50%; animation:litspin 0.9s linear infinite;"></span><span><b>AI가 작업 중이에요</b> — ' + escapeHtml(_litProg.msg) + ' <span style="color:#999;">(경과 ' + sec + '초 · 창을 닫지 말고 기다려 주세요)</span></span></div><style>@keyframes litspin{to{transform:rotate(360deg)}}</style>';
@@ -6659,7 +6664,7 @@ ${a.name}`;
   function litProgEnd(doneMsg) {
     if (_litProg.timer) clearInterval(_litProg.timer); _litProg.timer = null; litProgPaint();
     if (doneMsg) {
-      const el = document.getElementById('litProgress'); if (!el) return;
+      const el = litProgEl();
       el.innerHTML = '<div style="position:fixed; top:14px; left:50%; transform:translateX(-50%); z-index:99999; width:min(92vw,640px); box-shadow:0 6px 24px rgba(0,0,0,0.25); padding:14px 16px; background:#e8f6f0; border:2px solid #7cc4a4; border-radius:10px; font-size:14px;">✅ ' + escapeHtml(doneMsg) + '</div>';
       setTimeout(function() { if (!_litProg.timer) el.innerHTML = ''; }, 6000);
     }
@@ -7937,6 +7942,7 @@ ${a.name}`;
   // 섞어서 출제한다. 학생의 실제 수준이 학년 표준보다 높거나 낮을 수 있으므로, 여러 급수에 걸친
   // 문제로 "어디까지 통과하는지" 진단해서 정확한 실제 급수를 찾아낸다.
   async function generateVocabTest() {
+    if (selectedVocabStudent) selectedVocabStudent._vocabReviewNotes = null;
     const s = selectedVocabStudent;
     // 이미 만들어둔(대기중) 시험지가 있는데 또 누르면, 인쇄해서 이미 나눠준 문제와 저장되는 문제가
     // 달라지는 사고가 실제로 있었다(사용자 사례) — 인쇄된 종이와 기록이 어긋나 버림. 그래서 대기중인
@@ -8010,7 +8016,13 @@ ${levelDescText}${avoidText}
     try {
       const text = await callGemini(prompt);
       const clean = text.replace(/```json|```/g,'').trim();
-      const qs = shuffleVocabQuestionOptions(JSON.parse(clean));
+      let qs = shuffleVocabQuestionOptions(JSON.parse(clean));
+      litProgStart('진단 시험지를 만들었어요. AI가 문제를 검토하는 중...');
+      try {
+        const rv = await vocabAiReview(qs, '');
+        qs = rv.qs; selectedVocabStudent._vocabReviewNotes = rv.notes;
+        litProgEnd(rv.notes.failed ? '검토를 끝내지 못했어요. 시험지 위 안내를 확인해 주세요.' : (rv.notes.fixedNos.length ? '검토 완료 — ' + rv.notes.fixedNos.join(', ') + '번 문제를 고쳤어요.' : '검토 완료 — 고칠 문제를 찾지 못했어요.'));
+      } catch (e) { litProgEnd(); }
       selectedVocabStudent._vocabTestCache = qs;
       vocabInteractiveAnswers = {};
       await saveVocabPendingRecord(s, qs, baseLevel);
@@ -8173,6 +8185,67 @@ ${levelDescText}${avoidText}
     renderVocabTestBox(qs);
     const ak = document.getElementById('vocabAnswerKeyArea'); if (ak && editLevel) ak.style.display = '';
   }
+  // ===== 어휘력 문제 AI 검토 (문해력과 같은 방식) =====
+  // 1단계: 정답을 가린 채 AI가 모든 문제를 풀어 본다(저장된 정답과 다르면 문제가 모호하다는 신호).
+  // 2단계: 정답이 하나뿐인지·뜻이 겹치는 보기가 없는지·문장에 넣었을 때 자연스러운지 점검해 문제 있는 문항만 고쳐 돌려받는다.
+  async function vocabAiReview(qs, note) {
+    const lab = ['①', '②', '③', '④'];
+    const qText = qs.map(function(q, i) { return (i + 1) + '. [' + (q.type || '') + '] ' + q.question + '\n' + (q.options || []).map(function(o, k) { return lab[k] + ' ' + o; }).join('  '); }).join('\n\n');
+    litProgSet('문제 검토 1/2 — AI가 정답을 모르는 채로 ' + qs.length + '문제를 풀어 보는 중...');
+    let blind = [];
+    try {
+      const a = await callGeminiKoreanOnly('아래 어휘 문제들의 정답 번호(1~4)를 각각 고르세요. 설명 없이 JSON으로만 답하세요: {"answers":[1,2,3]} (문제 수만큼, 순서대로)\n\n' + qText);
+      blind = (JSON.parse(a.text.replace(/```json|```/g, '').trim()).answers) || [];
+    } catch (e) { blind = []; }
+    const mism = [];
+    qs.forEach(function(q, i) { if (blind[i] !== undefined && Number(blind[i]) - 1 !== q.answerIndex) mism.push(i + 1); });
+    const withAns = qs.map(function(q, i) { return (i + 1) + '. [' + (q.type || '') + '] ' + q.question + '\n' + (q.options || []).map(function(o, k) { return lab[k] + ' ' + o; }).join('  ') + '\n정답: ' + lab[q.answerIndex] + ' / 해설: ' + (q.explanation || ''); }).join('\n\n');
+    const prompt = '당신은 초·중등 국어 어휘 시험 문항을 검수하는 국어 교사입니다. 아래 문제들을 엄격하게 검토해서, 문제가 있는 문항만 고쳐 주세요.\n\n' +
+      '점검 항목: (1) 정답이 단 하나로만 성립하는가 — 특히 비슷한말·반대말 문제에서 정답 외의 보기가 뜻이 부분적으로라도 겹치거나 문맥에 따라 맞을 수 있으면 안 됨 (2) 빈칸 문제에서 정답을 넣었을 때 문장이 자연스럽고, 오답을 넣으면 확실히 어색한가 (3) 비슷한말 문제는 문장 속 낱말을 정답으로 바꿔 써도 문장이 자연스러운가 (4) 해설이 정답과 일치하는가 (5) 급수 수준에 맞는 낱말인가 (6) 한자를 고르거나 한자 표기를 묻는 문제가 아닌가 (7) 보기 4개가 같은 형식·비슷한 길이인가 (8) 빈칸 자리는 "(        )"로 표시되어 있고 "빈칸"이라는 글자가 문장 안에 있지 않은가.\n' +
+      (mism.length ? '※ 정답을 가리고 다시 풀어 보니 다음 번호에서 저장된 정답과 달랐으니 특히 확인하세요: ' + mism.join(', ') + '번\n' : '※ 정답을 가리고 다시 풀어 본 결과는 모든 문제가 저장된 정답과 일치했습니다(그래도 위 항목을 점검).\n') +
+      (note ? '※ 원장님이 직접 남긴 검토 요청(최우선 반영): ' + note + '\n' : '') +
+      '문제가 없는 문항은 그대로 두고 fixes에 넣지 마세요. 고칠 때는 같은 급수·같은 문제 유형을 유지하고 밑줄 칠 낱말은 __낱말__ 로 표시하세요. 한자·영어 단어는 쓰지 마세요.\n\n[문제와 정답]\n' + withAns + '\n\n' +
+      '설명이나 코드블록 없이 아래 JSON으로만 응답:\n{"issues":["고친 문항 번호와 이유를 한 줄씩(없으면 빈 배열)"],"fixes":[{"no":1,"question":"고친 문제","options":["보기1","보기2","보기3","보기4"],"answerIndex":0,"explanation":"해설"}]}';
+    litProgSet('문제 검토 2/2 — 정답이 애매하거나 보기가 겹치는 문제를 점검하고 고치는 중...');
+    const out = qs.map(function(q) { return q; });
+    const notes = { at: todayLocalDateStr(), mismatch: mism, issues: [], fixedNos: [], failed: false, note: note || '' };
+    try {
+      const kr = await callGeminiKoreanOnly(prompt);
+      const j = JSON.parse(kr.text.replace(/```json|```/g, '').trim());
+      notes.issues = (j.issues || []).map(String).filter(function(x) { return x.trim(); });
+      (j.fixes || []).forEach(function(f) {
+        const idx = Number(f.no) - 1;
+        if (!(idx >= 0 && idx < out.length)) return;
+        if (!f.question || !Array.isArray(f.options) || f.options.length !== 4 || typeof f.answerIndex !== 'number' || f.answerIndex < 0 || f.answerIndex > 3) return;
+        if (new Set(f.options.map(String)).size < 4) return;
+        const fixed = shuffleVocabQuestionOptions([{ question: String(f.question), options: f.options.map(String), answerIndex: f.answerIndex }])[0];
+        out[idx] = Object.assign({}, out[idx], { question: fixed.question, options: fixed.options, answerIndex: fixed.answerIndex, explanation: String(f.explanation || out[idx].explanation || '') });
+        notes.fixedNos.push(idx + 1);
+      });
+    } catch (e) { notes.failed = true; notes.issues = ['AI 검토를 끝내지 못했어요(' + (e && e.message) + '). 직접 확인하시거나 "AI 다시 검토"를 눌러 주세요.']; }
+    return { qs: out, notes: notes };
+  }
+  function vocabReviewBannerHtml(s) {
+    if (!s) return '';
+    const n = s._vocabReviewNotes;
+    const btn = '<button class="btn btn-secondary btn-sm" onclick="reviewVocabTest()">🔍 AI 다시 검토</button>';
+    if (!n) return '<div style="max-width:800px; margin-bottom:8px;">' + btn + ' <span style="font-size:11px; color:#888;">이상한 문제가 있으면 메모를 남기고 AI가 다시 점검하게 할 수 있어요</span></div>';
+    const body = n.issues && n.issues.length ? '<ul style="margin:4px 0 0 18px; padding:0;">' + n.issues.map(function(x) { return '<li>' + escapeHtml(x) + '</li>'; }).join('') + '</ul>' : '<div>고칠 문제를 찾지 못했어요.</div>';
+    return '<div style="max-width:800px; font-size:12px; color:#555; background:#fffdf3; border:1px solid #efe3b0; border-radius:8px; padding:8px 12px; margin-bottom:8px;">🔍 <b>AI 검토</b> (' + escapeHtml(n.at || '') + ')' + (n.mismatch && n.mismatch.length ? ' · 다시 풀어 보니 정답이 달랐던 번호: ' + n.mismatch.join(', ') + '번' : ' · 다시 풀어 본 답과 모두 일치') + (n.fixedNos && n.fixedNos.length ? ' · <b>고친 문항: ' + n.fixedNos.join(', ') + '번</b>' : '') + body + '<div style="margin-top:6px;">' + btn + '</div></div>';
+  }
+  async function reviewVocabTest() {
+    const s = selectedVocabStudent; if (!s || !s._vocabTestCache) return;
+    const note = prompt('AI가 문제를 다시 검토해요.\n이상한 문제가 있으면 적어 주세요. (예: "19번 비슷한말 문제 정답이 애매해요")\n비워 두고 확인을 누르면 전체를 다시 점검해요.', '');
+    if (note === null) return;
+    litProgStart('어휘 문제를 AI가 다시 검토하는 중... (30초~1분)');
+    try {
+      const res = await vocabAiReview(s._vocabTestCache, note.trim());
+      s._vocabReviewNotes = res.notes;
+      await commitVocabTestChange(res.qs);
+      litProgEnd(res.notes.failed ? '검토를 끝내지 못했어요. 시험지 위 안내를 확인해 주세요.' : (res.notes.fixedNos.length ? '검토 완료 — ' + res.notes.fixedNos.join(', ') + '번 문제를 고쳤어요. 시험지 위 노란 칸을 확인해 주세요.' : '검토 완료 — 고칠 문제를 찾지 못했어요.'));
+    } catch (e) { litProgEnd(); alert('검토 실패: ' + e.message); }
+  }
+
   async function saveVocabQuestionEdit(i) {
     const s = selectedVocabStudent;
     const qs = JSON.parse(JSON.stringify(s._vocabTestCache));
@@ -8346,7 +8419,7 @@ ${levelDescText}${avoidText}
     }
     const editFinalBanner = (s && s._vocabEditFinalLevel)
       ? `<div style="max-width:800px; background:#eef6ff; border:1px solid #9cc4ee; border-radius:8px; padding:10px 12px; margin-bottom:10px; font-size:13px;"><div style="font-weight:700; color:#1d5fa3;">✏️ ${s._vocabEditFinalLevel}급 확정 표준 시험지 수정 중</div><div style="color:#666; margin:3px 0 8px;">정답지의 "✏️ 수정"으로 고친 내용은 바로 표준 시험지에 저장되고, 이후 이 급수 시험을 보는 학생부터 적용돼요. (이미 인쇄·배포한 시험지는 바뀌지 않아요)</div><button class="btn btn-secondary btn-sm" onclick="finishEditFinalStandard()">수정 끝내기</button></div>` : '';
-    const bannerHtml = setStdBtn + (editFinalBanner || (draftMode
+    const bannerHtml = vocabReviewBannerHtml(s) + setStdBtn + (editFinalBanner || (draftMode
       ? `<div style="max-width:800px; background:#fff8e1; border:1px solid #f0c36d; border-radius:8px; padding:10px 12px; margin-bottom:10px; font-size:13px;">
            <div style="font-weight:700; color:#8a6d00;">📝 ${s._vocabDraftLevel}급 표준 시험지 초안</div>
            <div style="color:#666; margin:3px 0 8px;">처음 만들어진 문제라 어색한 문제가 있을 수 있어요. 아래 <b>정답지의 "✏️ 수정"</b>으로 문제를 고치거나 다시 만든 뒤, 괜찮으면 <b>확정</b>하세요. 확정하면 ${VOCAB_STANDARD_VALID_DAYS}일 동안 ${s._vocabDraftLevel}급 시험을 보는 모든 학생(처음이든 재진단이든)이 같은 문제를 풀어요. (확정 전에는 무료 진단 페이지에는 적용되지 않아요)</div>
