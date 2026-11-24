@@ -2375,7 +2375,7 @@
 
 <script>
   // ===== 버전 정보 (콘솔에서 확인: APP_VERSION 또는 페이지 로드시 자동 출력) =====
-  const APP_VERSION = 'v8.66';
+  const APP_VERSION = 'v8.67';
   const APP_VERSION_LOG = [
     'v1.0 — 탭 구조 + UI 껍데기',
     'v1.1 — AI 문제 생성 + 개념 사다리',
@@ -2586,6 +2586,7 @@
     'v8.64 — [신규] 어휘 진단 시험지를 "낱말 은행"(18개 급수 × 100문항, vocab 폴더의 JSON)에서 뽑도록 변경 — AI가 매번 만들 때 생기던 어색한 문장·애매한 보기를 없앰. 학생이 이미 본 문제·공부한 낱말·같은 시험지 안의 같은 낱말은 피하고, 커리큘럼 낱말은 먼저 뽑음. 은행을 못 불러오면 예전처럼 AI가 만듦. 새 문제 유형(속담뜻고르기·관용구뜻고르기·다의어구별하기·동음이의어구별하기·사자성어고르기·사자성어뜻고르기·알맞은낱말고르기·다른낱말고르기·의성어의태어고르기·이어주는말고르기·문맥뜻고르기) 지원, 보기가 긴 문제는 한 줄씩 표시, 정답지에 "🚩 신고"(같은 급수의 다른 문제로 바로 교체)와 신고 목록 추가',
     'v8.65 — [신규] 4주 학습 커리큘럼도 낱말 은행에서 만들도록 변경 — 목표 급수의 은행 낱말(뜻·예문 검토 완료) 40개를 주차별 10개씩 나누고, 주차별 확인 문제 5개는 예문의 낱말을 빈칸으로 만들어 자동 구성. 이 학생이 진단 시험에서 이미 본 낱말은 되도록 뒤로 미루되 모자라면 그대로 사용(절대 원칙 아님). 1~5급은 은행 낱말이 29~36개라 주차별 7~9개. 은행을 못 불러오면 예전처럼 AI가 만듦',
     'v8.66 — [버그 수정] 어휘 진단 시험지를 인쇄하면 테두리·문제가 페이지 중간에서 잘려 나오던 문제 — 낱말 은행 문제는 문장이 길어 "한 장 8문제" 고정 방식이 A4 한 장을 넘겼음(실제 높이 측정으로 확인). 인쇄 창에서 문제 높이를 직접 재어 한 장에 들어가는 만큼만 담아 페이지를 나누고, 용지 여백(@page 10mm)과 가로 폭(800px 고정에서 용지 폭에 맞춤)도 명시',
+    'v8.67 — [신규] 문해력 지문 은행 연결 — 7~18급 120편(급수당 10편 안팎, 지문 1개+5지선다 5문항, 검토 완료)을 lit/lit_L7.json ~ lit_L18.json 파일에서 불러와 지문 창고에 합침. 시험지를 만들 때 은행 지문을 먼저 쓰고(이미 본 지문 제외), 은행에 안 본 지문이 없을 때만 AI가 새로 만듦. 은행 지문은 서버에 저장하지 않으며 원장님이 고치면 일반 지문처럼 저장됨. [신규] 문해력 학부모 보고서에 어휘력과 같은 버튼 추가 — 결과만 복사 / 문항별 결과(O·X, 학생 답, 정답, 해설) 복사 / 지문 포함 복사 / 평가서 인쇄(요약 쪽 + 지문별 채점 쪽) / 전체 한번에 복사',
   ];
   console.log(`%c글답 학습기 ${APP_VERSION}`, 'font-weight:bold; font-size:14px; color:#0d1b4b;');
   console.groupCollapsed('%c버전 기록 (클릭해서 펼치기)', 'color:#888; font-size:11px;');
@@ -6627,21 +6628,51 @@ ${a.name}`;
         }
       }
     } catch (e) { console.log('문해력 지문 로드:', e); }
+    try { await mergeLitBank(level); } catch (e) { console.log('문해력 지문 은행 로드:', e); }
     _litPoolLoaded[key] = true;
-    try { localStorage.setItem('glp', JSON.stringify(window._litPool)); } catch (e) {}
+    litSaveLocal();
+  }
+  // v8.67: 문해력 지문 은행 — lit/lit_L{급수}.json 에 미리 만들어 둔 검토 완료 지문(7~18급)을 지문 창고에 합친다.
+  // 은행 지문은 서버(Firebase)·이 컴퓨터 저장소에는 저장하지 않고(bank 표시), 열 때마다 파일에서 불러온다.
+  // 원장님이 지문을 고치거나 AI 검토를 하면 bank 표시가 사라져 일반 지문처럼 서버에 저장되고, 그 뒤로는 고친 판이 우선한다.
+  const LIT_BANK_BASE = 'lit/';
+  function litSaveLocal() {
+    try {
+      const o = {};
+      Object.keys(window._litPool).forEach(function(k) { o[k] = (window._litPool[k] || []).filter(function(p) { return !p.bank; }); });
+      localStorage.setItem('glp', JSON.stringify(o));
+    } catch (e) {}
+  }
+  async function mergeLitBank(level) {
+    const key = String(level);
+    if (level < 7 || level > 18) return;
+    const res = await fetch(LIT_BANK_BASE + 'lit_L' + level + '.json?v=' + APP_VERSION);
+    if (!res.ok) return;
+    const d = await res.json();
+    if (!d || !d.passages || !d.passages.length) return;
+    const pool = window._litPool[key] = window._litPool[key] || [];
+    const have = {};
+    pool.forEach(function(p) { have[p.pid] = true; });
+    d.passages.forEach(function(p) {
+      if (have[p.pid]) return; // 서버·이 컴퓨터에 이미 있는 판(고친 것 포함)이 우선
+      p.bank = true; p.status = 'final';
+      pool.push(p);
+    });
+    pool.sort(function(a, b) { return String(a.createdAt).localeCompare(String(b.createdAt)) || a.pid.localeCompare(b.pid); });
   }
   async function saveLitPool(level) {
     const key = String(level);
-    try { localStorage.setItem('glp', JSON.stringify(window._litPool)); } catch (e) {}
+    litSaveLocal();
+    const bankKeep = (window._litPool[key] || []).filter(function(p) { return p.bank; });
     if (!(window._fbWriteReady && window._fbWriteReady())) return;
     try {
       const ref = window._doc(window._db, 'geuldap_settings', 'literacy_pool_' + key);
       const d = await window._getDoc(ref);
       const map = {};
       if (d.exists() && d.data().passages) d.data().passages.forEach(function(p) { map[p.pid] = p; });
-      (window._litPool[key] || []).forEach(function(p) { map[p.pid] = p; });
+      (window._litPool[key] || []).forEach(function(p) { if (!p.bank) map[p.pid] = p; });
       const merged = Object.keys(map).map(function(k) { return map[k]; }).sort(function(a, b) { return String(a.createdAt).localeCompare(String(b.createdAt)) || a.pid.localeCompare(b.pid); });
-      window._litPool[key] = merged;
+      window._litPool[key] = merged.concat(bankKeep.filter(function(b) { return !map[b.pid]; }));
       await window._setDoc(ref, { level: Number(key), passages: merged });
     } catch (e) {
       console.error('지문 저장 오류', e);
@@ -6769,7 +6800,7 @@ ${a.name}`;
       t.passages[i] = np;
       const pool = window._litPool[String(np.level)] || [];
       const cur = pool.find(function(x) { return x.pid === np.pid; });
-      if (cur) { cur.title = np.title; cur.text = np.text; cur.questions = JSON.parse(JSON.stringify(np.questions)); cur.review = np.review; cur.status = 'draft'; }
+      if (cur) { cur.title = np.title; cur.text = np.text; cur.questions = JSON.parse(JSON.stringify(np.questions)); cur.review = np.review; cur.status = 'draft'; cur.bank = false; }
       s.literacyPending = t;
       await saveLitPool(np.level);
       await persistLit(s);
@@ -6785,7 +6816,7 @@ ${a.name}`;
     const key = String(level);
     const seen = new Set(litSeenPids(s).concat(exclude || []));
     const pool = window._litPool[key] = window._litPool[key] || [];
-    const cand = pool.find(function(p) { return !seen.has(p.pid) && p.status === 'final'; }) || pool.find(function(p) { return !seen.has(p.pid); });
+    const cand = pool.find(function(p) { return !seen.has(p.pid) && p.bank; }) || pool.find(function(p) { return !seen.has(p.pid) && p.status === 'final'; }) || pool.find(function(p) { return !seen.has(p.pid); });
     if (cand) return cand;
     const np = await generateLitPassage(level, pool);
     pool.push(np);
@@ -6943,7 +6974,7 @@ ${a.name}`;
       vocabPrintFrameOpen(opts.hw ? '문해력 숙제' : '문해력 등급 평가') +
       '<div style="display:flex; justify-content:space-between; align-items:center; font-size:13px; margin-bottom:10px; flex-wrap:wrap; gap:6px;"><span>이름: ' + escapeHtml(opts.studentName || '') + '</span><span>날짜: ' + (opts.date ? escapeHtml(opts.date) : '______________') + '</span>' + (opts.hw ? '<span>권장 시간 | 30분</span><span>맞은 개수: ______ / ' + litTotalQuestions(test) + '</span>' : '<span>제한 시간 | ' + litTimeLimit(test) + '분</span><span>점수: ______ / 100</span>') + '</div>' +
       '<div style="font-size:13px; color:#555; margin-bottom:8px;"><b style="color:' + color + ';">' + rangeText + '</b> 다음 글을 읽고 물음에 답하세요.</div>' +
-      '<div style="border:1.5px solid #333; padding:16px 18px; font-family:\'Noto Serif KR\', serif; font-size:14px; line-height:1.95; background:#fff;">' +
+      '<div style="border:1.5px solid #333; padding:16px 18px; font-family:\'Noto Serif KR\', serif; font-size:14px; line-height:1.95; background:#fff; break-inside:avoid; page-break-inside:avoid;">' +
       '<div style="text-align:center; font-weight:700; margin-bottom:8px;">' + escapeHtml(p.title) + '</div>' + litParagraphsHtml(p.text, 'margin:0 0 6px; text-indent:0.8em;') + '</div>' +
       qHtml + VOCAB_PRINT_FRAME_CLOSE + '</div>';
   }
@@ -7036,7 +7067,7 @@ ${a.name}`;
       });
       const pool = window._litPool[String(p.level)] || [];
       const cur = pool.find(function(x) { return x.pid === p.pid; });
-      if (cur) { cur.title = p.title; cur.text = p.text; cur.questions = JSON.parse(JSON.stringify(p.questions)); }
+      if (cur) { cur.title = p.title; cur.text = p.text; cur.questions = JSON.parse(JSON.stringify(p.questions)); cur.bank = false; }
     });
     for (let i = 0; i < t.levels.length; i++) await saveLitPool(t.levels[i]);
     selectedLitStudent.literacyPending = t;
@@ -7296,7 +7327,7 @@ ${a.name}`;
   function showLitReport(rec) {
     const box = document.getElementById('litReportBox');
     box.innerHTML = '<div style="margin-top:16px;"><div style="font-weight:700; margin-bottom:6px;">👨‍👩‍👧 학부모 보고서 (' + escapeHtml(rec.date) + ')</div><textarea id="litReportText" rows="14" style="width:100%; font-size:14px; line-height:1.7; padding:12px; border:1px solid #ddd; border-radius:8px;" onchange="saveLitReportEdit(\'' + rec.id + '\')">' + escapeHtml(rec.report) + '</textarea>' +
-      '<div style="margin-top:6px; display:flex; gap:6px; flex-wrap:wrap;"><button class="btn btn-primary btn-sm" onclick="copyLitReport()">📋 카톡용 복사</button> <button class="btn btn-secondary btn-sm" onclick="regenerateLitReport(\'' + rec.id + '\')">🔄 다시 작성</button> <span id="litReportMsg" style="font-size:12px; color:#888;"></span></div></div>';
+      '<div style="margin-top:6px; display:flex; gap:6px; flex-wrap:wrap;"><button class="btn btn-secondary btn-sm" onclick="copyLitResultOnly(\'' + rec.id + '\')">📋 결과만 복사</button> <button class="btn btn-secondary btn-sm" onclick="copyLitQuestionsOnly(\'' + rec.id + '\', false)">📋 문항별 결과(O/X·해설)</button> <button class="btn btn-secondary btn-sm" onclick="copyLitQuestionsOnly(\'' + rec.id + '\', true)">📋 지문 포함 문항별 결과</button> <button class="btn btn-secondary btn-sm" onclick="copyLitReport()">📋 보고서 글만 복사</button> <button class="btn btn-primary btn-sm" onclick="printLitReportCertificate(\'' + rec.id + '\')">🖨️ 평가서 인쇄</button> <button class="btn btn-primary btn-sm" onclick="shareLitToParent(\'' + rec.id + '\')">📤 전체 한번에 복사</button> <button class="btn btn-secondary btn-sm" onclick="regenerateLitReport(\'' + rec.id + '\')">🔄 다시 작성</button> <span id="litReportMsg" style="font-size:12px; color:#888;"></span></div></div>';
     box.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
   async function saveLitReportEdit(id) {
@@ -7307,6 +7338,89 @@ ${a.name}`;
     const s = selectedLitStudent; const rec = (s.literacyRecords || []).find(function(r) { return r.id === id; }); if (!rec) return;
     rec.report = ''; await generateLitReport(id);
   }
+  // ----- v8.67 학부모 보고서: 결과 요약 / 문항별 결과 / 평가서 인쇄 / 전체 복사 (어휘력 보고서와 같은 구성) -----
+  function litRecFor(rid) {
+    const s = selectedLitStudent; if (!s) return null;
+    const recs = litRecordsFor(s);
+    return (rid ? recs.find(function(r) { return r.id === rid; }) : null) || recs[recs.length - 1] || null;
+  }
+  function buildLitResultText(s, rec) {
+    let t = '[문해력 진단 결과]\n';
+    t += '학생: ' + s.name + (s.grade ? ' (' + s.grade + ')' : '') + '\n진단일: ' + rec.date + '\n';
+    t += '진단 급수: ' + rec.oldLevel + '급 → ' + rec.newLevel + '급 (' + rec.resultLabel + ')\n';
+    t += '정답: ' + rec.correct + '/' + rec.total + '문항 (배점 환산 ' + rec.score + '점)\n';
+    t += '지문별 정답 수:\n';
+    (rec.passages || []).forEach(function(p, i) {
+      const b = rec.breakdown && rec.breakdown[i];
+      t += '  ' + (i + 1) + '. ' + p.title + ' (' + p.level + '급) ' + (b ? b.correct + '/' + b.total : '') + '\n';
+    });
+    return t;
+  }
+  function buildLitQuestionsText(rec, withPassage) {
+    if (!rec.passages || !rec.passages.length) return '(이 기록은 저장된 문제 데이터가 없습니다.)';
+    const test = { passages: rec.passages };
+    const nums = litPassageRange(test);
+    const ans = rec.answers || {};
+    let body = '';
+    rec.passages.forEach(function(p, pi) {
+      const b = rec.breakdown && rec.breakdown[pi];
+      body += '■ 지문 ' + (pi + 1) + ' · ' + p.title + ' (' + p.level + '급)' + (b ? ' — ' + b.correct + '/' + b.total + ' 정답' : '') + '\n';
+      if (withPassage) body += '\n' + String(p.text || '').trim() + '\n\n';
+      p.questions.forEach(function(q, qi) {
+        const n = nums[pi][0] + qi;
+        const sel = ans[n];
+        const hasSel = sel !== undefined && sel !== null;
+        body += n + '. (' + (q.type || '') + ') ' + q.question + '\n';
+        q.options.forEach(function(o, oi) { body += LIT_OPT[oi] + ' ' + o + '\n'; });
+        const correctText = LIT_OPT[q.answerIndex] + ' ' + q.options[q.answerIndex];
+        if (hasSel) body += sel === q.answerIndex ? '▶ 학생 답 ' + LIT_OPT[sel] + ' ⭕ 정답\n' : '▶ 학생 답 ' + LIT_OPT[sel] + ' ❌ → 정답은 ' + LIT_OPT[q.answerIndex] + '\n';
+        else body += '▶ 학생 답 없음 ❌ → 정답은 ' + LIT_OPT[q.answerIndex] + '\n';
+        if (q.explanation) body += '해설: ' + q.explanation + '\n';
+        body += '\n';
+      });
+    });
+    return '[시험 결과 — 문항별 정답·해설 (총 ' + rec.total + '문항, ' + rec.correct + '문항 정답)]\n\n' + body.replace(/\n+$/, '\n');
+  }
+  function litCopyText(text) {
+    navigator.clipboard.writeText(text)
+      .then(function() { alert('복사되었습니다! 카카오톡이나 문자에 붙여넣으세요.'); })
+      .catch(function() { prompt('자동 복사가 안 돼요. 아래 내용을 직접 복사해 주세요.', text); });
+  }
+  function copyLitResultOnly(rid) {
+    const rec = litRecFor(rid); if (!rec) { alert('진단 기록을 찾을 수 없어요.'); return; }
+    litCopyText(buildLitResultText(selectedLitStudent, rec));
+  }
+  function copyLitQuestionsOnly(rid, withPassage) {
+    const rec = litRecFor(rid); if (!rec) { alert('진단 기록을 찾을 수 없어요.'); return; }
+    litCopyText(buildLitQuestionsText(rec, !!withPassage));
+  }
+  function shareLitToParent(rid) {
+    const rec = litRecFor(rid); if (!rec) { alert('진단 기록을 찾을 수 없어요.'); return; }
+    const ta = document.getElementById('litReportText');
+    const reportText = ta ? ta.value.trim() : (rec.report || '').trim();
+    if (!reportText) { alert('먼저 "보고서 생성"으로 안내문을 만들어 주세요.'); return; }
+    litCopyText(buildLitQuestionsText(rec, false) + '\n[의견]\n' + buildLitResultText(selectedLitStudent, rec) + '\n' + reportText + '\n');
+  }
+  // 인쇄용 평가서: 1쪽 결과 요약+안내문, 이어서 지문마다 채점된 시험지(학생 답·정답·해설) — 지문 하나가 한 쪽 이상이면 문제 단위로 쪽이 넘어간다.
+  function printLitReportCertificate(rid) {
+    const s = selectedLitStudent; const rec = litRecFor(rid); if (!s || !rec) { alert('진단 기록을 찾을 수 없어요.'); return; }
+    const ta = document.getElementById('litReportText');
+    const reportText = ta && ta.value.trim() ? ta.value.trim() : (rec.report || '');
+    const row = function(k, v) { return '<tr><td style="padding:9px 14px; border:1px solid #bbb; background:#f3f8f8; width:26%; font-weight:700; text-align:center;">' + k + '</td><td style="padding:9px 14px; border:1px solid #bbb;">' + v + '</td></tr>'; };
+    const brk = (rec.passages || []).map(function(p, i) {
+      const b = rec.breakdown && rec.breakdown[i];
+      return '<tr><td style="padding:7px 10px; border:1px solid #ccc; text-align:center;">' + (i + 1) + '</td><td style="padding:7px 10px; border:1px solid #ccc;">' + escapeHtml(p.title) + '</td><td style="padding:7px 10px; border:1px solid #ccc; text-align:center;">' + p.level + '급</td><td style="padding:7px 10px; border:1px solid #ccc; text-align:center;"><b>' + (b ? b.correct + ' / ' + b.total : '') + '</b></td></tr>';
+    }).join('');
+    const first = '<div style="max-width:none; break-after:page; page-break-after:always; margin-bottom:20px;">' + vocabPrintFrameOpen('문해력 진단 평가서') +
+      '<table style="width:100%; border-collapse:collapse; font-size:14px; margin-bottom:16px;">' + row('이 름', escapeHtml(s.name)) + row('학 년', escapeHtml(s.grade || '')) + row('진단일', escapeHtml(rec.date)) + row('진단 급수', '<b style="color:#0d6b6b; font-size:16px;">' + rec.oldLevel + '급 → ' + rec.newLevel + '급</b> (' + escapeHtml(rec.resultLabel || '') + ')') + row('정답 수', rec.correct + ' / ' + rec.total + ' 문항 (배점 환산 ' + rec.score + '점)') + '</table>' +
+      '<table style="width:100%; border-collapse:collapse; font-size:13px; margin-bottom:16px;"><tr style="background:#faf8f3;"><th style="padding:7px; border:1px solid #ccc; width:40px;">번호</th><th style="padding:7px; border:1px solid #ccc;">지문</th><th style="padding:7px; border:1px solid #ccc; width:60px;">급수</th><th style="padding:7px; border:1px solid #ccc; width:80px;">정답 수</th></tr>' + brk + '</table>' +
+      (reportText ? '<div style="font-size:13.5px; line-height:1.85; white-space:pre-wrap; border-top:1px dashed #bbb; padding-top:12px;">' + escapeHtml(reportText) + '</div>' : '') +
+      VOCAB_PRINT_FRAME_CLOSE + '</div>';
+    const t = { passages: rec.passages };
+    const rest = rec.passages.map(function(p, i) { return litPassageBlockHtml(t, i, { studentName: s.name, date: rec.date, graded: true, answers: rec.answers || {}, pageBreak: i < rec.passages.length - 1 }); }).join('');
+    litOpenPrint(first + rest);
+  }
+
   async function copyLitReport() {
     const ta = document.getElementById('litReportText'); const msg = document.getElementById('litReportMsg');
     try { await navigator.clipboard.writeText(ta.value); msg.textContent = '복사했어요!'; } catch (e) { ta.select(); msg.textContent = '자동 복사가 안 돼서 선택해 두었어요 — Ctrl+C로 복사해 주세요.'; }
