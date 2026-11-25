@@ -1151,6 +1151,7 @@
   <div class="card">
     <div class="card-title">📖 문해력 진단·관리 <span style="font-size:12px; font-weight:400; color:#888;">(초등 1~6학년 대상 · 1~18급 · 2개월에 한 번)</span></div>
     <div style="font-size:12px; color:#888; margin-bottom:14px;">학생을 선택하면 그 학생이 <b>아직 보지 않은 지문</b>으로 시험지를 만들어요(같은 지문은 다시 나오지 않고, 안 본 지문이 없으면 같은 주제의 새 변형 글을 만들어요). 시험지 인쇄 → 학생이 푼 답을 입력 → 급수 자동 진단 → 학부모 보고서까지 이어져요.</div>
+    <div id="litLowBanner"></div>
     <div class="student-grid" id="litStudentGrid"></div>
   </div>
   <div class="card" id="litDetailSection" style="display:none;">
@@ -1164,7 +1165,7 @@
       <div id="litHwBox"></div>
       <div id="litHwHistory"></div>
     </div>
-    <div id="litProgress"></div>
+        <div id="litProgress"></div>
     <div id="litTestBox"></div>
     <div id="litResultBox"></div>
     <div id="litReportBox"></div>
@@ -2375,7 +2376,7 @@
 
 <script>
   // ===== 버전 정보 (콘솔에서 확인: APP_VERSION 또는 페이지 로드시 자동 출력) =====
-  const APP_VERSION = 'v8.67';
+  const APP_VERSION = 'v8.71';
   const APP_VERSION_LOG = [
     'v1.0 — 탭 구조 + UI 껍데기',
     'v1.1 — AI 문제 생성 + 개념 사다리',
@@ -2587,6 +2588,11 @@
     'v8.65 — [신규] 4주 학습 커리큘럼도 낱말 은행에서 만들도록 변경 — 목표 급수의 은행 낱말(뜻·예문 검토 완료) 40개를 주차별 10개씩 나누고, 주차별 확인 문제 5개는 예문의 낱말을 빈칸으로 만들어 자동 구성. 이 학생이 진단 시험에서 이미 본 낱말은 되도록 뒤로 미루되 모자라면 그대로 사용(절대 원칙 아님). 1~5급은 은행 낱말이 29~36개라 주차별 7~9개. 은행을 못 불러오면 예전처럼 AI가 만듦',
     'v8.66 — [버그 수정] 어휘 진단 시험지를 인쇄하면 테두리·문제가 페이지 중간에서 잘려 나오던 문제 — 낱말 은행 문제는 문장이 길어 "한 장 8문제" 고정 방식이 A4 한 장을 넘겼음(실제 높이 측정으로 확인). 인쇄 창에서 문제 높이를 직접 재어 한 장에 들어가는 만큼만 담아 페이지를 나누고, 용지 여백(@page 10mm)과 가로 폭(800px 고정에서 용지 폭에 맞춤)도 명시',
     'v8.67 — [신규] 문해력 지문 은행 연결 — 7~18급 120편(급수당 10편 안팎, 지문 1개+5지선다 5문항, 검토 완료)을 lit/lit_L7.json ~ lit_L18.json 파일에서 불러와 지문 창고에 합침. 시험지를 만들 때 은행 지문을 먼저 쓰고(이미 본 지문 제외), 은행에 안 본 지문이 없을 때만 AI가 새로 만듦. 은행 지문은 서버에 저장하지 않으며 원장님이 고치면 일반 지문처럼 저장됨. [신규] 문해력 학부모 보고서에 어휘력과 같은 버튼 추가 — 결과만 복사 / 문항별 결과(O·X, 학생 답, 정답, 해설) 복사 / 지문 포함 복사 / 평가서 인쇄(요약 쪽 + 지문별 채점 쪽) / 전체 한번에 복사',
+    'v8.68 — [삭제] 문해력 탭의 "주간 숙제"(지문 3개·15문제 숙제 만들기·인쇄·결과 입력·기록) 기능 삭제 — 문해력 지문 은행은 정식 진단 시험지용으로만 씀. 학생들에게 이미 저장돼 있던 숙제 기록 데이터는 지우지 않고 그대로 두며(이미 본 지문 제외 계산에는 계속 반영), 화면에서만 사라짐',
+    'v8.69 — [복원·추가] 문해력 탭 "주간 숙제" 다시 만듦(지문 1개·5문항, 급수 변동 없음, 은행 지문 공유·본 지문 제외) + 학생별 안 본 지문이 3편 이하면 "학생 지문 보충이 필요합니다" 알림',
+    'v8.69b — [신규] 배부 자료 "📄 표지 포함"(선택, 기본 포함) — 4주 커리큘럼·주차별 단어시험·어휘 진단 시험지·문해력 시험·문해력 주간 숙제 인쇄 앞에 예쁜 표지(이름·학년·급수·날짜, 주간 숙제는 "제 N주차" 표시). 문해력 숙제 화면에도 주차 표시',
+    'v8.70 — [개선] 표지에서 학년 기준보다 급수가 낮은 학생은 급수(출제 범위·현재→목표 급수)를 표시하지 않음',
+    'v8.71 — [되돌림] 표지 급수 숨김 취소 — 모든 학생 표지에 급수 표시(v8.69와 동일)'
   ];
   console.log(`%c글답 학습기 ${APP_VERSION}`, 'font-weight:bold; font-size:14px; color:#0d1b4b;');
   console.groupCollapsed('%c버전 기록 (클릭해서 펼치기)', 'color:#888; font-size:11px;');
@@ -6475,6 +6481,47 @@ ${a.name}`;
   function vocabAcademyName() {
     return (window._academySettings && window._academySettings.name) || '글답국어독서논술';
   }
+
+  // ===== v8.69: 배부 자료 표지 (선택) =====
+  // 4주 커리큘럼·주차별 단어시험·어휘 진단 시험지·문해력 시험·문해력 주간 숙제 인쇄 때 앞에 붙는 표지.
+  // "📄 표지 포함" 체크는 모든 인쇄 버튼 옆에서 같이 움직이고, 이 브라우저에 기억된다(기본: 포함).
+  function coverOn() { try { return localStorage.getItem('glCoverOn') !== '0'; } catch (e) { return true; } }
+  function setCoverOn(v) {
+    try { localStorage.setItem('glCoverOn', v ? '1' : '0'); } catch (e) {}
+    document.querySelectorAll('.coverChk').forEach(function(c) { c.checked = !!v; });
+  }
+  function coverChkHtml() {
+    return '<label style="font-size:12px; color:#555; font-weight:400; margin:0 6px; white-space:nowrap; cursor:pointer;"><input type="checkbox" class="coverChk" ' + (coverOn() ? 'checked' : '') + ' onchange="setCoverOn(this.checked)"> 📄 표지 포함</label>';
+  }
+  // o: { en, title, sub, badge, color, name, grade, items:[[라벨,값]], notes:[문장], foot }
+  function coverPageHtml(o) {
+    const c = o.color || '#0d6b6b';
+    const rows = (o.items || []).map(function(kv) {
+      return '<tr><td style="padding:13px 16px; border-bottom:1px solid #d9e6e6; width:30%; font-weight:700; text-align:center; background:#f3f8f8; color:' + c + ';">' + escapeHtml(kv[0]) + '</td><td style="padding:13px 20px; border-bottom:1px solid #d9e6e6; font-size:17px;">' + (kv[1] === '' ? '&nbsp;' : escapeHtml(String(kv[1]))) + '</td></tr>';
+    }).join('');
+    const notes = (o.notes || []).length ? '<div style="margin:26px 6px 0; padding:16px 22px; border:1.5px dashed ' + c + '; border-radius:10px; font-size:13.5px; line-height:1.95; color:#444;">' +
+      o.notes.map(function(n) { return '<div>' + escapeHtml(n) + '</div>'; }).join('') + '</div>' : '';
+    return '<div class="gcov" style="max-width:800px; margin:0 auto 20px; break-after:page; page-break-after:always;">' +
+      '<style>@media print{.gcov-in{min-height:94vh;}} .gcov-in{-webkit-print-color-adjust:exact; print-color-adjust:exact;}</style>' +
+      '<div class="gcov-in" style="border:3px double ' + c + '; border-radius:6px; padding:0; overflow:hidden; box-sizing:border-box; display:flex; flex-direction:column;">' +
+        '<div style="background:' + c + '; color:#fff; text-align:center; padding:34px 20px 28px;">' +
+          '<div style="font-size:26px; font-weight:800; letter-spacing:2px;">' + escapeHtml(vocabAcademyName()) + '</div>' +
+          '<div style="font-size:11px; letter-spacing:3px; opacity:.85; margin-top:6px;">GEULDAP KOREAN READING &amp; ESSAY ACADEMY</div></div>' +
+        '<div style="text-align:center; padding:54px 24px 10px;">' +
+          '<div style="font-size:14px; letter-spacing:7px; color:' + c + '; font-weight:700;">' + escapeHtml(o.en || '') + '</div>' +
+          '<div style="font-size:38px; font-weight:800; line-height:1.35; margin:16px 0 8px; color:#222;">' + escapeHtml(o.title) + '</div>' +
+          (o.sub ? '<div style="font-size:16px; color:#666;">' + escapeHtml(o.sub) + '</div>' : '') +
+          (o.badge ? '<div style="display:inline-block; margin-top:26px; padding:10px 38px; border-radius:40px; background:#fff4e0; border:2px solid #f0b86e; color:#b35c00; font-size:28px; font-weight:800;">' + escapeHtml(o.badge) + '</div>' : '') +
+        '</div>' +
+        '<div style="padding:30px 50px 0;"><table style="width:100%; border-collapse:collapse; border-top:2px solid ' + c + ';">' + rows + '</table>' + notes + '</div>' +
+        '<div style="margin-top:auto; text-align:center; padding:26px 20px 24px; font-size:12.5px; color:#888;">' + escapeHtml(o.foot || '꾸준히 읽고, 생각하고, 쓰는 힘 — 글답이 함께합니다') + '</div>' +
+      '</div></div>';
+  }
+  // v8.71: 급수는 항상 표지에 표시한다(보고서에는 학년 기준이 드러나지 않으므로 숨기지 않음). 숨김 기능이 필요하면 여기서 true 반환.
+  function coverHideLevel(s, kind) { return false; }
+  function coverStudentRows(s, extra) {
+    return [['이 름', s ? s.name : ''], ['학 년', s ? (s.grade || '') : '']].concat(extra || []);
+  }
   function vocabPrintFrameOpen(subtitle) {
     return `<div class="vocab-print-frame" style="border:3px double #0d6b6b; border-radius:4px; padding:22px 26px; box-sizing:border-box;">
       <div class="vocab-print-header" style="text-align:center; border-bottom:2px solid #0d6b6b; padding-bottom:12px; margin-bottom:18px; background:#fff;">
@@ -6860,6 +6907,38 @@ ${a.name}`;
     }).join('');
     if (selectedLitStudent) { document.getElementById('litDetailSection').style.display = ''; renderLitStatus(); renderLitHistory(); }
     else document.getElementById('litDetailSection').style.display = 'none';
+    checkLitLowStock(list);
+  }
+  // v8.69: 지문 보충 알림 — 학생별로 시험·숙제에 쓸 수 있는 안 본 지문이 LIT_LOW_LEFT편 이하인 급수를 모아 알려준다(7~18급만, 은행 기준)
+  const LIT_LOW_LEFT = 3;
+  let _litLowToken = 0;
+  async function checkLitLowStock(list) {
+    const box = document.getElementById('litLowBanner'); if (!box) return;
+    const tok = ++_litLowToken;
+    const low = {}; // 급수 -> {names:[], minLeft}
+    const need = {};
+    list.forEach(function(s) { litTestLevels(currentLitLevel(s)).forEach(function(l) { if (l >= 7 && l <= 18) need[l] = true; }); });
+    for (const k of Object.keys(need)) { try { await loadLitPool(Number(k)); } catch (e) {} }
+    if (tok !== _litLowToken) return;
+    list.forEach(function(s) {
+      const seen = new Set(litSeenPids(s));
+      litTestLevels(currentLitLevel(s)).forEach(function(l) {
+        if (l < 7 || l > 18) return;
+        const pool = window._litPool[String(l)] || [];
+        const left = pool.filter(function(p) { return !seen.has(p.pid) && (p.bank || p.status === 'final'); }).length;
+        if (left <= LIT_LOW_LEFT) {
+          if (!low[l]) low[l] = { names: [], minLeft: left };
+          if (low[l].names.indexOf(s.name) < 0) low[l].names.push(s.name);
+          if (left < low[l].minLeft) low[l].minLeft = left;
+        }
+      });
+    });
+    const ks = Object.keys(low).map(Number).sort(function(a, b) { return a - b; });
+    if (!ks.length) { box.innerHTML = ''; return; }
+    box.innerHTML = '<div style="margin:0 0 12px; padding:10px 14px; background:#fff4e5; border:1px solid #f0b86e; border-radius:10px; font-size:13px; line-height:1.7;">' +
+      '<b style="color:#b35c00;">⚠️ 학생 지문 보충이 필요합니다</b> <span style="color:#888;">(안 본 지문 ' + LIT_LOW_LEFT + '편 이하)</span><br>' +
+      ks.map(function(l) { return '<b>' + l + '급</b> — ' + low[l].names.map(escapeHtml).join(', ') + ' (남은 지문 ' + low[l].minLeft + '편)'; }).join('<br>') +
+      '<div style="color:#888; font-size:12px; margin-top:4px;">Claude에게 “○급 지문 보충해줘”라고 요청 → 새 lit 파일을 같은 이름으로 올리면 됩니다.</div></div>';
   }
   function selectLitStudent(id) {
     const s = _students.find(function(x) { return x.id === id; });
@@ -6995,7 +7074,7 @@ ${a.name}`;
     box.innerHTML = '<div style="margin:14px 0 8px; padding:10px 14px; background:#f3f8f8; border:1px solid #cfe5e5; border-radius:8px; font-size:13px;">기준 <b>' + t.baseLevel + '급</b>' + (t.manualBase ? ' <span style="color:#8a6d00;">(원장님이 직접 선택)</span>' : '') + ' → 출제 범위 <b>' + t.levels.join('·') + '급</b> · 지문 ' + t.passages.length + '개 · 총 ' + total + '문항 · ' + litTimeLimit(t) + '분' +
       (drafts ? '<div style="color:#8a6d00; margin-top:4px;">📝 아직 확인 전(초안) 지문이 ' + drafts + '개 있어요. 읽어 보고 필요하면 수정한 뒤 "✅ 지문 확정"을 눌러 주세요.</div>' : '<div style="color:#0d6b6b; margin-top:4px;">✅ 모든 지문이 확정된 상태예요.</div>') + '</div>' +
       '<div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px;">' +
-      '<button class="btn btn-secondary btn-sm" onclick="printLitTest()">🖨️ 시험지 인쇄(표지+지문, 답은 시험지에 표시)</button>' +
+      '<button class="btn btn-secondary btn-sm" onclick="printLitTest()">🖨️ 시험지 인쇄(표지+지문, 답은 시험지에 표시)</button>' + coverChkHtml() +
       '<button class="btn btn-secondary btn-sm" onclick="printLitAnswerSheet()">🖨️ (선택) 별도 답안지 인쇄</button>' +
       '<button class="btn btn-secondary btn-sm" onclick="printLitAnswerKey()">🖨️ 정답·해설 인쇄</button>' +
       '<button class="btn btn-secondary btn-sm" onclick="toggleLitAnswer()">' + (window._litShowAnswer ? '정답 가리기' : '정답·해설 보기') + '</button>' +
@@ -7084,14 +7163,11 @@ ${a.name}`;
   }
   function litCoverHtml(s, t) {
     const total = litTotalQuestions(t);
-    const row = function(k, v) { return '<tr><td style="padding:14px 18px; border:1px solid #bbb; background:#f3f8f8; width:28%; font-weight:700; text-align:center;">' + k + '</td><td style="padding:14px 18px; border:1px solid #bbb;">' + v + '</td></tr>'; };
-    return '<div class="lit-cover" style="max-width:800px; break-after:page; page-break-after:always; margin-bottom:20px;">' + vocabPrintFrameOpen('') +
-      '<div style="text-align:center; margin:60px 0 40px;"><div style="font-size:15px; color:#0d6b6b; letter-spacing:6px; margin-bottom:14px;">LITERACY LEVEL TEST</div><div style="font-size:34px; font-weight:800; line-height:1.3;">문해력<br>등급 평가</div></div>' +
-      '<table style="width:100%; border-collapse:collapse; font-size:16px; margin-bottom:32px;">' + row('이 름', escapeHtml(s.name)) + row('학 년', escapeHtml(s.grade || '')) + row('평가일', escapeHtml(todayLocalDateStr())) + row('문항 수 / 시간', total + '문항 · ' + litTimeLimit(t) + '분') + row('점 수', '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;/ 100') + '</table>' +
-      '<div style="border:1.5px solid #333; padding:18px 22px; font-size:14px; line-height:2;"><div style="font-weight:700; margin-bottom:6px;">[ 유의 사항 ]</div>' +
-      '<div>1. 시작 신호가 있을 때까지 시험지를 넘기지 않습니다.</div><div>2. 글을 꼼꼼히 읽고, 각 문제에서 알맞은 답을 하나만 고릅니다.</div><div>3. 모르는 문제는 표시해 두고 다음 문제로 넘어갑니다.</div><div>4. 정해진 시간 안에 모든 문제를 풀고, 마지막에 한 번 더 확인합니다.</div><div>5. 문제마다 배점이 달라요. 어려운 문제일수록 점수가 높으니, 쉬운 문제에서 실수했더라도 끝까지 포기하지 말고 풀어 보세요.</div></div>' +
-      '<div style="text-align:center; margin-top:40px; font-size:13px; color:#888;">이 평가는 글 읽는 힘을 알아보기 위한 것으로, 점수보다 자신의 읽기 습관을 돌아보는 데 목적이 있어요.</div>' +
-      VOCAB_PRINT_FRAME_CLOSE + '</div>';
+    const lv = t.passages.map(function(p) { return p.level; });
+    const lvTxt = lv.filter(function(x, i) { return lv.indexOf(x) === i; }).sort(function(x, y) { return x - y; }).join('·') + '급';
+    return coverPageHtml({ en: 'LITERACY LEVEL TEST', title: '문해력 등급 평가', sub: '글 읽는 힘을 알아보는 시간', badge: '지문 ' + t.passages.length + '개 · ' + total + '문항',
+      items: coverStudentRows(s, [['평가일', todayLocalDateStr()]].concat(coverHideLevel(s, 'lit') ? [] : [['출제 범위', lvTxt]])),
+      notes: ['[ 유의 사항 ]', '1. 시작 신호가 있을 때까지 시험지를 넘기지 않습니다.', '2. 글을 꼼꼼히 읽고, 각 문제에서 알맞은 답을 하나만 고릅니다.', '3. 모르는 문제는 표시해 두고 나중에 다시 풉니다.', '이 평가는 점수보다 자신의 읽기 습관을 돌아보는 데 목적이 있습니다.'] });
   }
   // 학생이 답을 표시하는 답안지(숙제로 내줄 때 시험지 뒤에 붙이거나 따로 인쇄·PDF 저장해서 카톡으로 보낼 수 있음)
   function litAnswerSheetHtml(s, t) {
@@ -7116,7 +7192,7 @@ ${a.name}`;
   }
   function printLitTest() {
     const s = selectedLitStudent, t = litCurrentTest; if (!s || !t) return;
-    litOpenPrint(litCoverHtml(s, t) + t.passages.map(function(p, i) { return litPassageBlockHtml(t, i, { studentName: s.name, pageBreak: true }); }).join(''));
+    litOpenPrint((coverOn() ? litCoverHtml(s, t) : '') + t.passages.map(function(p, i) { return litPassageBlockHtml(t, i, { studentName: s.name, pageBreak: true }); }).join(''));
   }
   function printLitAnswerKey() {
     const s = selectedLitStudent, t = litCurrentTest; if (!s || !t) return;
@@ -7185,7 +7261,7 @@ ${a.name}`;
     alert(s.name + ' 학생: ' + diag.diagnosed + '급으로 진단되었어요 (' + correctAll + '/' + total + '문항 정답, 배점 환산 ' + rec.score + '점/100). 아래 "진단 보고서 생성"으로 학부모 안내문을 만들 수 있어요.');
   }
 
-  // ===== 주간 숙제 (지문 3개 · 15문제 · 급수 변동 없음) =====
+  // ===== 주간 숙제 (지문 1개 · 5문제 · 급수 변동 없음) — v8.69: 3개→1개로 줄임(은행 지문을 아끼고 매주 가볍게 풀도록) =====
   async function generateLitHw() {
     const s = selectedLitStudent; if (!s) return;
     if (s.literacyHwPending && !confirm('아직 결과 입력 전인 숙제가 있어요. 새로 만들면 그 숙제는 사라져요.\n이미 보냈다면 새로 만들지 마세요. 계속할까요?')) return;
@@ -7195,7 +7271,7 @@ ${a.name}`;
     try {
       s.literacyHwPending = null;
       const ps = [];
-      for (let i = 0; i < 3; i++) { litProgSet('(' + (i + 1) + '/3) ' + level + '급 숙제 지문을 고르는 중...'); ps.push(await pickOrCreateLitPassage(s, level, ps.map(function(x) { return x.pid; }))); }
+      for (let i = 0; i < 1; i++) { litProgSet('(' + (i + 1) + '/1) ' + level + '급 숙제 지문을 고르는 중...'); ps.push(await pickOrCreateLitPassage(s, level, ps.map(function(x) { return x.pid; }))); }
       s.literacyHwPending = { id: Date.now().toString(), level: level, createdAt: todayLocalDateStr(), passages: JSON.parse(JSON.stringify(ps)) };
       window._litHwAnswers = {}; window._litHwShowAns = false;
       await persistLit(s);
@@ -7208,16 +7284,22 @@ ${a.name}`;
     const h = s && s.literacyHwPending;
     if (!h) { box.innerHTML = ''; return; }
     const ps = litHwPassages(h); const t = { passages: ps };
-    box.innerHTML = '<div style="margin:12px 0 8px; padding:8px 12px; background:#f3f8f8; border:1px solid #cfe5e5; border-radius:8px; font-size:13px;">📚 ' + h.level + '급 (' + litLevelDef(h.level).band + ' ' + litLevelDef(h.level).sub + ') · 지문 ' + ps.length + '개 · ' + litTotalQuestions(t) + '문항 · ' + escapeHtml(h.createdAt) + ' 생성<br><span style="color:#666;">' + ps.map(function(p) { return '「' + escapeHtml(p.title) + '」'; }).join(' ') + '</span></div>' +
-      '<div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px;"><button class="btn btn-secondary btn-sm" onclick="printLitHw()">🖨️ 숙제 인쇄·PDF</button><button class="btn btn-secondary btn-sm" onclick="toggleLitHwAnswer()">' + (window._litHwShowAns ? '정답 가리기' : '정답·해설 보기') + '</button><button class="btn btn-primary btn-sm" onclick="openLitHwResult()">✅ 숙제 결과 입력</button></div><div id="litHwResultBox"></div>' +
+    box.innerHTML = '<div style="margin:12px 0 8px; padding:8px 12px; background:#f3f8f8; border:1px solid #cfe5e5; border-radius:8px; font-size:13px;">📚 ' + '<b>제 ' + litHwWeekNo(s) + ' 주차</b> · ' + h.level + '급 (' + litLevelDef(h.level).band + ' ' + litLevelDef(h.level).sub + ') · 지문 ' + ps.length + '개 · ' + litTotalQuestions(t) + '문항 · ' + escapeHtml(h.createdAt) + ' 생성<br><span style="color:#666;">' + ps.map(function(p) { return '「' + escapeHtml(p.title) + '」'; }).join(' ') + '</span></div>' +
+      '<div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px;"><button class="btn btn-secondary btn-sm" onclick="printLitHw()">🖨️ 숙제 인쇄·PDF</button>' + coverChkHtml() + '<button class="btn btn-secondary btn-sm" onclick="toggleLitHwAnswer()">' + (window._litHwShowAns ? '정답 가리기' : '정답·해설 보기') + '</button><button class="btn btn-primary btn-sm" onclick="openLitHwResult()">✅ 숙제 결과 입력</button></div><div id="litHwResultBox"></div>' +
       ps.map(function(p, i) { return litPassageBlockHtml(t, i, { studentName: s.name, hw: true, showAnswer: !!window._litHwShowAns, pageBreak: i < ps.length - 1 }); }).join('');
   }
   function toggleLitHwAnswer() { window._litHwShowAns = !window._litHwShowAns; renderLitHwBox(); }
   function printLitHw() {
     const s = selectedLitStudent; const h = s && s.literacyHwPending; if (!h) return;
     const ps = litHwPassages(h); const t = { passages: ps };
-    litOpenPrint(ps.map(function(p, i) { return litPassageBlockHtml(t, i, { studentName: s.name, hw: true, pageBreak: i < ps.length - 1 }); }).join(''));
+    const wk = litHwWeekNo(s);
+    const cover = coverOn() ? coverPageHtml({ en: 'WEEKLY READING HOMEWORK', title: '문해력 주간 숙제', sub: '매주 한 편, 읽는 힘이 자랍니다', badge: '제 ' + wk + ' 주차', color: '#2c6e49',
+      items: coverStudentRows(s, [['주 차', '제 ' + wk + ' 주차'], ['배부일', todayLocalDateStr()], ['제출일', ''], ['범 위', (coverHideLevel(s, 'lit') ? '' : h.level + '급 · ') + '지문 ' + ps.length + '개 · ' + litTotalQuestions(t) + '문항']]),
+      notes: ['풀이한 뒤 답안은 학원 선생님께 제출하세요.', '모르는 낱말은 밑줄을 치고 뜻을 찾아 써 보면 더 좋아요.'] }) : '';
+    litOpenPrint(cover + ps.map(function(p, i) { return litPassageBlockHtml(t, i, { studentName: s.name, hw: true, pageBreak: i < ps.length - 1 }); }).join(''));
   }
+  // 몇 주차 숙제인지: 지금까지 저장된 숙제 기록 수 + 1 (이번 숙제)
+  function litHwWeekNo(s) { return ((s && s.literacyHw) || []).length + 1; }
   function openLitHwResult() {
     const s = selectedLitStudent; const h = s && s.literacyHwPending; if (!h) return;
     window._litHwAnswers = {};
@@ -7957,6 +8039,7 @@ ${a.name}`;
       <div id="vocabCurriculumPrintArea">${weekBlocksHtml}</div>
       <div style="margin-top:10px;">
         <button class="btn btn-secondary btn-sm" onclick="printVocabCurriculum()">🖨️ 4주치 전체 인쇄</button>
+        ${coverChkHtml()}
         <button class="btn btn-secondary btn-sm" onclick="printVocabWeeklyWordTests()">📝 주차별 단어시험지 인쇄 (주 10단어)</button>
       </div>
       ${renderVocabWeekScoreBox(cache)}
@@ -8074,16 +8157,23 @@ ${a.name}`;
     const cache = selectedVocabStudent && selectedVocabStudent._vocabCurriculumCache;
     if (!cache || !cache.weeksData || !cache.weeksData.length) { alert('먼저 급수 향상 4주 커리큘럼을 만들어주세요.'); return; }
     const w = window.open('', '_blank');
-    w.document.write(`<html><head><meta charset="utf-8"><style>${VOCAB_PRINT_FRAME_FILL_CSS}</style></head><body>${buildVocabWeeklyWordTestHtml(cache)}</body></html>`);
+    w.document.write(`<html><head><meta charset="utf-8"><style>${VOCAB_PRINT_FRAME_FILL_CSS}</style></head><body>${vocabCurCover(cache, '주차별 단어시험지', 'WEEKLY WORD QUIZ', '주 10낱말 · 뜻 보고 낱말 쓰기')}${buildVocabWeeklyWordTestHtml(cache)}</body></html>`);
     w.document.close();
     w.print();
   }
 
+  function vocabCurCover(cache, title, en, badge) {
+    if (!coverOn() || !cache) return '';
+    const s = selectedVocabStudent;
+    const items = coverStudentRows(s, (coverHideLevel(s, 'vocab') ? [] : [['급 수', cache.curLevel + '급 → 목표 ' + cache.targetLevel + '급']]).concat([['시작일', todayLocalDateStr()], ['과 정', '1주차 ~ 4주차 (주 10낱말)']]));
+    return coverPageHtml({ en: en, title: title, sub: '어휘력을 한 단계 끌어올리는 4주', badge: badge, color: '#0d6b6b', items: items,
+      notes: ['매주 낱말 10개를 읽고 뜻과 예문을 익힌 뒤, 확인 문제로 점검합니다.', '주차가 끝날 때마다 쪽지시험으로 스스로 확인해 보세요.'] });
+  }
   function printVocabCurriculum() {
     const container = document.getElementById('vocabCurriculumPrintArea');
     if (!container) return;
     const w = window.open('', '_blank');
-    w.document.write(`<html><head><style>${VOCAB_PRINT_FRAME_FILL_CSS}</style></head><body>${container.innerHTML}</body></html>`);
+    w.document.write(`<html><head><meta charset="utf-8"><style>${VOCAB_PRINT_FRAME_FILL_CSS}</style></head><body>${vocabCurCover(selectedVocabStudent && selectedVocabStudent._vocabCurriculumCache, '급수 향상 4주 커리큘럼', 'VOCABULARY 4-WEEK PLAN', '4주 학습 과정')}${container.innerHTML}</body></html>`);
     w.document.close();
     w.print();
   }
@@ -8774,6 +8864,7 @@ ${levelDescText}${avoidText}${currText}
         </div>
         <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
           <button class="btn btn-secondary btn-sm" onclick="printVocabTestPaged()">🖨️ 시험지 인쇄</button>
+          ${coverChkHtml()}
           <button class="btn btn-secondary btn-sm" onclick="toggleVocabAnswerKey()">🔑 정답지 보기/숨기기</button>
           <button class="btn btn-primary btn-sm" onclick="gradeVocabInteractive()">✅ 위에서 고른 답으로 채점하기</button>
         </div>
@@ -8861,6 +8952,15 @@ ${levelDescText}${avoidText}${currText}
   // 확인되어(1페이지에 헤더 누락, 페이지 중간에서 테두리가 잘림) 시험지 인쇄도 자료실과 같은
   // 원리로 바꾼다 — 문제를 페이지 단위(8문제)로 미리 나눠, 각 페이지가 처음부터 자기 헤더+테두리를
   // 포함한 독립 블록이 되도록 하고 그 사이에 강제 페이지 나누기를 넣는다.
+  function vocabTestCover(s) {
+    if (!coverOn()) return '';
+    const qs = s._vocabTestCache || [];
+    const lv = qs.map(function(q) { return q.level; }).filter(function(x) { return x != null; });
+    const lo = lv.length ? Math.min.apply(null, lv) : null, hi = lv.length ? Math.max.apply(null, lv) : null;
+    return coverPageHtml({ en: 'VOCABULARY LEVEL TEST', title: '어휘력 진단 평가', sub: '내 어휘 실력을 알아보는 시간', badge: qs.length + '문항', color: '#7a4fa3',
+      items: coverStudentRows(s, [['평가일', todayLocalDateStr()]].concat(coverHideLevel(s, 'vocab') || lo == null ? [] : [['출제 범위', lo === hi ? lo + '급' : lo + '급 ~ ' + hi + '급']])),
+      notes: ['[ 유의 사항 ]', '1. 시작 신호가 있을 때까지 시험지를 넘기지 않습니다.', '2. 문제를 읽고 알맞은 답을 하나만 고릅니다.', '3. 모르는 문제는 표시해 두고 나중에 다시 풉니다.'] });
+  }
   function printVocabTestPaged() {
     const s = selectedVocabStudent;
     const qs = s && s._vocabTestCache;
@@ -8891,7 +8991,7 @@ ${levelDescText}${avoidText}${currText}
         'document.getElementById("pages").innerHTML=out;setTimeout(function(){window.print();},300);' +
       '};';
     const w = window.open('', '_blank');
-    w.document.write('<html><head><meta charset="utf-8"><title>어휘 진단 시험지</title><style>' + css + '</style></head><body><div id="probe" style="position:absolute;left:0;top:0;width:718px;visibility:hidden;"></div><div id="pages"></div><script>' + script + '<\/script></body></html>');
+    w.document.write('<html><head><meta charset="utf-8"><title>어휘 진단 시험지</title><style>' + css + '</style></head><body><div id="probe" style="position:absolute;left:0;top:0;width:718px;visibility:hidden;"></div>' + vocabTestCover(s) + '<div id="pages"></div><script>' + script + '<\/script></body></html>');
     w.document.close();
   }
 
