@@ -552,6 +552,7 @@
   <div class="tab" onclick="switchTab('learner')" style="color:#2f855a;">📚 학습기</div>
   <div class="tab mobile-keep" onclick="switchTab('vocab')" style="color:#0d6b6b;">🔤 어휘력</div>
   <div class="tab mobile-keep" onclick="switchTab('literacy')" style="color:#0d6b6b;">📖 문해력</div>
+  <div class="tab mobile-keep" onclick="switchTab('todo')" style="color:#c0392b;" id="todoTabBtn">✅ 할 일</div>
   <div class="mobile-more" onclick="toggleMobileTabs()">⋯ 더보기</div>
   <div class="tab" onclick="switchTab('materials')" style="color:#8b5a2b;">📚 자료실</div>
   <div class="tab" onclick="switchTab('blog')" style="color:#a8710a;">📝 블로그 생성</div>
@@ -1431,6 +1432,22 @@
 </div>
 
 <!-- 법정 서류함 -->
+<!-- 할 일 -->
+<div class="page" id="page-todo">
+  <div class="card">
+    <div class="card-title">✅ 내가 할 일</div>
+    <div style="font-size:12px; color:#888; margin-bottom:10px;">메모하듯 적고 Enter · 끝나면 체크하세요. 서버에 저장돼서 집·학원 컴퓨터 어디서나 같은 목록이 보여요.</div>
+    <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px;">
+      <input type="text" id="todoInput" placeholder="예) 김○○ 학부모 상담 전화" style="flex:1; min-width:200px;" onkeydown="if(event.key==='Enter'){addTodo();}">
+      <input type="date" id="todoDue" title="기한(선택)">
+      <label style="font-size:13px; display:flex; align-items:center; gap:4px; white-space:nowrap;"><input type="checkbox" id="todoStar"> ⭐ 중요</label>
+      <button class="btn btn-primary btn-sm" onclick="addTodo()">+ 추가</button>
+    </div>
+    <div id="todoList"></div>
+    <div id="todoDoneBox"></div>
+  </div>
+</div>
+
 <div class="page" id="page-legal">
   <div class="card">
     <div class="card-title">📁 법정 서류함</div>
@@ -2312,6 +2329,7 @@
       const vcDoc = await getDoc(doc(db, 'geuldap_settings', 'vocab_curricula'));
       if (vcDoc.exists() && vcDoc.data().byLevel) { window._vocabCurricula = vcDoc.data().byLevel; localStorage.setItem('gvc', JSON.stringify(window._vocabCurricula)); }
     } catch(e3) { console.log('공용 커리큘럼 로드:', e3); }
+    try { const tdDoc = await getDoc(doc(db, 'geuldap_settings', 'todos')); if (tdDoc.exists() && Array.isArray(tdDoc.data().items)) { window._todos = tdDoc.data().items; localStorage.setItem('gtodo', JSON.stringify(window._todos)); if (window.updateTodoBadge) updateTodoBadge(); } } catch (e4) { console.log('할 일 로드:', e4); }
     localStorage.setItem('gs', JSON.stringify(window._students));
     localStorage.setItem('gr', JSON.stringify(window._records));
     localStorage.setItem('gq', JSON.stringify(window._quizzes));
@@ -2376,7 +2394,7 @@
 
 <script>
   // ===== 버전 정보 (콘솔에서 확인: APP_VERSION 또는 페이지 로드시 자동 출력) =====
-  const APP_VERSION = 'v8.72';
+  const APP_VERSION = 'v8.73';
   const APP_VERSION_LOG = [
     'v1.0 — 탭 구조 + UI 껍데기',
     'v1.1 — AI 문제 생성 + 개념 사다리',
@@ -2593,7 +2611,9 @@
     'v8.69b — [신규] 배부 자료 "📄 표지 포함"(선택, 기본 포함) — 4주 커리큘럼·주차별 단어시험·어휘 진단 시험지·문해력 시험·문해력 주간 숙제 인쇄 앞에 예쁜 표지(이름·학년·급수·날짜, 주간 숙제는 "제 N주차" 표시). 문해력 숙제 화면에도 주차 표시',
     'v8.70 — [개선] 표지에서 학년 기준보다 급수가 낮은 학생은 급수(출제 범위·현재→목표 급수)를 표시하지 않음',
     'v8.71 — [되돌림] 표지 급수 숨김 취소 — 모든 학생 표지에 급수 표시(v8.69와 동일)',
-    'v8.72 — [변경] 어휘·문해력 급수 진단 컷을 엄격하게: "아래 급수는 만점" 가정(기존 90%) — 상승하려면 어휘(5개 급수) 약 70점 이상, 2단계 상승 약 90점 이상'
+    'v8.72 — [변경] 어휘·문해력 급수 진단 컷을 엄격하게: "아래 급수는 만점" 가정(기존 90%) — 상승하려면 어휘(5개 급수) 약 70점 이상, 2단계 상승 약 90점 이상',
+    'v8.73 — [변경] 상승을 더 어렵게: 점수 컷을 넘어도 새 급수 자체의 정답률이 70% 미만이면 그 급수로 인정하지 않음(어휘·문해력 공용)',
+    'v8.73b — [신규] "✅ 할 일" 탭 — 메모하듯 적고 체크, 기한·중요(⭐) 표시, 기한 지남 강조, 완료 목록 접기, 탭에 남은 개수 표시, 서버 저장(집·학원 공유)'
   ];
   console.log(`%c글답 학습기 ${APP_VERSION}`, 'font-weight:bold; font-size:14px; color:#0d1b4b;');
   console.groupCollapsed('%c버전 기록 (클릭해서 펼치기)', 'color:#888; font-size:11px;');
@@ -5557,7 +5577,7 @@ ${a.name}`;
   }
 
   function switchTab(tab) {
-    document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', ['students','upload','records','reading','attendance','quiz','leads','timetable','payments','learner','vocab','literacy','materials','blog','legal'][i]===tab));
+    document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', ['students','upload','records','reading','attendance','quiz','leads','timetable','payments','learner','vocab','literacy','todo','materials','blog','legal'][i]===tab));
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.getElementById('page-'+tab).classList.add('active');
     if (tab==='upload') renderUploadStudents();
@@ -5574,6 +5594,76 @@ ${a.name}`;
     if (tab==='materials') renderMaterialsTab();
     if (tab==='blog') renderBlogGenerate();
     if (tab==='legal') renderLegalDocs();
+    if (tab==='todo') renderTodoTab();
+  }
+
+
+  // ===== v8.73: 할 일 메모·체크 =====
+  // 서버(geuldap_settings/todos)와 이 컴퓨터(gtodo)에 저장. 항목: {id, text, due, star, done, doneAt, createdAt}
+  window._todos = [];
+  try { window._todos = JSON.parse(localStorage.getItem('gtodo') || '[]') || []; } catch (e) { window._todos = []; }
+  async function loadTodos() {
+    try {
+      if (window._fbReady && window._getDoc) {
+        const d = await window._getDoc(window._doc(window._db, 'geuldap_settings', 'todos'));
+        if (d.exists() && Array.isArray(d.data().items)) window._todos = d.data().items;
+      }
+    } catch (e) { console.log('할 일 로드:', e); }
+    try { localStorage.setItem('gtodo', JSON.stringify(window._todos)); } catch (e) {}
+    updateTodoBadge();
+  }
+  async function saveTodos() {
+    try { localStorage.setItem('gtodo', JSON.stringify(window._todos)); } catch (e) {}
+    updateTodoBadge();
+    try { if (window._fbReady && window._setDoc) await window._setDoc(window._doc(window._db, 'geuldap_settings', 'todos'), { items: window._todos, updatedAt: new Date().toISOString() }); }
+    catch (e) { console.log('할 일 저장:', e); alert('⚠️ 할 일을 서버에 저장하지 못했어요(이 컴퓨터에는 저장됨).'); }
+  }
+  function updateTodoBadge() {
+    const b = document.getElementById('todoTabBtn'); if (!b) return;
+    const n = window._todos.filter(function(t) { return !t.done; }).length;
+    const od = window._todos.filter(function(t) { return !t.done && t.due && t.due < todayLocalDateStr(); }).length;
+    b.textContent = '✅ 할 일' + (n ? ' (' + n + ')' : '') + (od ? ' ⚠️' : '');
+  }
+  async function renderTodoTab() { await loadTodos(); renderTodoList(); }
+  function addTodo() {
+    const inp = document.getElementById('todoInput'); const text = (inp.value || '').trim(); if (!text) return;
+    window._todos.unshift({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 5), text: text, due: document.getElementById('todoDue').value || '', star: document.getElementById('todoStar').checked, done: false, createdAt: todayLocalDateStr() });
+    inp.value = ''; document.getElementById('todoDue').value = ''; document.getElementById('todoStar').checked = false;
+    saveTodos(); renderTodoList(); inp.focus();
+  }
+  function toggleTodo(id) { const t = window._todos.find(function(x) { return x.id === id; }); if (!t) return; t.done = !t.done; t.doneAt = t.done ? todayLocalDateStr() : ''; saveTodos(); renderTodoList(); }
+  function starTodo(id) { const t = window._todos.find(function(x) { return x.id === id; }); if (!t) return; t.star = !t.star; saveTodos(); renderTodoList(); }
+  function editTodo(id) {
+    const t = window._todos.find(function(x) { return x.id === id; }); if (!t) return;
+    const v = prompt('할 일 고치기', t.text); if (v === null) return;
+    if (v.trim()) t.text = v.trim();
+    const d = prompt('기한(YYYY-MM-DD, 비우면 없음)', t.due || ''); if (d !== null) t.due = /^\d{4}-\d{2}-\d{2}$/.test(d.trim()) ? d.trim() : '';
+    saveTodos(); renderTodoList();
+  }
+  function deleteTodo(id) { window._todos = window._todos.filter(function(x) { return x.id !== id; }); saveTodos(); renderTodoList(); }
+  function clearDoneTodos() { if (!confirm('완료한 항목을 모두 지울까요?')) return; window._todos = window._todos.filter(function(x) { return !x.done; }); saveTodos(); renderTodoList(); }
+  function todoRowHtml(t) {
+    const today = todayLocalDateStr();
+    const over = !t.done && t.due && t.due < today, isToday = !t.done && t.due === today;
+    const dueTxt = t.due ? '<span style="font-size:12px; margin-left:8px; padding:1px 8px; border-radius:10px; ' + (over ? 'background:#fdecea; color:#c0392b; font-weight:700;' : (isToday ? 'background:#fff4e0; color:#b35c00; font-weight:700;' : 'background:#f1f1f1; color:#666;')) + '">' + (over ? '기한 지남 ' : (isToday ? '오늘 ' : '')) + escapeHtml(t.due.slice(5).replace('-', '/')) + '</span>' : '';
+    return '<div style="display:flex; align-items:center; gap:10px; padding:10px 6px; border-bottom:1px solid #eee;' + (t.done ? ' opacity:.55;' : '') + '">' +
+      '<input type="checkbox" ' + (t.done ? 'checked' : '') + ' onchange="toggleTodo(\'' + t.id + '\')" style="width:20px; height:20px; cursor:pointer; flex:none;">' +
+      '<div style="flex:1; font-size:15px; line-height:1.5; word-break:break-all;' + (t.done ? ' text-decoration:line-through;' : '') + '">' + (t.star ? '⭐ ' : '') + escapeHtml(t.text) + dueTxt + '</div>' +
+      '<button class="btn btn-secondary btn-sm" style="padding:2px 8px;" title="중요 표시" onclick="starTodo(\'' + t.id + '\')">' + (t.star ? '★' : '☆') + '</button>' +
+      '<button class="btn btn-secondary btn-sm" style="padding:2px 8px;" onclick="editTodo(\'' + t.id + '\')">✏️</button>' +
+      '<button class="btn btn-secondary btn-sm" style="padding:2px 8px;" onclick="deleteTodo(\'' + t.id + '\')">🗑️</button></div>';
+  }
+  function renderTodoList() {
+    const open = window._todos.filter(function(t) { return !t.done; }).sort(function(a, b) {
+      if (!!b.star !== !!a.star) return b.star ? 1 : -1;
+      if (a.due && b.due) return a.due.localeCompare(b.due);
+      if (a.due) return -1; if (b.due) return 1; return 0;
+    });
+    const done = window._todos.filter(function(t) { return t.done; }).sort(function(a, b) { return String(b.doneAt).localeCompare(String(a.doneAt)); });
+    document.getElementById('todoList').innerHTML = open.length ? open.map(todoRowHtml).join('') : '<div class="empty" style="padding:18px 0;">할 일이 없어요 🎉</div>';
+    document.getElementById('todoDoneBox').innerHTML = done.length ? '<details style="margin-top:16px;"><summary style="cursor:pointer; font-size:13px; color:#888;">완료한 일 ' + done.length + '개</summary>' + done.map(todoRowHtml).join('') +
+      '<div style="margin-top:8px;"><button class="btn btn-secondary btn-sm" onclick="clearDoneTodos()">완료 항목 모두 지우기</button></div></details>' : '';
+    updateTodoBadge();
   }
 
   // ===== 렌더링 =====
@@ -6587,7 +6677,11 @@ ${a.name}`;
     const S = [];
     for (let j = -1; j < n; j++) { let e = 0; for (let k = 0; k < n; k++) e += w[k] * (k <= j ? hi : guess); S.push(e / tot); }
     let diagnosed = sorted[0].level - 1;
-    for (let j = 0; j < n; j++) { if (sc >= (S[j] + S[j + 1]) / 2) diagnosed = sorted[j].level; }
+    // v8.73: 점수 컷을 넘어도, 그 급수 자체의 정답률이 70% 미만이면(두 번째 급수부터) 그 급수로는 인정하지 않고 한 급수씩 내려 본다 — 새 급수를 직접 통과해야 상승
+    for (let j = n - 1; j >= 0; j--) {
+      const rate = sorted[j].total > 0 ? sorted[j].correct / sorted[j].total : 0;
+      if (sc >= (S[j] + S[j + 1]) / 2 && (j === 0 || rate >= 0.7)) { diagnosed = sorted[j].level; break; }
+    }
     if (diagnosed < 1) diagnosed = 1;
     return { diagnosed: diagnosed, toppedOut: diagnosed === sorted[n - 1].level, score: Math.round(sc * 100), weights: w };
   }
